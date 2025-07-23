@@ -1,0 +1,34 @@
+# Archivo: .gitignore
+
+# Dependencias de Node
+/frontend/node_modules
+/frontend/build
+.pnp
+.pnp.js
+
+# Archivos de caché y logs de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Archivos de entorno (¡NUNCA subas secretos!)
+.env
+.env.*
+*.env
+
+# Archivos de IDE y sistema operativo
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

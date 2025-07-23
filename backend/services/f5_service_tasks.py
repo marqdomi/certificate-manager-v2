@@ -1,0 +1,85 @@
+# backend/services/f5_service_tasks.py
+from datetime import datetime
+
+from core.celery_worker import celery_app
+from db.base import SessionLocal
+from db.models import Device
+from services.f5_service_logic import _perform_scan
+# 1. IMPORTAMOS NUESTRO SERVICIO DE ENCRIPTACIÓN
+from services import encryption_service
+from .f5_service_logic import _perform_scan
+
+@celery_app.task(name="scan_single_f5")
+def scan_f5_task(device_id: int):
+    db = SessionLocal()
+    
+    # 1. Obtenemos el objeto 'device' de la BBDD
+    device = db.query(Device).filter(Device.id == device_id).first()
+    
+    if not device:
+        print(f"ERROR: [Task] Device with ID {device_id} not found in DB.")
+        db.close()
+        return # Salimos temprano si no hay dispositivo
+
+    # 2. Extraemos TODA la información que necesitamos ANTES de entrar al bloque principal
+    device_hostname = device.hostname
+    device_ip = device.ip_address
+    encrypted_pass = device.encrypted_password
+    username = device.username
+    
+    # 3. Inicializamos las variables de resultado
+    final_status = 'failed'
+    final_message = 'Task did not run to completion.'
+
+    try:
+        if not encrypted_pass:
+            raise ValueError("No credentials configured for this device.")
+        
+        password = encryption_service.decrypt_data(encrypted_pass)
+
+        # 4. Llamamos a la lógica de escaneo
+        result = _perform_scan(db, device, username, password) # Le pasamos el objeto 'device'
+        
+        # 5. Guardamos el resultado en nuestras variables locales
+        final_status = result.get('status', 'failed')
+        final_message = result.get('message', 'Scan finished with no details.')
+
+    except Exception as e:
+        # Si algo falla (no hay pass, la desencripción falla, etc.), guardamos el error
+        final_status = 'failed'
+        final_message = str(e)
+        print(f"ERROR: [Task] Pre-scan check failed for {device_hostname}. Reason: {final_message}")
+    
+    # 6. Actualizamos la BBDD fuera del 'try...except' principal de la lógica de negocio
+    #    pero ANTES de cerrar la sesión.
+    device.last_scan_status = final_status
+    device.last_scan_message = final_message
+    device.last_scan_timestamp = datetime.utcnow()
+    db.commit()
+
+    print(f"INFO: [Task] Finalized scan for {device_hostname} with status: {final_status}")
+    
+    # 7. Cerramos la sesión y devolvemos las variables locales
+    db.close()
+    return {"device_id": device_id, "status": final_status, "message": final_message}
+
+@celery_app.task(name="trigger_scan_for_all_devices_task")
+def trigger_scan_for_all_devices_task():
+    """
+    Tarea que Celery Beat llamará. Pone en cola un escaneo para cada dispositivo.
+    """
+    db = SessionLocal()
+    try:
+        devices = db.query(Device).all()
+        if not devices:
+            print("INFO: [Celery Beat] No devices to scan.")
+            return "No devices registered."
+
+        for device in devices:
+            scan_f5_task.delay(device.id)
+        
+        message = f"Successfully queued {len(devices)} scan tasks from scheduled job."
+        print(f"INFO: [Celery Beat] {message}")
+        return message
+    finally:
+        db.close()

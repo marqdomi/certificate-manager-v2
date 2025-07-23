@@ -1,0 +1,151 @@
+// frontend/src/components/DeviceTable.jsx
+
+import React, { useState, useEffect } from 'react';
+import apiClient from '../services/api'; 
+import { DataGrid } from '@mui/x-data-grid';
+import { Box, Chip, Button, IconButton, Tooltip, useTheme } from '@mui/material'; // Importamos useTheme
+import DeleteIcon from '@mui/icons-material/Delete';
+
+const DeviceTable = ({ onSetCredentials, onDeleteDevice, searchTerm, refreshTrigger, userRole }) => {
+    
+    // --- (TODA TU LÓGICA FUNCIONAL SE MANTIENE INTACTA) ---
+    const [devices, setDevices] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const theme = useTheme(); // Usamos el hook para acceder a la paleta del tema
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setLoading(true);
+            let apiUrl = '/devices'; 
+            if (searchTerm) {
+                apiUrl += `?search=${encodeURIComponent(searchTerm)}`;
+            }
+            
+            apiClient.get(apiUrl)
+                .then(response => {
+                    setDevices(response.data);
+                })
+                .catch(error => {
+                    console.error("Error fetching devices:", error);
+                    setDevices([]);
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        }, 300);
+
+        return () => clearTimeout(handler);
+    }, [searchTerm, refreshTrigger]); 
+    // --- (FIN DE LA LÓGICA FUNCIONAL) ---
+
+
+    // ✅ CAMBIO DE DISEÑO 1: Pulimos la presentación de las columnas
+    const columns = [
+        { field: 'hostname', headerName: 'Hostname', flex: 1, minWidth: 250 },
+        { field: 'ip_address', headerName: 'IP Address', width: 150 },
+        { field: 'site', headerName: 'Site', width: 120 },
+        { field: 'version', headerName: 'Version', width: 120 },
+        {
+            field: 'last_scan_status',
+            headerName: 'Last Scan Status',
+            width: 150,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => {
+                const status = params.value || 'pending';
+                let color = 'default';
+                if (status === 'success') color = 'success';
+                if (status === 'failed' || status === 'error') color = 'error';
+                // Chip "filled" para un look más moderno y consistente
+                return (
+                    <Tooltip title={params.row.last_scan_message || status} arrow>
+                        <span>
+                            <Chip label={status} color={color} size="small" sx={{ textTransform: 'capitalize' }} />
+                        </span>
+                    </Tooltip>
+                );
+            },
+        },
+        {
+            field: 'last_scan_timestamp',
+            headerName: 'Last Scan Time',
+            width: 200,
+            valueGetter: (value) => (value ? new Date(value).toLocaleString() : 'N/A'),
+        },
+    ];
+
+    const finalColumns = [...columns];
+    if (userRole && userRole !== 'viewer') {
+        finalColumns.push({
+            field: 'actions',
+            headerName: 'Actions',
+            sortable: false,
+            width: 220,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params) => (
+                // ✅ CAMBIO DE DISEÑO 2: Jerarquía de botones de acción
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* El botón principal ahora es "contained" para destacar */}
+                    <Button variant="contained" size="small" onClick={() => onSetCredentials(params.row)}>
+                        Set Credentials
+                    </Button>
+                    {/* El botón secundario/destructivo es un IconButton */}
+                    {userRole === 'admin' && (
+                        <Tooltip title="Delete Device">
+                            <IconButton color="error" size="small" onClick={() => onDeleteDevice(params.row.id)}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
+            )
+        });
+    }
+
+    return (
+        // ✅ CAMBIO DE DISEÑO 3: Contenedor y estilos del DataGrid
+        <Box sx={{ height: 'calc(100vh - 280px)', width: '100%' }}>
+            <DataGrid
+                rows={devices}
+                columns={finalColumns}
+                loading={loading}
+                getRowId={(row) => row.id}
+                initialState={{
+                    pagination: { paginationModel: { pageSize: 25 } },
+                }}
+                pageSizeOptions={[15, 25, 50, 100]}
+                disableRowSelectionOnClick
+                // --- AQUÍ ESTÁ EL REDISEÑO VISUAL ---
+                sx={{
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  
+                  '& .MuiDataGrid-columnHeaders': {
+                    borderBottom: '1px solid',
+                    borderColor: theme.palette.divider,
+                    color: theme.palette.text.secondary,
+                  },
+                  '& .MuiDataGrid-columnHeaderTitle': {
+                    fontWeight: 'bold',
+                  },
+                  '& .MuiDataGrid-cell': {
+                    borderBottom: '1px solid',
+                    borderColor: theme.palette.divider,
+                  },
+                  '& .MuiDataGrid-footerContainer': {
+                    borderTop: 'none',
+                  },
+                  '& .MuiDataGrid-row:hover': {
+                     backgroundColor: theme.palette.action.hover,
+                  },
+                  '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                     outline: 'none',
+                  },
+                }}
+            />
+        </Box>
+    );
+};
+
+export default DeviceTable;

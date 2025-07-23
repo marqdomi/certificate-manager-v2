@@ -1,0 +1,29 @@
+# backend/requirements.txt (versiones fijadas y estables)
+
+# Frameworks y Servidor
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# Base de Datos y Migraciones
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+alembic==1.13.1
+Django==4.2 # Para celery-beat
+django-celery-beat==2.5.0
+
+# Seguridad y Autenticación
+python-dotenv==1.0.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+cryptography==42.0.8
+
+# Tareas Asíncronas
+celery==5.4.0
+redis==5.0.4
+
+# SDKs y dependencias de red (¡LA PARTE MÁS IMPORTANTE!)
+f5-sdk==3.0.21
+requests==2.31.0
+urllib3==1.26.18
+paramiko==2.11.0
