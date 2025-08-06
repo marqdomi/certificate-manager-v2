@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
 from icontrol.exceptions import iControlUnexpectedHTTPError
+from cryptography.fernet import Fernet
 
 # --- Imports para la lógica y la seguridad ---
 from db.base import get_db
@@ -254,23 +255,43 @@ def delete_certificate(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_active_user)
 ):
-    db_cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
+    # 1. Buscamos el certificado en nuestra base de datos
+    db_cert = db.query(Certificate).options(joinedload(Certificate.device)).filter(Certificate.id == cert_id).first()
     if not db_cert:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found in DB.")
 
-    # La lógica para borrar del F5 ahora está encapsulada, la llamaremos desde aquí
+    device = db_cert.device
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Associated device not found for this certificate.")
+
+    # ✅ --- LA CORRECCIÓN CLAVE ESTÁ AQUÍ --- ✅
+    # Hacemos exactamente lo mismo que en tus otras funciones:
+    # Desencriptamos la contraseña ANTES de llamar al servicio de lógica.
     try:
-        # Pasamos los datos, el servicio se encarga de la conexión
+        if not device.encrypted_password:
+            raise ValueError(f"Credentials not set for device {device.hostname}.")
+            
+        decrypted_password = encryption_service.decrypt_data(device.encrypted_password)
+
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+    # 2. Llamamos a la función de servicio con los parámetros correctos
+    try:
         f5_service_logic.delete_certificate_from_f5(
-            hostname=db_cert.device.hostname,
-            username=db_cert.device.username,
-            password=db_cert.device.password, # ¡OJO! f5_service_logic necesitará desencriptar esto
+            hostname=device.hostname,
+            username=device.username,
+            password=decrypted_password, # <-- Le pasamos la contraseña ya desencriptada
             cert_name=db_cert.name,
             partition=db_cert.partition
         )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred during F5 operation: {e}")
 
+    # 3. Si todo va bien, borramos el certificado de nuestra base de datos
     db.delete(db_cert)
     db.commit()
     

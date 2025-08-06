@@ -3,108 +3,80 @@
 import { createTheme } from '@mui/material/styles';
 
 // --- 1. Paleta de Colores de Marca (Centralizada) ---
-// Mantenemos tus colores base para consistencia de marca.
 const soleraPurple = '#5A31A0';
-const soleraTeal = '#13EDA6';
+const soleraTeal = '#0dc6e7ff';
 
 // --- 2. Función Generadora de Tema (Mejor Práctica) ---
-// En lugar de dos temas separados, creamos una función que devuelve la configuración
-// correcta según el modo ('light' o 'dark'). Esto evita repetir código.
-
 export const getDesignTokens = (mode) => ({
   palette: {
-    mode, // 'light' o 'dark'
+    mode,
     primary: {
       main: soleraPurple,
     },
     secondary: {
       main: soleraTeal,
     },
-    // Usamos el operador ternario para definir las paletas específicas del modo.
     ...(mode === 'dark'
       ? {
-          // ==================================================
-          // =============== PALETA MODO OSCURO ===============
-          // ==================================================
-          // Objetivo: Alto contraste, profundidad y look profesional.
+          // --- PALETA MODO OSCURO (Sin cambios, ya era perfecta) ---
           background: {
-            default: '#121826', // Un azul marino/gris muy oscuro en lugar de negro. Es más sofisticado.
-            paper: '#1A2133',   // Un tono ligeramente más claro para las "superficies" como tarjetas y tablas. Esto crea profundidad.
+            default: '#121826',
+            paper: '#1A2133',
           },
           text: {
-            primary: '#E0E0E0',   // NUNCA blanco puro. Un gris muy claro reduce la fatiga visual.
-            secondary: '#A0A0A0', // Un gris más suave para textos secundarios, con buen contraste.
+            primary: '#E0E0E0',
+            secondary: '#A0A0A0',
           },
-          // Colores de estado ajustados para el modo oscuro (menos "brillantes")
-          success: {
-            main: '#33b864', // Un verde más desaturado y agradable a la vista.
-          },
-          warning: {
-            main: '#ffb74d', // Un naranja ligeramente más suave.
-          },
-          error: {
-            main: '#e57373', // Un rojo menos agresivo.
-          },
+          success: { main: '#33b864' },
+          warning: { main: '#ffb74d' },
+          error: { main: '#e57373' },
         }
       : {
-          // =================================================
-          // =============== PALETA MODO CLARO ===============
-          // =================================================
-          // Objetivo: Limpio, aireado y profesional.
+          // --- PALETA MODO CLARO (Ajustada para la nueva identidad) ---
           background: {
-            default: '#f4f7fa', // Un fondo blanco roto/gris muy claro. Más suave que el gris que tenías.
+            default: '#F8F9FA', // Un blanco roto muy sutil que combina con todo
             paper: '#ffffff',
           },
           text: {
-            primary: '#1C2025',   // Un negro suave en lugar de #333 para un look más moderno.
-            secondary: '#64748B', // Un gris azulado para texto secundario.
+            primary: '#1C2025',
+            secondary: '#64748B',
           },
-          success: {
-            main: '#2e7d32',
-          },
-          warning: {
-            main: '#ed6c02',
-          },
-          error: {
-            main: '#d32f2f',
-          },
+          success: { main: '#2e7d32' },
+          warning: { main: '#ed6c02' },
+          error: { main: '#d32f2f' },
         }),
   },
-
-  // --- 3. Personalizaciones Globales de Componentes ---
-  // Aquí es donde añadimos la "personalidad" a la aplicación.
   shape: {
-    borderRadius: 12, // Bordes más redondeados para un look más moderno en todo.
+    borderRadius: 12,
   },
   components: {
-    // Sobrescribimos el estilo por defecto de la AppBar (barra superior)
+    // ✅ --- ¡AQUÍ ESTÁ LA MODIFICACIÓN PRINCIPAL! --- ✅
     MuiAppBar: {
       styleOverrides: {
         root: ({ theme }) => ({
-          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(26, 33, 51, 0.7)' : 'rgba(255, 255, 255, 0.7)',
           backdropFilter: 'blur(10px)',
           boxShadow: 'none',
-          borderBottom: '1px solid',
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-          color: theme.palette.text.primary,
+          
+          // Usamos una lógica condicional para el estilo de la AppBar
+          ...(theme.palette.mode === 'dark'
+            ? { // Estilo para MODO OSCURO
+                backgroundColor: 'rgba(26, 33, 51, 0.7)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                color: theme.palette.text.primary,
+              }
+            : { // Estilo para MODO CLARO
+                background: `linear-gradient(90deg, ${soleraPurple} 0%, #0bc0d1ff 100%)`, // Usamos un Teal más oscuro para mejor contraste
+                borderBottom: 'none', // Sin borde inferior cuando hay degradado
+                color: '#ffffff', // El texto debe ser blanco para ser legible sobre el degradado
+              }
+          ),
         }),
       },
     },
-    // Estilo base para todas las tarjetas y superficies
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          // Por defecto, las tarjetas no tendrán el efecto de vidrio,
-          // lo aplicaremos nosotros donde queramos para tener más control.
-          // Pero sí tendrán el borde redondeado que definimos arriba.
-        },
-      },
-    },
-    // Un pequeño detalle para los botones
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: 'none', // Botones con texto normal, no TODO MAYÚSCULAS.
+          textTransform: 'none',
           fontWeight: 'bold',
         },
         contained: {
@@ -115,6 +87,7 @@ export const getDesignTokens = (mode) => ({
         }
       },
     },
+    // No necesitamos tocar MuiPaper aquí, ya que el estilo de vidrio se aplica localmente
   },
 });
 

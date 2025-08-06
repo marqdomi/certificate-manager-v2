@@ -15,7 +15,6 @@ from typing import Optional
 import paramiko # <-- Importar la nueva librería
 import time
 from db.models import Certificate, Device #<-- Asegúrate de que F5Device esté importado, no solo Device
-from cryptography.fernet import Fernet
 
     
 # -------------------------------------------------------------------

@@ -97,7 +97,10 @@ const LoginPage = () => {
           width: '100%', 
           maxWidth: '420px',
           // Mantenemos el efecto de vidrio esmerilado que tenías
-          backgroundColor: 'rgba(30, 30, 30, 0.75)', // Un valor fijo puede funcionar mejor
+          backgroundColor: (theme) => 
+            theme.palette.mode === 'dark' 
+              ? 'rgba(30, 30, 30, 0.75)'   // Fondo oscuro para modo oscuro
+              : 'rgba(255, 255, 255, 0.7)', // Fondo claro para modo claro
           backdropFilter: 'blur(10px)',
           borderRadius: '12px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
