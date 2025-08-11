@@ -47,3 +47,53 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+// --- Convenience wrappers (optional) ---
+export async function deployPfxForRenewal(certId, file, password) {
+  const formData = new FormData();
+  formData.append('pfx_file', file);
+  if (password) formData.append('pfx_password', password);
+  const { data } = await apiClient.post(`/certificates/${certId}/deploy-pfx`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deployNewPfx(targetDeviceIds, file, password, installChainFromPfx = false) {
+  const formData = new FormData();
+  formData.append('pfx_file', file);
+  if (password) formData.append('pfx_password', password);
+  targetDeviceIds.forEach(id => formData.append('target_device_ids', id));
+  formData.append('install_chain_from_pfx', installChainFromPfx);
+  const { data } = await apiClient.post('/deployments/new-pfx', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function previewDeployment(deviceId, oldCertName, partition = 'Common') {
+  const form = new FormData();
+  form.append('device_id', deviceId);
+  form.append('old_cert_name', oldCertName);
+  form.append('partition', partition);
+  const { data } = await apiClient.post('/deployments/preview', form);
+  return data;
+}
+
+export async function confirmDeployment(deviceId, oldCertName, newObjectName, chainName = 'DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1', selectedProfiles = null) {
+  const form = new FormData();
+  form.append('device_id', deviceId);
+  form.append('old_cert_name', oldCertName);
+  form.append('new_object_name', newObjectName);
+  form.append('chain_name', chainName);
+  if (selectedProfiles) {
+    form.append('selected_profiles', JSON.stringify(selectedProfiles));
+  }
+  const { data } = await apiClient.post('/deployments/confirm', form);
+  return data;
+}
+
+export async function verifyInstalledCert(deviceId, objectName) {
+  const { data } = await apiClient.get(`/certificates/devices/${deviceId}/verify/${objectName}`);
+  return data; // {version, san:[], serial, not_after, subject, issuer}
+}

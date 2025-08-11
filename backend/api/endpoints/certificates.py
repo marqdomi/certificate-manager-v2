@@ -1,4 +1,5 @@
 # backend/api/endpoints/certificates.py
+# backend/api/endpoints/certificates.py
 
 from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, status
 from sqlalchemy.orm import Session, joinedload, aliased
@@ -16,14 +17,14 @@ from schemas.certificate import CertificateResponse
 from services import certificate_service, f5_service_logic, encryption_service, auth_service
 from services import pfx_service 
 from services.f5_service_tasks import scan_f5_task 
-from sqlalchemy.orm import joinedload
+
 
 
 router = APIRouter()
 
-# --- Schemas para Peticiones/Respuestas ---
+# ---- Unified Schemas (single source of truth) ----
 class RenewalInitiateRequest(BaseModel):
-    private_key_content: str # La clave ahora es obligatoria para este flujo
+    private_key_content: Optional[str] = None
 
 class DeployRequest(BaseModel):
     signed_cert_content: str
@@ -130,10 +131,6 @@ def get_cert_usage_details(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get usage data from F5: {str(e)}")
 
-# 1. Definimos el schema para el cuerpo de la petición.
-#    El campo para la clave es opcional.
-class RenewalInitiateRequest(BaseModel):
-    private_key_content: Optional[str] = None
 
 # 2. El endpoint corregido
 @router.post("/{cert_id}/initiate-renewal", summary="Initiate a certificate renewal")
@@ -143,14 +140,6 @@ def initiate_certificate_renewal(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
-    # --- ¡AÑADIMOS EL PRINT DE DEPURACIÓN! ---
-    print("="*20, "DEBUGGING RENEWAL REQUEST", "="*20)
-    print(f"Received request for cert_id: {cert_id}")
-    print(f"Request Body Content (raw): {request}")
-    print(f"Extracted Private Key: '{request.private_key_content[:30]}...'") # Imprimimos solo los primeros 30 caracteres
-    print("="*60)
-    # --- FIN DEL BLOQUE DE DEPURACIÓN ---
-    
     db_cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
     if not db_cert or not db_cert.common_name:
         raise HTTPException(status_code=404, detail="Certificate with a valid Common Name not found")
@@ -167,39 +156,10 @@ def initiate_certificate_renewal(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Asegúrate de que la clase RenewalInitiateRequest está definida antes de esta función,
-# tal como la definimos en los pasos anteriores.
-class RenewalInitiateRequest(BaseModel):
-    private_key_content: Optional[str] = None
-
-# Definimos el schema de la respuesta para ser explícitos
-class RenewalDetailsResponse(BaseModel):
-    renewal_id: int
-    csr: str
-    private_key: str
-
-@router.get("/renewals/{renewal_id}/details", response_model=RenewalDetailsResponse)
-def get_renewal_details(
-    renewal_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
-):
-    renewal = db.query(RenewalRequest).filter(RenewalRequest.id == renewal_id).first()
-    if not renewal:
-        raise HTTPException(status_code=404, detail="Renewal request not found.")
-    
-    private_key = encryption_service.decrypt_data(renewal.encrypted_private_key)
-    return RenewalDetailsResponse(
-        renewal_id=renewal.id, 
-        csr=renewal.csr_content, 
-        private_key=private_key
-    )
 
 
 
-# --- Endpoint POST /deploy : Protegido para Admin y Operator ---
-class DeployRequest(BaseModel):
-    signed_cert_content: str
+
 
 @router.post("/{renewal_id}/deploy", summary="Deploy signed certificate to F5")
 def deploy_signed_certificate(
@@ -221,28 +181,22 @@ def deploy_signed_certificate(
 
     try:
         f5_hostname = db_cert.f5_device_hostname
-        
-        # Obtenemos las credenciales del dispositivo asociado al certificado original
         device = db_cert.device
         if not device or not device.encrypted_password:
             raise ValueError(f"No credentials configured for device {f5_hostname}")
-        
         f5_username = device.username
         f5_password = encryption_service.decrypt_data(device.encrypted_password)
-        
-        result = f5_service_logic.deploy_and_update_f5(
-            hostname=f5_hostname, 
-            username=f5_username, 
+        result = f5_service_logic.deploy_from_pem_and_update_profiles(
+            hostname=f5_hostname,
+            username=f5_username,
             password=f5_password,
             old_cert_name=db_cert.name,
-            new_cert_content=request.signed_cert_content,
-            new_key_content=private_key
+            cert_pem=request.signed_cert_content,
+            key_pem=private_key
         )
-
         renewal.status = RenewalStatus.COMPLETED
         renewal.encrypted_private_key = "[REDACTED]"
         db.commit()
-
         return {"status": "success", "message": "Certificate deployed successfully!", "details": result}
     except ValueError as e:
         renewal.status = RenewalStatus.FAILED
@@ -280,9 +234,9 @@ def delete_certificate(
     # 2. Llamamos a la función de servicio con los parámetros correctos
     try:
         f5_service_logic.delete_certificate_from_f5(
-            hostname=device.hostname,
+            hostname=device.ip_address,
             username=device.username,
-            password=decrypted_password, # <-- Le pasamos la contraseña ya desencriptada
+            password=decrypted_password,
             cert_name=db_cert.name,
             partition=db_cert.partition
         )
@@ -448,47 +402,6 @@ async def new_deployment_from_pfx(
     
     return {"deployment_results": results}
 
-class ProfileUpdateRequest(BaseModel):
-    device_id: int
-    old_cert_name: str
-    new_cert_name: str
-    # La cadena es opcional, usaremos la por defecto
-    chain_name: Optional[str] = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
-
-@router.post("/update-profiles", summary="Update SSL profiles to use a new certificate")
-def update_ssl_profiles(
-    request: ProfileUpdateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
-):
-    device = db.query(Device).filter(Device.id == request.device_id).first()
-    if not device or not device.encrypted_password:
-        raise HTTPException(status_code=404, detail="Device not found or credentials not set.")
-
-    f5_username = device.username
-    f5_password = encryption_service.decrypt_data(device.encrypted_password)
-
-    try:
-        # ¡Necesitamos una nueva función de servicio para esto!
-        updated_profiles = f5_service_logic.update_profiles_with_new_cert(
-            hostname=device.ip_address,
-            username=f5_username,
-            password=f5_password,
-            old_cert_name=request.old_cert_name,
-            new_cert_name=request.new_cert_name,
-            chain_name=request.chain_name
-        )
-        # Actualizamos nuestro inventario después de cambiar el F5
-        # (Lanzamos una tarea de re-escaneo para ese dispositivo)
-        scan_f5_task.delay(device.id)
-
-        return {
-            "status": "success",
-            "message": f"Successfully updated {len(updated_profiles)} SSL profile(s).",
-            "updated_profiles": updated_profiles
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     
 # --- SCHEMA PARA LA PETICIÓN DE ACTUALIZACIÓN ---
 class ProfileUpdateRequest(BaseModel):
@@ -545,3 +458,59 @@ def update_ssl_profiles(
     except Exception as e:
         # Si algo falla en el F5, devolvemos el error
         raise HTTPException(status_code=500, detail=f"Failed to update profiles on F5: {str(e)}")
+# --- Verify installed certificate endpoint ---
+class VerifyCertResponse(BaseModel):
+    version: Optional[str]
+    san: List[str] = []
+    serial: Optional[str]
+    not_after: Optional[str]
+    subject: Optional[str]
+    issuer: Optional[str]
+    fingerprint_sha256: Optional[str] = None
+    object_name: Optional[str] = None
+    source: Optional[str] = None
+class NormalizeResponse(BaseModel):
+    renamed_certs: list
+    renamed_keys: list
+    updated_profiles: list
+
+@router.post("/devices/{device_id}/normalize-object-names", response_model=NormalizeResponse,
+             summary="Normalize F5 cert/key object names (remove .crt/.key suffix and update profiles)")
+def normalize_object_names_endpoint(device_id: int,
+                                    db: Session = Depends(get_db),
+                                    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))):
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device or not device.encrypted_password:
+        raise HTTPException(status_code=404, detail="Device not found or credentials not set.")
+    f5_username = device.username
+    f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    try:
+        report = f5_service_logic.normalize_object_names(
+            hostname=device.ip_address,
+            username=f5_username,
+            password=f5_password,
+        )
+        return report
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/devices/{device_id}/verify/{object_name}", response_model=VerifyCertResponse,
+            summary="Verify installed certificate (version & SAN) on F5")
+def verify_installed_cert(device_id: int, object_name: str,
+                          db: Session = Depends(get_db),
+                          current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))):
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device or not device.encrypted_password:
+        raise HTTPException(status_code=404, detail="Device not found or credentials not set.")
+    f5_username = device.username
+    f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    try:
+        details = f5_service_logic.verify_installed_certificate(
+            hostname=device.ip_address,
+            username=f5_username,
+            password=f5_password,
+            object_name=object_name
+        )
+        return details
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,9 +1,13 @@
 // frontend/src/components/DeployDialog.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, CircularProgress, Typography } from '@mui/material';
 
 const DeployDialog = ({ open, onClose, onDeploy, loading }) => {
   const [certContent, setCertContent] = useState('');
+
+  useEffect(() => {
+    if (!open) setCertContent('');
+  }, [open]);
 
   const handleDeploy = () => {
     if (certContent) {
@@ -26,9 +30,9 @@ const DeployDialog = ({ open, onClose, onDeploy, loading }) => {
           value={certContent}
           onChange={(e) => setCertContent(e.target.value)}
           margin="normal"
-          placeholder="-----BEGIN CERTIFICATE-----
-...
------END CERTIFICATE-----"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={`-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----`}
         />
       </DialogContent>
       <DialogActions>

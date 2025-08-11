@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper, Alert } from '@mui/material';
-import axios from 'axios';
+import apiClient from '../services/api';
 import CircularProgress from '@mui/material/CircularProgress';
 import { jwtDecode } from 'jwt-decode';
 
@@ -17,7 +17,7 @@ export const authProvider = {
         params.append('username', username);
         params.append('password', password);
 
-        const response = await axios.post('http://localhost:8000/api/v1/auth/token', params);
+        const response = await apiClient.post('/auth/token', params);
         
         if (response.data.access_token) {
             const token = response.data.access_token;

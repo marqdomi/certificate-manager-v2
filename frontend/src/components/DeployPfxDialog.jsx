@@ -1,5 +1,4 @@
-// frontend/src/components/DeployPfxDialog.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions, Button, 
     TextField, Box, Typography, CircularProgress, Alert 
@@ -9,6 +8,14 @@ const DeployPfxDialog = ({ open, onClose, onDeploy, loading, certToRenew }) => {
   const [pfxFile, setPfxFile] = useState(null);
   const [pfxPassword, setPfxPassword] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setPfxFile(null);
+      setPfxPassword('');
+      setError('');
+    }
+  }, [open]);
 
   const handleDeployClick = () => {
     if (!pfxFile) {
@@ -30,7 +37,7 @@ const DeployPfxDialog = ({ open, onClose, onDeploy, loading, certToRenew }) => {
         </Alert>
         <Box sx={{ mb: 2 }}>
             <Button variant="contained" component="label" fullWidth>
-                Upload PFX File
+                Upload PFX File (.pfx)
                 <input type="file" hidden onChange={(e) => setPfxFile(e.target.files[0])} accept=".pfx" />
             </Button>
             {pfxFile && <Typography variant="caption" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>Selected: {pfxFile.name}</Typography>}
@@ -42,12 +49,13 @@ const DeployPfxDialog = ({ open, onClose, onDeploy, loading, certToRenew }) => {
           variant="outlined"
           value={pfxPassword}
           onChange={(e) => setPfxPassword(e.target.value)}
+          autoComplete="new-password"
         />
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={loading}>Cancel</Button>
-        <Button onClick={handleDeployClick} variant="contained" disabled={loading}>
+        <Button onClick={handleDeployClick} variant="contained" disabled={loading || !pfxFile}>
           {loading ? <CircularProgress size={24} /> : 'Deploy from PFX'}
         </Button>
       </DialogActions>

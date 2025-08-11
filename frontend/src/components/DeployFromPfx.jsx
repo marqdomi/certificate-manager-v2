@@ -1,12 +1,12 @@
-// frontend/src/components/DeployFromPfx.jsx
 import React, { useState } from 'react';
-import { Box, Button, TextField, CircularProgress, Typography, Alert } from '@mui/material';
+import { Box, Button, TextField, CircularProgress, Typography, Alert, Checkbox, FormControlLabel } from '@mui/material';
 
 // Recibe la función 'onDeploy' y el estado 'isLoading' de su padre
 const DeployFromPfx = ({ onDeploy, isLoading }) => {
     const [pfxFile, setPfxFile] = useState(null);
     const [pfxPassword, setPfxPassword] = useState('');
     const [error, setError] = useState('');
+    const [installChainFromPfx, setInstallChainFromPfx] = useState(false);
 
     const handleDeployClick = () => {
         if (!pfxFile) {
@@ -15,7 +15,7 @@ const DeployFromPfx = ({ onDeploy, isLoading }) => {
         }
         setError('');
         // No hace la llamada a la API. Solo pasa los datos al padre.
-        onDeploy({ pfxFile, pfxPassword });
+        onDeploy({ pfxFile, pfxPassword, installChainFromPfx });
     };
 
     return (
@@ -40,7 +40,17 @@ const DeployFromPfx = ({ onDeploy, isLoading }) => {
                 sx={{ mb: 2 }}
             />
             {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
-            <Button onClick={handleDeployClick} variant="contained" disabled={isLoading} fullWidth size="large">
+            <FormControlLabel
+                control={
+                    <Checkbox
+                        checked={installChainFromPfx}
+                        onChange={(e) => setInstallChainFromPfx(e.target.checked)}
+                    />
+                }
+                label="Also install the CA chain from the PFX (optional)"
+                sx={{ mb: 1 }}
+            />
+            <Button onClick={handleDeployClick} variant="contained" disabled={isLoading || !pfxFile} fullWidth size="large">
                 {isLoading ? <CircularProgress size={24} /> : 'Deploy from PFX'}
             </Button>
         </Box>

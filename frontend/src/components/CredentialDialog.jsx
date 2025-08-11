@@ -1,4 +1,3 @@
-// frontend/src/components/CredentialDialog.jsx
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box } from '@mui/material';
 
@@ -44,11 +43,12 @@ const CredentialDialog = ({ open, onClose, onSave, device }) => {
           variant="standard"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && password) handleSave(); }}
         />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave}>Save</Button>
+        <Button onClick={handleSave} disabled={!password}>Save</Button>
       </DialogActions>
     </Dialog>
   );

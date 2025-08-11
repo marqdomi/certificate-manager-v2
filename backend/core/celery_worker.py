@@ -2,17 +2,21 @@ from celery import Celery
 from celery.schedules import crontab
 from . import celery_config
 
-celery_app = Celery(
-    "tasks",
-    include=['services.f5_service_tasks']
-)
+# Use a stable, descriptive app name
+celery_app = Celery("certificate_manager")
 celery_app.config_from_object(celery_config)
 
-# --- LA AGENDA ---
+# Autodiscover tasks inside the 'services' package (and subpackages)
+celery_app.autodiscover_tasks(packages=["services"])
+
+# --- Beat schedule ---
+# NOTE: The key name previously claimed "every 5 minutes" but actually ran daily at 03:00.
+# Keeping behavior the same, but correcting the label. Make this configurable later if needed.
 celery_app.conf.beat_schedule = {
-    'scan-all-devices-every-5-minutes': { # Le damos un nombre único
-        'task': 'trigger_scan_for_all_devices_task', # La tarea que va a llamar
-        # Para probar, lo ejecutamos a las 3 am todos los dias
-        'schedule': crontab(hour=3, minute=0), 
+    "scan-all-devices-daily-03:00": {
+        # If your task is registered with a custom name, keep that here;
+        # otherwise prefer the dotted path. We retain the current name to avoid breaking changes.
+        "task": "trigger_scan_for_all_devices_task",
+        "schedule": crontab(hour=3, minute=0),
     },
 }

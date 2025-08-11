@@ -10,11 +10,11 @@ from sqlalchemy import (
     Text, 
     Enum, 
     ForeignKey,
-    Boolean 
+    Boolean,
+    UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from .base import Base 
-import enum
 
 # -------------------------------------------------------------------
 # MODELO Device (Ahora es el "padre")
@@ -32,12 +32,14 @@ class Device(Base):
     last_scan_status = Column(String, default="pending")
     last_scan_message = Column(Text, nullable=True)
     last_scan_timestamp = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # --- RELACIÓN (1/2) ---
     # Un dispositivo puede tener muchos certificados.
     # 'back_populates' le dice a SQLAlchemy cómo conectar con la otra tabla.
     # 'cascade' asegura que si borras un dispositivo, todos sus certificados se borren también.
-    certificates = relationship("Certificate", back_populates="device", cascade="all, delete, delete-orphan")
+    certificates = relationship("Certificate", back_populates="device", cascade="all, delete, delete-orphan", passive_deletes=True)
 
     def __repr__(self):
         return f"<Device(hostname='{self.hostname}')>"
@@ -58,10 +60,12 @@ class Certificate(Base):
     # 1. Ya no usamos el hostname para la relación.
     f5_device_hostname = Column(String, index=True, nullable=False) 
     # 2. Creamos una ForeignKey numérica que apunta al ID de la tabla 'devices'.
-    device_id = Column(Integer, ForeignKey("devices.id"), nullable=False)
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False)
     
     partition = Column(String, default="Common")
-    last_scanned = Column(DateTime)
+    last_scanned = Column(DateTime, default=datetime.utcnow, nullable=True)
+
+    __table_args__ = (UniqueConstraint('device_id', 'name', name='uq_cert_device_name'),)
 
     # --- RELACIÓN (2/2) ---
     # Esta es la contraparte que faltaba.
@@ -109,3 +113,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False) # NUNCA guardamos la contraseña en texto plano
     role = Column(Enum(UserRole), nullable=False, default=UserRole.VIEWER)
     is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<User(username='{self.username}', role='{self.role.value}')>"

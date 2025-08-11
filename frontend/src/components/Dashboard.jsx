@@ -48,10 +48,16 @@ const StatCard = ({ title, value, color, onClick }) => (
 const Dashboard = ({ stats, onFilterSelect }) => {
   const theme = useTheme();
   
+  const safeStats = stats || {};
+  const total = safeStats.total ?? 0;
+  const healthy = safeStats.healthy ?? 0;
+  const warning = safeStats.warning ?? 0;
+  const expired = safeStats.expired ?? 0;
+
   const pieData = [
-    { name: 'Healthy (> 30d)', value: stats.healthy, color: theme.palette.success.main },
-    { name: 'Warning (< 30d)', value: stats.warning, color: theme.palette.warning.main },
-    { name: 'Expired', value: stats.expired, color: theme.palette.error.main },
+    { name: 'Healthy (> 30d)', value: healthy, color: theme.palette.success.main },
+    { name: 'Warning (< 30d)', value: warning, color: theme.palette.warning.main },
+    { name: 'Expired', value: expired, color: theme.palette.error.main },
   ];
   
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }) => {
@@ -76,16 +82,16 @@ const Dashboard = ({ stats, onFilterSelect }) => {
 
       <Grid item xs={12} sm={6} md={3}>
         {/* Para 'Total', pasamos null para que no se aplique ningún filtro */}
-        <StatCard title="Total Certificates" value={stats.total} color={theme.palette.text.primary} onClick={() => onFilterSelect(null)} />
+        <StatCard title="Total Certificates" value={total} color={theme.palette.text.primary} onClick={() => onFilterSelect(null)} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <StatCard title="Healthy (> 30 days)" value={stats.healthy} color={theme.palette.success.main} onClick={() => onFilterSelect({ type: 'status', value: 'healthy' })} />
+        <StatCard title="Healthy (> 30 days)" value={healthy} color={theme.palette.success.main} onClick={() => onFilterSelect({ type: 'status', value: 'healthy' })} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <StatCard title="Warning (< 30 days)" value={stats.warning} color={theme.palette.warning.main} onClick={() => onFilterSelect({ type: 'status', value: 'warning' })} />
+        <StatCard title="Warning (< 30 days)" value={warning} color={theme.palette.warning.main} onClick={() => onFilterSelect({ type: 'status', value: 'warning' })} />
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <StatCard title="Expired" value={stats.expired} color={theme.palette.error.main} onClick={() => onFilterSelect({ type: 'status', value: 'expired' })} />
+        <StatCard title="Expired" value={expired} color={theme.palette.error.main} onClick={() => onFilterSelect({ type: 'status', value: 'expired' })} />
       </Grid>
       
       {/* --- (El resto del componente del gráfico no cambia) --- */}

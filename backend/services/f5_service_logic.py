@@ -9,13 +9,187 @@ from cryptography.hazmat.primitives import serialization, hashes
 from f5.bigip import ManagementRoot
 from f5.sdk_exception import F5SDKError
 from sqlalchemy.orm import Session
-from db.models import Certificate, Device 
+from db.models import Certificate, Device
 from cryptography.hazmat.primitives.serialization import pkcs12
 from typing import Optional
-import paramiko # <-- Importar la nueva librería
 import time
-from db.models import Certificate, Device #<-- Asegúrate de que F5Device esté importado, no solo Device
+# ----------------------------
+# Helper utilities (REST upload + tmsh + PEM sanitize)
+# ----------------------------
+from typing import Tuple
+import math
+import requests
 
+def _sanitize_pem_cert(cert_pem: str) -> str:
+    """Re-serializa el certificado a un PEM canónico (limpio)."""
+    cert = x509.load_pem_x509_certificate(cert_pem.encode('utf-8'))
+    return cert.public_bytes(serialization.Encoding.PEM).decode('utf-8')
+
+def _get_not_after_dt(cert_obj) -> datetime:
+    """Compatibilidad entre versiones de cryptography para obtener not_valid_after."""
+    try:
+        return cert_obj.not_valid_after_utc  # cryptography >= 42
+    except AttributeError:
+        return cert_obj.not_valid_after      # versiones anteriores
+
+def _rest_upload_bytes(mgmt: ManagementRoot, data: bytes, remote_filename: str) -> str:
+    """Sube bytes a /var/config/rest/downloads/<remote_filename> usando uploads (chunked)."""
+    session: requests.Session = mgmt._meta_data['icr_session']
+    uri = f"https://{mgmt.hostname}/mgmt/shared/file-transfer/uploads/{remote_filename}"
+    size = len(data)
+    chunk = 1024 * 1024  # 1 MiB
+    start = 0
+    while start < size:
+        end = min(start + chunk, size)
+        # Content-Range: start-end/total  (end es inclusivo)
+        content_range = f"{start}-{end - 1}/{size}"
+        headers = {
+            'Content-Type': 'application/octet-stream',
+            'Content-Range': content_range
+        }
+        resp = session.post(uri, data=data[start:end], headers=headers, timeout=120)
+        if resp.status_code not in (200, 202):
+            raise ValueError(f"Upload failed for {remote_filename}: {resp.status_code} {resp.text}")
+        start = end
+    # Archivo quedará en /var/config/rest/downloads/<remote_filename>
+    return f"/var/config/rest/downloads/{remote_filename}"
+
+def _tmsh_run(mgmt: ManagementRoot, cmd: str) -> str:
+    session: requests.Session = mgmt._meta_data['icr_session']
+    uri = f"https://{mgmt.hostname}/mgmt/tm/util/bash"
+    payload = {"command": "run", "utilCmdArgs": f"-c \"{cmd}\""}
+    resp = session.post(uri, json=payload, timeout=120)
+    if resp.status_code not in (200, 202):
+        raise ValueError(f"tmsh run failed: {resp.status_code} {resp.text}")
+    return resp.json().get('commandResult', '')
+
+import re
+
+def _parse_openssl_text(openssl_text: str) -> dict:
+    """Extrae campos clave del texto de `openssl x509 -text`."""
+    info = {"version": None, "san": [], "serial": None, "not_after": None, "subject": None, "issuer": None}
+    # Version
+    m = re.search(r"Version:\s*(\d+)", openssl_text)
+    if m:
+        info["version"] = m.group(1)
+    # Serial
+    m = re.search(r"Serial Number:\s*([0-9A-F:]+)", openssl_text, re.IGNORECASE)
+    if m:
+        info["serial"] = m.group(1)
+    # Not After
+    m = re.search(r"Not After\s*:\s*(.*)", openssl_text)
+    if m:
+        info["not_after"] = m.group(1).strip()
+    # Subject
+    m = re.search(r"Subject:\s*(.*)", openssl_text)
+    if m:
+        info["subject"] = m.group(1).strip()
+    # Issuer
+    m = re.search(r"Issuer:\s*(.*)", openssl_text)
+    if m:
+        info["issuer"] = m.group(1).strip()
+    # SAN block
+    san_block = re.search(r"X509v3 Subject Alternative Name:\s*\n\s*((?:.+\n)+?)\n\s*X509v3", openssl_text)
+    if not san_block:
+        # Try until end of string
+        san_block = re.search(r"X509v3 Subject Alternative Name:\s*\n\s*((?:.+\n)+)", openssl_text)
+    if san_block:
+        entries = [s.strip() for s in san_block.group(1).strip().split(',')]
+        # Flatten lines
+        flat = []
+        for line in entries:
+            flat.extend([p.strip() for p in line.split(',') if p.strip()])
+        info["san"] = [re.sub(r"^(DNS:|IP Address:)", "", x).strip() for x in flat if x]
+    return info
+
+def _parse_tmsh_oneline_cert(output: str) -> dict:
+    """Parsea la salida de 'tmsh list sys file ssl-cert <name> one-line'."""
+    # Ejemplo de línea:
+    # sys file ssl-cert star_identifix_com_2026-08-04 { ... version 3 subject-alternative-name "DNS:*.identifix.com, DNS:identifix.com" fingerprint SHA256/05:97:... }
+    info = {
+        "version": None,
+        "san": [],
+        "serial": None,
+        "not_after": None,
+        "subject": None,
+        "issuer": None,
+        "fingerprint_sha256": None,
+        "object_name": None,
+        "source": "tmsh-list",
+    }
+    line = output.strip()
+    if not line:
+        return info
+    # object name
+    m = re.search(r"sys file ssl-cert\s+([^\s{]+)", line)
+    if m:
+        info["object_name"] = m.group(1)
+    # version
+    m = re.search(r"\bversion\s+(\d+)", line)
+    if m:
+        info["version"] = m.group(1)
+    # SAN (quoted)
+    m = re.search(r"subject-alternative-name\s+\"([^\"]*)\"", line)
+    if m:
+        raw = m.group(1)
+        parts = [p.strip() for p in raw.split(',') if p.strip()]
+        sans = []
+        for p in parts:
+            p = re.sub(r"^(DNS:|IP Address:)\s*", "", p)
+            if p:
+                sans.append(p)
+        info["san"] = sans
+    # serial
+    m = re.search(r"\bserial-number\s+([0-9A-F:]+)", line, re.IGNORECASE)
+    if m:
+        info["serial"] = m.group(1)
+    # not_after (expiration-string)
+    m = re.search(r"expiration-string\s+\"([^\"]+)\"", line)
+    if m:
+        info["not_after"] = m.group(1)
+    # subject
+    m = re.search(r"\bsubject\s+\"([^\"]+)\"", line)
+    if m:
+        info["subject"] = m.group(1)
+    # issuer
+    m = re.search(r"\bissuer\s+\"([^\"]+)\"", line)
+    if m:
+        info["issuer"] = m.group(1)
+    # fingerprint SHA256/..  (tomamos la parte después de la barra)
+    m = re.search(r"fingerprint\s+SHA256/([0-9A-F:]+)", line)
+    if m:
+        info["fingerprint_sha256"] = m.group(1)
+    return info
+
+def verify_cert_object(mgmt: ManagementRoot, object_name: str) -> dict:
+    """Verifica usando filestore (tmsh list) sin depender de rutas en /config/ssl/ssl.crt."""
+    # 1) Intento principal: tmsh one-line
+    out = _tmsh_run(mgmt, f"tmsh list sys file ssl-cert {object_name} one-line")
+    details = _parse_tmsh_oneline_cert(out)
+    if details.get("version") or details.get("san") or details.get("fingerprint_sha256"):
+        return details
+    # 2) Fallback: listar multiline y parsear con regex simples
+    out_ml = _tmsh_run(mgmt, f"tmsh list sys file ssl-cert {object_name}")
+    # Reutilizamos el parser de openssl si detectamos bloque SAN/Version en texto
+    # (algunas builds incluyen el cert PEM en el list)
+    parsed_os = _parse_openssl_text(out_ml)
+    if parsed_os.get("version") or parsed_os.get("san"):
+        parsed_os.update({"object_name": object_name, "source": "tmsh-list-ml"})
+        return parsed_os
+    # 3) Fallback final: intentar descargar el archivo vía REST $download y pasar openssl
+    try:
+        # Ruta REST del objeto (selfLink) puede variar; intentamos usar el endpoint JSON
+        cert_res = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=object_name)
+        # $download devuelve el archivo; guardamos temporalmente en /var/tmp y lo inspeccionamos
+        # Nota: la librería f5-sdk no expone directo $download aquí; usamos util/bash para leer el contenido del objeto si está incrustado
+        # Como último recurso, devolvemos lo que tengamos del list
+        fallback = {"object_name": object_name, "source": "tmsh-list-empty"}
+        fallback.update({k: None for k in ("version","san","serial","not_after","subject","issuer","fingerprint_sha256")})
+        return fallback
+    except Exception:
+        fb = {"object_name": object_name, "source": "not-found"}
+        fb.update({k: None for k in ("version","san","serial","not_after","subject","issuer","fingerprint_sha256")})
+        return fb
     
 # -------------------------------------------------------------------
 # FUNCIÓN DE LÓGICA DE ESCANEO
@@ -112,93 +286,183 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
         return {"status": "error", "message": str(e_outer)}
 
 
+
 # -------------------------------------------------------------------
-# FUNCIÓN DE LÓGICA DE DESPLIEGUE (sin cambios)
+# NUEVAS FUNCIONES DE DESPLIEGUE: PEM y PFX, y alias legacy
 # -------------------------------------------------------------------
+
+def _install_cert_and_key_from_local(mgmt: ManagementRoot, cert_local_path: str, key_local_path: str, object_name: str) -> None:
+    # Instala el cert y key en objetos sys crypto usando rutas locales ya subidas
+    _tmsh_run(mgmt, f"tmsh install sys crypto cert {object_name} from-local-file {cert_local_path}")
+    _tmsh_run(mgmt, f"tmsh install sys crypto key {object_name} from-local-file {key_local_path}")
+
+def _install_chain_from_local(mgmt: ManagementRoot, chain_local_path: str, chain_object_name: str) -> None:
+    _tmsh_run(mgmt, f"tmsh install sys crypto cert {chain_object_name} from-local-file {chain_local_path}")
+
+def deploy_from_pem_and_update_profiles(
+    hostname: str, username: str, password: str,
+    old_cert_name: str,
+    cert_pem: str,
+    key_pem: str,
+    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
+):
+    """
+    Sube cert/key por file-transfer + instala con tmsh (como la GUI),
+    y actualiza los perfiles SSL que usaban old_cert_name.
+    """
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+
+    # 1) Sanitizar PEM de certificado y asegurar que es v3 con SAN (opcional validar aquí)
+    cert_pem_clean = _sanitize_pem_cert(cert_pem)
+
+    # 2) Derivar nombre estable del objeto/archivo
+    cert_obj = x509.load_pem_x509_certificate(cert_pem_clean.encode('utf-8'))
+    cn = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(cert_obj).date().isoformat()
+    safe_cn = cn.replace('*.', 'star_').replace('.', '_')
+    object_name = f"{safe_cn}_{not_after}"
+    cert_filename = f"{object_name}.crt"
+    key_filename = f"{object_name}.key"
+
+    # 3) Upload a /var/config/rest/downloads
+    cert_path = _rest_upload_bytes(mgmt, cert_pem_clean.encode('utf-8'), cert_filename)
+    key_path = _rest_upload_bytes(mgmt, key_pem.encode('utf-8'), key_filename)
+
+    # 4) Instalar con tmsh (equivalente a GUI)
+    _install_cert_and_key_from_local(mgmt, cert_path, key_path, object_name)
+
+    # Post-install verification: check version and SAN via openssl
+    details = verify_cert_object(mgmt, object_name)
+    if str(details.get("version")) != "3":
+        raise ValueError("Post-install verification failed: certificate is not Version 3 on device.")
+    if not details.get("san"):
+        # No SAN found; warning or error depending on policy
+        raise ValueError("Post-install verification failed: SAN extension not found on installed certificate.")
+
+    # --- SAFEGUARD: do NOT update profiles if no old_cert_name was provided ---
+    if not old_cert_name or str(old_cert_name).strip() == "" or str(old_cert_name).lower() in ("none", "null"):
+        # We only return information about the newly installed objects; profiles remain untouched
+        return {
+            "new_cert_object": object_name,
+            "new_cert_name": f"{object_name}.crt",
+            "new_key_name": f"{object_name}.key",
+            "updated_profiles": [],
+            "verification": details
+        }
+
+    # 5) Actualizar perfiles
+    updated_profiles = []
+    ssl_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection()
+    chain_ref = f"/Common/{chain_name}"
+    for profile in ssl_profiles:
+        if any(old_cert_name in item.get('cert', '') for item in getattr(profile, 'certKeyChain', [])):
+            profile.modify(
+                certKeyChain=[{
+                    'name': 'default',
+                    # Referenciamos por nombre de objeto, sin extensión, como hace la GUI
+                    'cert': f"/Common/{object_name}",
+                    'key': f"/Common/{object_name}",
+                    'chain': chain_ref
+                }]
+            )
+            updated_profiles.append(profile.name)
+
+    return {
+        "new_cert_object": object_name,               # nombre del objeto en F5 (sin extensión)
+        "new_cert_name": f"{object_name}.crt",       # compatibilidad con respuesta previa
+        "new_key_name": f"{object_name}.key",        # informativo
+        "updated_profiles": updated_profiles,
+        "verification": details
+    }
+
+def deploy_from_pfx_and_update_profiles(
+    hostname: str, username: str, password: str,
+    old_cert_name: str,
+    pfx_data: bytes,
+    pfx_password: Optional[str],
+    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
+    install_chain_from_pfx: bool = False
+):
+    """Desempaqueta PFX, sanea PEM, sube por file-transfer, instala con tmsh y actualiza perfiles."""
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        pfx_password_bytes = pfx_password.encode('utf-8') if pfx_password else None
+        private_key_obj, main_cert_obj, additional_certs = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
+    except Exception as e:
+        raise ValueError(f"Could not read data from PFX. Is the password correct? Details: {e}")
+
+    cn = main_cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(main_cert_obj).date().isoformat()
+    cert_pem = main_cert_obj.public_bytes(serialization.Encoding.PEM).decode('utf-8')
+    key_pem = private_key_obj.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()
+    ).decode('utf-8')
+    chain_pem = None
+    if additional_certs:
+        chain_pem = "".join([c.public_bytes(serialization.Encoding.PEM).decode("utf-8") for c in additional_certs])
+
+    # Respect flag to avoid installing chain objects from the PFX unless explicitly requested
+    if not install_chain_from_pfx:
+        chain_pem = None
+
+    if chain_pem:
+        # Instalar chain y usarla en el profile
+        cn = main_cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
+        not_after = _get_not_after_dt(main_cert_obj).date().isoformat()
+        safe_cn = cn.replace("*.", "star_").replace(".", "_")
+        chain_object_name = f"{safe_cn}_{not_after}_chain"
+        chain_filename = f"{chain_object_name}.crt"
+        chain_path = _rest_upload_bytes(mgmt, chain_pem.encode('utf-8'), chain_filename)
+        _install_chain_from_local(mgmt, chain_path, chain_object_name)
+        return deploy_from_pem_and_update_profiles(
+            hostname=hostname, username=username, password=password,
+            old_cert_name=old_cert_name,
+            cert_pem=cert_pem, key_pem=key_pem, chain_name=chain_object_name
+        )
+    else:
+        return deploy_from_pem_and_update_profiles(
+            hostname=hostname, username=username, password=password,
+            old_cert_name=old_cert_name,
+            cert_pem=cert_pem, key_pem=key_pem, chain_name=chain_name
+        )
+
+# Alias para mantener compatibilidad con llamadas antiguas que usaban el nombre anterior
 def deploy_and_update_f5(
     hostname: str, username: str, password: str,
     old_cert_name: str,
     pfx_data: bytes,
     pfx_password: Optional[str],
-    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
+    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
+    install_chain_from_pfx: bool = False
 ):
-    """
-    Desempaqueta un PFX, sube los archivos .crt y .key por separado,
-    y actualiza los perfiles SSL. Este método es el más compatible.
-    """
+    return deploy_from_pfx_and_update_profiles(
+        hostname=hostname, username=username, password=password,
+        old_cert_name=old_cert_name,
+        pfx_data=pfx_data, pfx_password=pfx_password,
+        chain_name=chain_name,
+        install_chain_from_pfx=install_chain_from_pfx
+    )
+
+# Sube e instala cert+key (sin tocar perfiles)
+def upload_cert_and_key(hostname: str, username: str, password: str, cert_content: str, key_content: str) -> dict:
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    # Sanitiza y crea nombre
+    cert_clean = _sanitize_pem_cert(cert_content)
+    cert_obj = x509.load_pem_x509_certificate(cert_clean.encode('utf-8'))
+    cn = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(cert_obj).date().isoformat()
+    safe_cn = cn.replace('*.', 'star_').replace('.', '_')
+    object_name = f"{safe_cn}_{not_after}"
+    cert_filename = f"{object_name}.crt"
+    key_filename = f"{object_name}.key"
 
-    # 1. Desempaquetar el PFX para obtener el contenido
-    try:
-        pfx_password_bytes = pfx_password.encode('utf-8') if pfx_password else None
-        private_key_obj, main_cert_obj, _ = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
-        
-        cn = main_cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
-        exp_date = main_cert_obj.not_valid_after_utc.strftime('%Y-%m-%d')
-        
-        new_cert_content = main_cert_obj.public_bytes(serialization.Encoding.PEM).decode('utf-8')
-        new_key_content = private_key_obj.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
-        ).decode('utf-8')
+    cert_path = _rest_upload_bytes(mgmt, cert_clean.encode('utf-8'), cert_filename)
+    key_path = _rest_upload_bytes(mgmt, key_content.encode('utf-8'), key_filename)
 
-        # 2. Construir los nombres de archivo que crearemos en el F5
-        safe_cn = cn.replace('*.', 'star_').replace('.', '_')
-        new_cert_name_on_f5 = f"{safe_cn}_{exp_date}.crt"
-        new_key_name_on_f5 = f"{safe_cn}_{exp_date}.key"
-
-    except Exception as e:
-        raise ValueError(f"Could not read data from PFX. Is it valid and password correct? Details: {e}")
-
-    # 3. Subir los archivos .crt y .key por separado
-    # Este es el método que usa la API REST sin wrappers complejos
-    session = mgmt._meta_data['icr_session']
-    base_uri = f"https://{hostname}/mgmt/tm"
-
-    try:
-        # Subimos el certificado
-        cert_payload = {'command': 'create', 'name': new_cert_name_on_f5, 'source-path': f"file-data:{new_cert_content}"}
-        response = session.post(f"{base_uri}/sys/file/ssl-cert", json=cert_payload)
-        # Si el archivo ya existe (409), no es un error. Para otros errores, fallamos.
-        if response.status_code not in [200, 409]:
-            response.raise_for_status()
-
-        # Subimos la clave
-        key_payload = {'command': 'create', 'name': new_key_name_on_f5, 'source-path': f"file-data:{new_key_content}"}
-        response = session.post(f"{base_uri}/sys/file/ssl-key", json=key_payload)
-        if response.status_code not in [200, 409]:
-            response.raise_for_status()
-            
-        print(f"INFO: Successfully uploaded cert/key for '{new_cert_name_on_f5}'")
-
-    except Exception as e:
-        error_message = str(e)
-        if hasattr(e, 'response') and e.response:
-             try: error_message = e.response.json()['message']
-             except: pass
-        raise ValueError(f"Failed to upload files via API. F5 response: {error_message}")
-
-    # 4. Encontrar y actualizar los perfiles SSL
-    updated_profiles = []
-    ssl_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection()
-    for profile in ssl_profiles:
-        if any(old_cert_name in item.get('cert', '') for item in getattr(profile, 'certKeyChain', [])):
-            print(f"INFO: Updating profile '{profile.name}'...")
-            try:
-                profile.modify(
-                    certKeyChain=[{
-                        'name': 'default',
-                        'cert': f"/Common/{new_cert_name_on_f5}",
-                        'key': f"/Common/{new_key_name_on_f5}",
-                        'chain': f"/Common/{chain_name}"
-                    }]
-                )
-                updated_profiles.append(profile.name)
-            except F5SDKError as e_profile:
-                print(f"ERROR: Could not update profile '{profile.name}'. Reason: {e_profile.response.text}")
-
-    return { "new_cert_name": new_cert_name_on_f5, "updated_profiles": updated_profiles }
+    _install_cert_and_key_from_local(mgmt, cert_path, key_path, object_name)
+    return {"object_name": object_name, "cert": f"{object_name}.crt", "key": f"{object_name}.key"}
 
 def get_certificate_usage(hostname: str, username: str, password: str, cert_name: str, partition: str):
     """
@@ -417,24 +681,36 @@ def update_profiles_with_new_cert(
     hostname: str, username: str, password: str,
     old_cert_name: str,
     new_cert_name: str, 
-    chain_name: str
+    chain_name: str,
+    selected_profiles: Optional[list] = None
 ):
     """
     Busca perfiles SSL y los actualiza usando el nombre base del objeto,
     imitando el comportamiento de la GUI del F5.
+    Si selected_profiles es provisto, solo modifica los perfiles cuyo nombre o fullPath coincida.
     """
     mgmt = ManagementRoot(hostname, username, password, token=True)
 
-    
     new_object_name = new_cert_name
-    
-   
     chain_ref = f"/Common/{chain_name}"
 
     updated_profiles = []
     ssl_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection()
-    
+
+    sel_names = set()
+    if selected_profiles:
+        for item in selected_profiles:
+            if isinstance(item, str):
+                sel_names.add(item)
+                # Add tail part if fullPath
+                if '/' in item:
+                    sel_names.add(item.split('/')[-1])
+
     for profile in ssl_profiles:
+        # If selected_profiles is set, only proceed if match
+        if selected_profiles:
+            if (profile.fullPath not in sel_names) and (profile.name not in sel_names):
+                continue
         if any(old_cert_name in item.get('cert', '') for item in getattr(profile, 'certKeyChain', [])):
             print(f"INFO: Updating profile '{profile.name}' to use object '{new_object_name}'")
             try:
@@ -451,8 +727,13 @@ def update_profiles_with_new_cert(
                 error_text = e_profile.response.text
                 print(f"ERROR: Could not update profile '{profile.name}'. Reason: {error_text}")
                 raise ValueError(f"Failed to update profile '{profile.name}': {error_text}")
-    
+
     return updated_profiles
+
+
+# Semantic alias for API: preview_certificate_usage
+def preview_certificate_usage(hostname: str, username: str, password: str, cert_name: str, partition: str):
+    return get_certificate_usage(hostname, username, password, cert_name, partition)
 
 def get_realtime_chains_from_f5(hostname: str, username: str, password: str):
     """
@@ -470,3 +751,80 @@ def get_realtime_chains_from_f5(hostname: str, username: str, password: str):
     chain_names = [cert.fullPath for cert in f5_certs]
     return sorted(chain_names)
 
+
+# ----------------------------
+# Normalización de nombres de objetos (remover .crt/.key en el nombre)
+# ----------------------------
+
+def _list_client_ssl_profiles(mgmt: ManagementRoot):
+    return mgmt.tm.ltm.profile.client_ssls.get_collection()
+
+def _rename_cert_object(mgmt: ManagementRoot, old: str, new: str) -> None:
+    _tmsh_run(mgmt, f"tmsh mv sys file ssl-cert {old} {new}")
+
+def _rename_key_object(mgmt: ManagementRoot, old: str, new: str) -> None:
+    _tmsh_run(mgmt, f"tmsh mv sys file ssl-key {old} {new}")
+
+def _update_profiles_reference(mgmt: ManagementRoot, old_name: str, new_name: str) -> list:
+    """Cambia referencias en client-ssl profiles de /Common/old_name(.crt|.key) a /Common/new_name."""
+    updated = []
+    for prof in _list_client_ssl_profiles(mgmt):
+        ckc = getattr(prof, 'certKeyChain', []) or []
+        changed = False
+        new_ckc = []
+        for item in ckc:
+            item = dict(item)
+            for field in ('cert','key','chain'):
+                if field in item and isinstance(item[field], str):
+                    # Normalizamos comparando solo el nombre final
+                    tail = item[field].split('/')[-1]
+                    if tail == old_name or tail == f"{old_name}.crt" or tail == f"{old_name}.key":
+                        item[field] = f"/Common/{new_name}"
+                        changed = True
+            new_ckc.append(item)
+        if changed:
+            prof.modify(certKeyChain=new_ckc)
+            updated.append(prof.name)
+    return updated
+
+def normalize_object_names(hostname: str, username: str, password: str) -> dict:
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    certs = mgmt.tm.sys.file.ssl_certs.get_collection()
+    keys  = mgmt.tm.sys.file.ssl_keys.get_collection()
+
+    to_fix_certs = [c.name for c in certs if c.name.endswith('.crt')]
+    to_fix_keys  = [k.name for k in keys  if k.name.endswith('.key')]
+
+    report = {"renamed_certs": [], "renamed_keys": [], "updated_profiles": []}
+
+    # Renombrar certs
+    for old in to_fix_certs:
+        new = old[:-4]  # remove .crt
+        try:
+            _rename_cert_object(mgmt, old, new)
+            report["renamed_certs"].append({"old": old, "new": new})
+            # Actualizar perfiles que referencien el viejo nombre
+            ups = _update_profiles_reference(mgmt, old, new)
+            report["updated_profiles"].extend(ups)
+        except Exception as e:
+            report["renamed_certs"].append({"old": old, "error": str(e)})
+
+    # Renombrar keys
+    for old in to_fix_keys:
+        new = old[:-4]  # remove .key
+        try:
+            _rename_key_object(mgmt, old, new)
+            report["renamed_keys"].append({"old": old, "new": new})
+            ups = _update_profiles_reference(mgmt, old, new)
+            report["updated_profiles"].extend(ups)
+        except Exception as e:
+            report["renamed_keys"].append({"old": old, "error": str(e)})
+
+    # De-duplicar perfiles en reporte
+    report["updated_profiles"] = sorted(list(set(report["updated_profiles"])))
+    return report
+
+# Public function to verify installed certificate by object name (for API endpoint)
+def verify_installed_certificate(hostname: str, username: str, password: str, object_name: str) -> dict:
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    return verify_cert_object(mgmt, object_name)

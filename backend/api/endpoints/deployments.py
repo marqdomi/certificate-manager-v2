@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import json
 
 from db.base import get_db
 from db.models import Device, User, UserRole
@@ -16,6 +17,7 @@ async def new_pfx_deployment(
     pfx_file: UploadFile = File(...),
     target_device_ids: List[int] = Form(...),
     pfx_password: Optional[str] = Form(None),
+    install_chain_from_pfx: Optional[bool] = Form(False),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
     """
@@ -47,7 +49,8 @@ async def new_pfx_deployment(
                 password=f5_password,
                 old_cert_name="", # <-- Esto le dice a la función que es un nuevo despliegue
                 pfx_data=pfx_data,
-                pfx_password=pfx_password
+                pfx_password=pfx_password,
+                install_chain_from_pfx=install_chain_from_pfx
             )
             
             # Opcional: Registrar el nuevo certificado en nuestra BBDD
@@ -61,3 +64,73 @@ async def new_pfx_deployment(
             db.rollback()
 
     return {"deployment_results": deployment_results}
+
+
+# Endpoint 1: Preview which profiles/VS would be affected by replacing a cert
+@router.post("/preview", summary="Preview which profiles/VS would be affected by replacing a cert")
+async def preview_deployment(
+    db: Session = Depends(get_db),
+    device_id: int = Form(...),
+    old_cert_name: str = Form(...),
+    partition: str = Form('Common'),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
+):
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    if not device.encrypted_password:
+        raise HTTPException(status_code=400, detail="Device credentials not set")
+    f5_username = device.username
+    f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    try:
+        usage = f5_service_logic.preview_certificate_usage(
+            hostname=device.ip_address,
+            username=f5_username,
+            password=f5_password,
+            cert_name=old_cert_name,
+            partition=partition
+        )
+        return usage
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Endpoint 2: Confirm updating selected profiles to a new cert object
+@router.post("/confirm", summary="Confirm updating selected profiles to a new cert object")
+async def confirm_deployment(
+    db: Session = Depends(get_db),
+    device_id: int = Form(...),
+    old_cert_name: str = Form(...),
+    new_object_name: str = Form(...),
+    chain_name: str = Form('DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1'),
+    selected_profiles: Optional[str] = Form(None),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
+):
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    if not device.encrypted_password:
+        raise HTTPException(status_code=400, detail="Device credentials not set")
+    f5_username = device.username
+    f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    try:
+        profiles_list = None
+        if selected_profiles:
+            try:
+                profiles_list = json.loads(selected_profiles)
+                if not isinstance(profiles_list, list):
+                    raise ValueError("selected_profiles must be a JSON array")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid selected_profiles: {e}")
+        updated = f5_service_logic.update_profiles_with_new_cert(
+            hostname=device.ip_address,
+            username=f5_username,
+            password=f5_password,
+            old_cert_name=old_cert_name,
+            new_cert_name=new_object_name,
+            chain_name=chain_name,
+            selected_profiles=profiles_list
+        )
+        return {"updated_profiles": updated}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

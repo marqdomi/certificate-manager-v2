@@ -1,6 +1,4 @@
-# backend/schemas/certificate.py
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 class CertificateResponse(BaseModel):
@@ -19,5 +17,4 @@ class CertificateResponse(BaseModel):
     renewal_id: int | None = None
     renewal_status: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

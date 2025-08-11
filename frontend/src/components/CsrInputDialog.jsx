@@ -1,13 +1,17 @@
-// frontend/src/components/CsrInputDialog.jsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Alert, CircularProgress } from '@mui/material';
 
 const CsrInputDialog = ({ open, onClose, onGenerate, cert, loading }) => {
   const [privateKeyInput, setPrivateKeyInput] = useState('');
 
+  const handleClose = useCallback(() => {
+    setPrivateKeyInput('');
+    if (onClose) onClose();
+  }, [onClose]);
+
   const handleGenerateClick = () => {
     // Solo llama a onGenerate si el campo no está vacío
-    if (privateKeyInput) {
+    if (privateKeyInput.trim()) {
       onGenerate(cert, privateKeyInput);
     }
   };
@@ -15,7 +19,7 @@ const CsrInputDialog = ({ open, onClose, onGenerate, cert, loading }) => {
   if (!cert) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
       <DialogTitle>Initiate Renewal for: {cert.common_name}</DialogTitle>
       <DialogContent>
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -32,12 +36,12 @@ const CsrInputDialog = ({ open, onClose, onGenerate, cert, loading }) => {
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button onClick={handleClose} disabled={loading}>Cancel</Button>
         <Button 
           onClick={handleGenerateClick} 
           variant="contained" 
           // El botón se deshabilita si no hay texto o si está cargando
-          disabled={!privateKeyInput || loading}
+          disabled={!privateKeyInput.trim() || loading}
         >
           {loading ? <CircularProgress size={24} /> : 'Generate CSR'}
         </Button>
