@@ -1,10 +1,8 @@
-// frontend/src/components/RenewalDetailDialog.jsx
-
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions, Button, 
-    TextField, Box, Typography, CircularProgress, IconButton 
+    TextField, Box, Typography, CircularProgress, IconButton, Snackbar 
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -12,6 +10,8 @@ const RenewalDetailDialog = ({ open, onClose, renewalId }) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
     // Solo hacemos la llamada a la API si el diálogo está abierto y tenemos un ID
@@ -34,8 +34,14 @@ const RenewalDetailDialog = ({ open, onClose, renewalId }) => {
     }
   }, [open, renewalId]); // Se ejecuta cada vez que el diálogo se abre con un nuevo ID
 
-  const handleCopy = (text) => {
+  const handleCopy = (text, label) => {
     navigator.clipboard.writeText(text);
+    setSnackbarMessage(`${label} copied to clipboard`);
+    setSnackbarOpen(true);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return (
@@ -56,12 +62,12 @@ const RenewalDetailDialog = ({ open, onClose, renewalId }) => {
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle1" gutterBottom>Certificate Signing Request (CSR)</Typography>
               <TextField multiline fullWidth rows={10} value={details.csr} InputProps={{ readOnly: true }} />
-              <Button onClick={() => handleCopy(details.csr)} sx={{ mt: 1 }}>Copy CSR</Button>
+              <Button onClick={() => handleCopy(details.csr, 'CSR')} sx={{ mt: 1 }}>Copy CSR</Button>
             </Box>
             <Box sx={{ mt: 4 }}>
               <Typography variant="subtitle1" gutterBottom>Associated Private Key</Typography>
               <TextField multiline fullWidth rows={10} value={details.private_key} InputProps={{ readOnly: true }} />
-              <Button onClick={() => handleCopy(details.private_key)} sx={{ mt: 1 }}>Copy Private Key</Button>
+              <Button onClick={() => handleCopy(details.private_key, 'Private Key')} sx={{ mt: 1 }}>Copy Private Key</Button>
             </Box>
           </>
         )}
@@ -69,6 +75,13 @@ const RenewalDetailDialog = ({ open, onClose, renewalId }) => {
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Dialog>
   );
 };

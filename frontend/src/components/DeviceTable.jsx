@@ -1,5 +1,3 @@
-// frontend/src/components/DeviceTable.jsx
-
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api'; 
 import { DataGrid } from '@mui/x-data-grid';
@@ -52,15 +50,79 @@ const DeviceTable = ({ onSetCredentials, onDeleteDevice, searchTerm, refreshTrig
             align: 'center',
             headerAlign: 'center',
             renderCell: (params) => {
-                const status = params.value || 'pending';
-                let color = 'default';
-                if (status === 'success') color = 'success';
-                if (status === 'failed' || status === 'error') color = 'error';
-                // Chip "filled" para un look más moderno y consistente
+                const rawStatus = params.value || 'pending';
+                const message = params.row.last_scan_message || '';
+
+                // 1) Extraer código corto del mensaje: [EC=AUTH], [EC=TIMEOUT], etc.
+                let shortCode = null;
+                const m = message.match(/\[EC=([A-Z_]+)\]/);
+                if (m && m[1]) shortCode = m[1];
+
+                // 2) Normalizar el código a algo más "bonito" si hace falta
+                const normalizeCode = (code) => {
+                    switch (code) {
+                        case 'AUTH':
+                            return 'AUTH';
+                        case 'TIMEOUT':
+                        case 'CONNECT_TIMEOUT':
+                        case 'READ_TIMEOUT':
+                            return 'TIMEOUT';
+                        case 'SSL':
+                        case 'TLS':
+                            return 'SSL';
+                        case 'CONN':
+                        case 'CONNECTION':
+                        case 'NETWORK':
+                            return 'CONN';
+                        case 'HTTP':
+                            return 'HTTP';
+                        default:
+                            return 'UNKNOWN';
+                    }
+                };
+
+                // 3) Decidir etiqueta y color del chip
+                let chipLabel = rawStatus;
+                let chipColor = 'default';
+
+                if (rawStatus === 'success') {
+                    chipLabel = 'success';
+                    chipColor = 'success';
+                } else if (rawStatus === 'running') {
+                    chipLabel = 'running';
+                    chipColor = 'info';
+                } else if (rawStatus === 'pending') {
+                    chipLabel = 'pending';
+                    chipColor = 'warning';
+                } else if (rawStatus === 'failed' || rawStatus === 'error') {
+                    const label = shortCode ? normalizeCode(shortCode) : 'error';
+                    chipLabel = label;
+                    // Colores por tipo de error
+                    switch (label) {
+                        case 'AUTH':
+                            chipColor = 'error';
+                            break;
+                        case 'TIMEOUT':
+                            chipColor = 'warning';
+                            break;
+                        case 'SSL':
+                            chipColor = 'info';
+                            break;
+                        case 'HTTP':
+                            chipColor = 'secondary';
+                            break;
+                        case 'CONN':
+                            chipColor = 'default';
+                            break;
+                        default:
+                            chipColor = 'error';
+                    }
+                }
+
                 return (
-                    <Tooltip title={params.row.last_scan_message || status} arrow>
+                    <Tooltip title={message || rawStatus} arrow>
                         <span>
-                            <Chip label={status} color={color} size="small" sx={{ textTransform: 'capitalize' }} />
+                            <Chip label={chipLabel} color={chipColor} size="small" sx={{ textTransform: 'uppercase', fontWeight: 600 }} />
                         </span>
                     </Tooltip>
                 );

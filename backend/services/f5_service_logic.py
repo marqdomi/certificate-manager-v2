@@ -1,3 +1,25 @@
+from typing import Optional
+def derive_object_name_from_pem(cert_pem: str) -> str:
+    """
+    Given a PEM certificate, sanitize and derive a safe F5 object name: <safe_cn>_<not_after>
+    """
+    cert_pem_clean = _sanitize_pem_cert(cert_pem)
+    cert_obj = x509.load_pem_x509_certificate(cert_pem_clean.encode("utf-8"))
+    cn = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(cert_obj).date().isoformat()
+    safe_cn = cn.replace("*.", "star_").replace(".", "_")
+    return f"{safe_cn}_{not_after}"
+
+def derive_object_name_from_pfx(pfx_data: bytes, pfx_password: Optional[str]) -> str:
+    """
+    Given a PFX (PKCS12) file and password, derive a safe F5 object name: <safe_cn>_<not_after>
+    """
+    pfx_password_bytes = pfx_password.encode("utf-8") if pfx_password else None
+    _key_obj, cert_obj, _extra = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
+    cn = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(cert_obj).date().isoformat()
+    safe_cn = cn.replace("*.", "star_").replace(".", "_")
+    return f"{safe_cn}_{not_after}"
 # backend/services/f5_service_logic.py
 
 import os
@@ -490,16 +512,15 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
     for vs in virtual_servers:
         # Un VS puede tener múltiples perfiles. Iteramos sobre ellos.
         vs_profiles = [p.fullPath for p in vs.profiles_s.get_collection()]
-        
         # Comprobamos si alguno de los perfiles del VS está en nuestra lista de perfiles que usan el cert
         if any(profile_path in vs_profiles for profile_path in usage_data["profiles"]):
             vs_info = {
                 "name": vs.fullPath,
                 "destination": getattr(vs, 'destination', 'N/A').split('/')[-1], # ej: 10.10.10.5:443
-                "state": getattr(vs, 'enabled', True) # Asumimos 'enabled' si no está 'disabled'
+                "state": getattr(vs, 'enabled', True), # Asumimos 'enabled' si no está 'disabled'
+                "profiles": vs_profiles
             }
             usage_data["virtual_servers"].append(vs_info)
-            
     return usage_data
 
 def delete_certificate_from_f5(hostname: str, username: str, password: str, cert_name: str, partition: str):
@@ -751,6 +772,97 @@ def get_realtime_chains_from_f5(hostname: str, username: str, password: str):
     chain_names = [cert.fullPath for cert in f5_certs]
     return sorted(chain_names)
 
+
+
+# ----------------------------
+# Helpers de FALLBACK para construir caché sin depender de certs locales
+# ----------------------------
+
+def _safe_tail(path: Optional[str]) -> Optional[str]:
+    if not path or not isinstance(path, str):
+        return None
+    return path.strip().split('/')[-1] or None
+
+
+def list_client_ssl_profiles_bulk(hostname: str, username: str, password: str):
+    """
+    Devuelve información "bulk" de client-ssl profiles para usar en el caché
+    cuando no tenemos certificados locales. Incluye el cert referenciado.
+
+    Retorno: lista de diccionarios con:
+      - name, partition, fullPath, context="clientside"
+      - cert_full (p.ej. /Common/foo), cert_name (tail sin partición)
+      - key_full, chain_full (si existen)
+    """
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    out = []
+    for prof in mgmt.tm.ltm.profile.client_ssls.get_collection():
+        ckc = getattr(prof, 'certKeyChain', []) or []
+        cert_full = None
+        key_full = None
+        chain_full = None
+        if ckc:
+            # Usamos el primer elemento como hace la GUI (name=default)
+            first = dict(ckc[0])
+            cert_full = first.get('cert')
+            key_full = first.get('key')
+            chain_full = first.get('chain')
+        out.append({
+            "name": getattr(prof, 'name', None),
+            "partition": getattr(prof, 'partition', 'Common'),
+            "fullPath": getattr(prof, 'fullPath', None) or f"/{getattr(prof,'partition','Common')}/{getattr(prof,'name', '')}",
+            "context": "clientside",
+            "cert_full": cert_full,
+            "cert_name": _safe_tail(cert_full),
+            "key_full": key_full,
+            "chain_full": chain_full,
+        })
+    return out
+
+
+def get_all_ssl_profiles(hostname: str, username: str, password: str):
+    """
+    Alias semántico usado por el cache-builder para el modo fallback.
+    Devuelve la misma estructura que list_client_ssl_profiles_bulk().
+    """
+    return list_client_ssl_profiles_bulk(hostname, username, password)
+
+
+def list_virtuals_min(hostname: str, username: str, password: str):
+    """
+    Devuelve info mínima de Virtual Servers y los perfiles aplicados.
+    Retorna lista de dicts: { fullPath, profiles: [fullPath_de_profile, ...] }
+    """
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    out = []
+    for vs in mgmt.tm.ltm.virtuals.get_collection():
+        try:
+            profs = vs.profiles_s.get_collection()
+            prof_paths = [getattr(p, 'fullPath', None) or f"/{getattr(p,'partition','Common')}/{getattr(p,'name','')}" for p in profs]
+        except Exception:
+            prof_paths = []
+        out.append({
+            "fullPath": getattr(vs, 'fullPath', None) or f"/{getattr(vs,'partition','Common')}/{getattr(vs,'name','')}",
+            "profiles": prof_paths,
+        })
+    return out
+
+
+def get_ssl_profile_vips(hostname: str, username: str, password: str, profile_fullpath: str):
+    """
+    Dado el fullPath de un client-ssl profile, devuelve la lista de VS (fullPath)
+    que referencian ese perfil. Útil para poblar ssl_profile_vips_cache en fallback.
+    """
+    # Normalizamos el fullpath para comparar con y sin partición/nombre
+    target = profile_fullpath
+    target_tail = _safe_tail(profile_fullpath)
+    vips = []
+    for vs in list_virtuals_min(hostname, username, password):
+        profs = vs.get('profiles') or []
+        # Coincidimos si el VS tiene el fullPath exacto o el tail del profile
+        if any(p == target or _safe_tail(p) == target_tail for p in profs):
+            vips.append(vs.get('fullPath'))
+    return vips
 
 # ----------------------------
 # Normalización de nombres de objetos (remover .crt/.key en el nombre)

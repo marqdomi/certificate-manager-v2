@@ -17,4 +17,6 @@ class CertificateResponse(BaseModel):
     renewal_id: int | None = None
     renewal_status: str | None = None
 
+    usage_state: str | None = None  # 'in-use' | 'no-profiles' | 'profiles-no-vips'
+
     model_config = ConfigDict(from_attributes=True)

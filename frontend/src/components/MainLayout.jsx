@@ -1,10 +1,10 @@
 // frontend/src/components/MainLayout.jsx
 
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
     Box, Drawer, AppBar, Toolbar, List, ListItem, ListItemButton, 
-    ListItemIcon, ListItemText, Typography, IconButton, Tooltip 
+    ListItemIcon, ListItemText, Typography, IconButton, Tooltip, Collapse 
 } from '@mui/material';
 
 // --- (No se cambian los imports) ---
@@ -19,6 +19,10 @@ import { useThemeContext } from '../context/ThemeContext';
 import { authProvider } from '../pages/LoginPage';
 import soleraLogo from '../assets/solera_logo.svg';
 import PublishIcon from '@mui/icons-material/Publish';
+import LanIcon from '@mui/icons-material/Lan';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 
 const drawerWidth = 240;
 
@@ -33,6 +37,8 @@ const navItems = [
 const MainLayout = ({ children }) => {
   const { mode, toggleTheme } = useThemeContext();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [openVips, setOpenVips] = React.useState(location.pathname.startsWith('/vips'));
 
   const handleLogout = () => {
     authProvider.logout();
@@ -98,6 +104,47 @@ const MainLayout = ({ children }) => {
                 </ListItemButton>
               </ListItem>
             ))}
+
+            {/* VIPs parent item */}
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => setOpenVips((v) => !v)}
+                sx={{
+                  '&.active': {
+                    backgroundColor: 'action.selected',
+                    fontWeight: 'fontWeightBold',
+                  },
+                }}
+              >
+                <ListItemIcon><LanIcon /></ListItemIcon>
+                <ListItemText primary="VIPs" />
+                {openVips ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+
+            <Collapse in={openVips} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={NavLink}
+                    to="/vips/overview"
+                    sx={{ pl: 4, '&.active': { backgroundColor: 'action.selected', fontWeight: 'fontWeightBold' } }}
+                  >
+                    <ListItemIcon><DashboardIcon /></ListItemIcon>
+                    <ListItemText primary="Overview" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={NavLink}
+                    to="/vips/search"
+                    sx={{ pl: 4, '&.active': { backgroundColor: 'action.selected', fontWeight: 'fontWeightBold' } }}
+                  >
+                    <ListItemIcon><SearchOutlinedIcon /></ListItemIcon>
+                    <ListItemText primary="Search" />
+                  </ListItemButton>
+                </ListItem>
+              </List>
+            </Collapse>
           </List>
         </Box>
       </Drawer>

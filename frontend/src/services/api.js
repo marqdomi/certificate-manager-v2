@@ -4,7 +4,8 @@ import axios from 'axios';
 import { authProvider } from '../pages/LoginPage';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: '/api/v1', // use Vite proxy to backend
+  withCredentials: true, // allow cookies if backend uses session auth
 });
 
 // --- Interceptor de Petición (Request) ---
@@ -96,4 +97,64 @@ export async function confirmDeployment(deviceId, oldCertName, newObjectName, ch
 export async function verifyInstalledCert(deviceId, objectName) {
   const { data } = await apiClient.get(`/certificates/devices/${deviceId}/verify/${objectName}`);
   return data; // {version, san:[], serial, not_after, subject, issuer}
+}
+
+export async function validateDeployment(payload) {
+  // payload: { mode: 'pfx'|'pem', pfxFile?, pfxPassword?, certPem?, keyPem?, chainPem? }
+  const form = new FormData();
+  form.append('mode', payload.mode);
+  if (payload.mode === 'pfx') {
+    if (payload.pfxFile) form.append('pfx_file', payload.pfxFile);
+    if (payload.pfxPassword) form.append('pfx_password', payload.pfxPassword);
+  } else {
+    if (payload.certPem) form.append('cert_pem', payload.certPem);
+    if (payload.keyPem) form.append('key_pem', payload.keyPem);
+    if (payload.chainPem) form.append('chain_pem', payload.chainPem);
+  }
+  const { data } = await apiClient.post('/deployments/validate', form);
+  return data; // { parsed: {cn, san[], not_after}, warnings: [] }
+}
+
+export async function executeDeployment(opts) {
+  // opts: { deviceId, oldCertName, mode, pfxFile?, pfxPassword?, certPem?, keyPem?, installChainFromPfx?, chainName?, updateProfiles?, selectedProfiles?, dryRun? }
+  const form = new FormData();
+  form.append('device_id', opts.deviceId);
+  form.append('old_cert_name', opts.oldCertName || '');
+  form.append('mode', opts.mode);
+  if (opts.mode === 'pfx') {
+    if (opts.pfxFile) form.append('pfx_file', opts.pfxFile);
+    if (opts.pfxPassword) form.append('pfx_password', opts.pfxPassword);
+    if (opts.installChainFromPfx != null) form.append('install_chain_from_pfx', String(!!opts.installChainFromPfx));
+  } else {
+    if (opts.certPem) form.append('cert_pem', opts.certPem);
+    if (opts.keyPem) form.append('key_pem', opts.keyPem);
+  }
+  if (opts.chainName) form.append('chain_name', opts.chainName);
+  if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles));
+  if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles));
+  if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun));
+  const { data } = await apiClient.post('/deployments/execute', form);
+  return data;
+}
+
+export async function planDeployment(opts) {
+  // opts: { deviceId, oldCertName, mode, pfxFile?, pfxPassword?, certPem?, keyPem?, installChainFromPfx?, chainName?, updateProfiles?, selectedProfiles?, dryRun? }
+  const form = new FormData();
+  form.append('device_id', opts.deviceId);
+  form.append('old_cert_name', opts.oldCertName || '');
+  form.append('mode', opts.mode);
+  if (opts.mode === 'pfx') {
+    if (opts.pfxFile) form.append('pfx_file', opts.pfxFile);
+    if (opts.pfxPassword) form.append('pfx_password', opts.pfxPassword);
+    if (opts.installChainFromPfx != null) form.append('install_chain_from_pfx', String(!!opts.installChainFromPfx));
+  } else {
+    if (opts.certPem) form.append('cert_pem', opts.certPem);
+    if (opts.keyPem) form.append('key_pem', opts.keyPem);
+  }
+  if (opts.chainName) form.append('chain_name', opts.chainName);
+  if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles));
+  if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles));
+  if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun));
+  const { data } = await apiClient.post('/deployments/plan', form);
+  return data;
 }

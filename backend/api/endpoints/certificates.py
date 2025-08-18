@@ -13,6 +13,7 @@ from cryptography.fernet import Fernet
 # --- Imports para la lógica y la seguridad ---
 from db.base import get_db
 from db.models import Certificate, RenewalRequest, RenewalStatus, User, UserRole, Device
+from db.models import CertProfileLinksCache, SslProfileVipsCache
 from schemas.certificate import CertificateResponse
 from services import certificate_service, f5_service_logic, encryption_service, auth_service
 from services import pfx_service 
@@ -79,21 +80,70 @@ def get_certificates(
 
     query = query.order_by(Certificate.expiration_date.asc())
     results = db.execute(query).all()
-    
+
+    # --- USAGE STATE BATCH LOGIC ---
+    # Build keys for all certs: (device_id, cert.name)
+    keys = []
+    device_ids = set()
+    cert_names = set()
+    for cert, _, _ in results:
+        if cert and cert.device_id is not None and cert.name is not None:
+            keys.append((cert.device_id, cert.name))
+            device_ids.add(cert.device_id)
+            cert_names.add(cert.name)
+
+    # Query CertProfileLinksCache in batch
+    links_by_key = {}
+    profiles_fp_by_device = set()
+    if device_ids and cert_names:
+        links = db.query(CertProfileLinksCache).filter(
+            CertProfileLinksCache.device_id.in_(device_ids),
+            CertProfileLinksCache.cert_name.in_(cert_names)
+        ).all()
+        for l in links:
+            k = (l.device_id, l.cert_name)
+            links_by_key.setdefault(k, set()).add(l.profile_full_path)
+            profiles_fp_by_device.add((l.device_id, l.profile_full_path))
+
+    # Query SslProfileVipsCache in batch
+    vips_by_profile = {}
+    all_profile_full_paths = set(fp for (_, fp) in profiles_fp_by_device)
+    if device_ids and all_profile_full_paths:
+        vips = db.query(SslProfileVipsCache).filter(
+            SslProfileVipsCache.device_id.in_(device_ids),
+            SslProfileVipsCache.profile_full_path.in_(all_profile_full_paths)
+        ).all()
+        for v in vips:
+            k = (v.device_id, v.profile_full_path)
+            vips_by_profile.setdefault(k, 0)
+            vips_by_profile[k] += 1
+
+    # Compute usage_state_by_key
+    usage_state_by_key = {}
+    for k in keys:
+        profiles = links_by_key.get(k, set())
+        if not profiles:
+            usage_state_by_key[k] = 'no-profiles'
+        else:
+            total_vips = 0
+            for pf in profiles:
+                total_vips += vips_by_profile.get((k[0], pf), 0)
+            if total_vips == 0:
+                usage_state_by_key[k] = 'profiles-no-vips'
+            else:
+                usage_state_by_key[k] = 'in-use'
+
+    # Build response certs
     response_certs = []
     for cert, renewal_id, renewal_status in results:
         days_remaining = (cert.expiration_date - datetime.utcnow()).days if cert.expiration_date else None
-        
-        # cert.__dict__ ya contiene 'device_id' porque es una columna del modelo.
-        # Pero para ser explícitos y seguros, lo añadimos.
         cert_data = cert.__dict__
         cert_data['days_remaining'] = days_remaining
         cert_data['renewal_id'] = renewal_id
         cert_data['renewal_status'] = renewal_status.name if renewal_status else None
-        
-        # Aseguramos que el device_id esté presente.
-        cert_data['device_id'] = cert.device_id 
-
+        cert_data['device_id'] = cert.device_id
+        # Set usage_state
+        cert_data['usage_state'] = usage_state_by_key.get((cert.device_id, cert.name))
         response_certs.append(cert_data)
 
     return response_certs

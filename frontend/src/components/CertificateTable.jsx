@@ -96,10 +96,19 @@ const CertificateTable = ({
                         <Button variant="contained" color="secondary" size="small" onClick={() => onOpenDeploy(params.row)}>
                             DEPLOY
                         </Button>
-                    ) : ( // Botón primario para la acción principal
-                        <Button variant="contained" size="small" onClick={() => onInitiateRenewal(params.row)} disabled={!canRenew}>
-                            {actionLoading && activeActionCertId === params.row.id ? <CircularProgress size={20} color="inherit" /> : 'RENEW...'}
-                        </Button>
+                    ) : (
+                        // Botón primario para la acción principal, con tooltip aclaratorio
+                        <Tooltip title="Open renewal wizard">
+                          <span>
+                            <Button variant="contained" size="small" onClick={() => onInitiateRenewal(params.row)} disabled={!canRenew}>
+                              {actionLoading && activeActionCertId === params.row.id ? (
+                                <CircularProgress size={20} color="inherit" />
+                              ) : (
+                                'RENEW'
+                              )}
+                            </Button>
+                          </span>
+                        </Tooltip>
                     )
                 )}
 

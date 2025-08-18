@@ -108,12 +108,53 @@ class UserRole(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)   # <-- antes tenía un typo en "index"
     username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False) # NUNCA guardamos la contraseña en texto plano
+    hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.VIEWER)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role.value}')>"
+    
+# --- NUEVAS TABLAS DE CACHÉ (añadir al final de models.py) ---
+class SslProfilesCache(Base):
+    __tablename__ = "ssl_profiles_cache"
+
+    id = Column(Integer, primary_key=True)
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True)
+    profile_name = Column(String, nullable=False)     # solo el nombre (sin /Partition/)
+    partition = Column(String, nullable=False, default="Common")
+    context = Column(String, nullable=True)           # clientside/serverside/—
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("device_id", "partition", "profile_name", name="uq_profiles_device_partition_name"),
+    )
+
+class SslProfileVipsCache(Base):
+    __tablename__ = "ssl_profile_vips_cache"
+
+    id = Column(Integer, primary_key=True)
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True)
+    profile_full_path = Column(String, nullable=False, index=True)  # ej. /Common/clientssl
+    vip_name = Column(String, nullable=False)                        # vs name
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("device_id", "profile_full_path", "vip_name", name="uq_profile_vip_per_device"),
+    )
+
+class CertProfileLinksCache(Base):
+    __tablename__ = "cert_profile_links_cache"
+
+    id = Column(Integer, primary_key=True)
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True)
+    cert_name = Column(String, nullable=False, index=True)
+    profile_full_path = Column(String, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("device_id", "cert_name", "profile_full_path", name="uq_cert_profile_per_device"),
+    )

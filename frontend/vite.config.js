@@ -8,7 +8,19 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // Default to local backend if not provided
-  const apiBase = env.VITE_API_BASE_URL || 'http://localhost:8000'
+  // Resolve API base.
+  // If VITE_API_BASE_URL is unset OR points to localhost/127.0.0.1 (which breaks inside Docker),
+  // fall back to the docker service name "backend".
+  const resolveApiBase = () => {
+    const raw = env.VITE_API_BASE_URL || '';
+    const isLocalHost =
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(raw) ||
+      raw === 'localhost' ||
+      raw === '127.0.0.1';
+    if (!raw || isLocalHost) return 'http://backend:8000';
+    return raw;
+  };
+  const apiBase = resolveApiBase();
 
   return {
     plugins: [react()],
