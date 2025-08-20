@@ -1,32 +1,58 @@
-// frontend/src/api/devices.ts
 import api from '../services/api';
 
-export type Device = {
-  id: number;
-  hostname: string;
-  ip_address: string;
-  site?: string | null;
+export type VipProfile = {
+  full_path: string;
+  partition: string;
+  name: string;
+  cert_name?: string | null;
 };
 
-export type CacheStatus = {
-  device_id: number;
-  profiles_count: number;
-  vips_count: number;
-  links_count: number;
-  last_updated: string | null;
+export type VipItem = {
+  vip_name: string;
+  profiles: VipProfile[];
 };
 
-export async function fetchDevices(search?: string): Promise<Device[]> {
-  const res = await api.get('/devices/', { params: search ? { search } : undefined });
+/**
+ * Obtener VIPs cacheadas para un device específico
+ */
+export async function getVips(deviceId: number): Promise<VipItem[]> {
+  const res = await api.get('/f5/vips', { params: { device_id: deviceId } });
   return res.data;
 }
 
-export async function fetchCacheStatus(deviceId: number): Promise<CacheStatus> {
-  const res = await api.get('/f5/cache/status', { params: { device_id: deviceId } });
+/**
+ * Encola un refresh para un device específico (modo rápido por defecto)
+ */
+export async function rescanDeviceNow(deviceId: number): Promise<{ queued: boolean }> {
+  const res = await api.post('/f5/cache/refresh', {
+    device_ids: [deviceId],
+    full_resync: false,
+  });
   return res.data;
 }
 
-export async function triggerCacheRefresh(deviceIds: number[]): Promise<{queued: boolean}> {
-  const res = await api.post('/f5/cache/refresh', { device_ids: deviceIds });
+/**
+ * Encola un refresh para una lista de devices. Si `full` es true, fuerza resync completo.
+ */
+export async function scanDevicesByIds(
+  ids: number[],
+  full: boolean = false,
+): Promise<{ queued: boolean } | { queued: boolean }[]> {
+  const res = await api.post('/f5/cache/refresh', {
+    device_ids: ids,
+    full_resync: full,
+  });
+  return res.data;
+}
+
+/**
+ * Encola un refresh global para todos los devices.
+ */
+export async function scanDevicesAll(full: boolean = false): Promise<{ queued: boolean }>
+{
+  const res = await api.post('/f5/cache/refresh', {
+    all: true,
+    full_resync: full,
+  });
   return res.data;
 }

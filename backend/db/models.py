@@ -141,6 +141,12 @@ class SslProfileVipsCache(Base):
     profile_full_path = Column(String, nullable=False, index=True)  # ej. /Common/clientssl
     vip_name = Column(String, nullable=False)                        # vs name
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    vip_full_path = Column(Text, nullable=True)
+    partition     = Column(Text, nullable=True)
+    destination   = Column(Text, nullable=True)
+    service_port  = Column(Integer, nullable=True)
+    enabled       = Column(Boolean, nullable=True)
+    status        = Column(Text, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("device_id", "profile_full_path", "vip_name", name="uq_profile_vip_per_device"),

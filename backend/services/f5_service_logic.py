@@ -831,7 +831,8 @@ def get_all_ssl_profiles(hostname: str, username: str, password: str):
 def list_virtuals_min(hostname: str, username: str, password: str):
     """
     Devuelve info mínima de Virtual Servers y los perfiles aplicados.
-    Retorna lista de dicts: { fullPath, profiles: [fullPath_de_profile, ...] }
+    Retorna lista de dicts:
+      { fullPath, partition, name, destination, servicePort, enabled, profiles: [fullPath_de_profile, ...] }
     """
     mgmt = ManagementRoot(hostname, username, password, token=True)
     out = []
@@ -841,8 +842,31 @@ def list_virtuals_min(hostname: str, username: str, password: str):
             prof_paths = [getattr(p, 'fullPath', None) or f"/{getattr(p,'partition','Common')}/{getattr(p,'name','')}" for p in profs]
         except Exception:
             prof_paths = []
+        full_path = getattr(vs, 'fullPath', None) or f"/{getattr(vs,'partition','Common')}/{getattr(vs,'name','')}"
+        # destination suele venir como '/Common/1.2.3.4:443' o '1.2.3.4:443'
+        raw_dest = getattr(vs, 'destination', None)
+        dest_tail = (raw_dest or '').split('/')[-1] if raw_dest else None
+        # Extraer puerto si existe
+        svc_port = None
+        if dest_tail and ':' in dest_tail:
+            try:
+                svc_port = int(dest_tail.split(':')[-1])
+            except Exception:
+                svc_port = None
+        enabled = True
+        # Algunas versiones exponen 'disabled' o 'enabled' como booleano/cadena
+        if hasattr(vs, 'disabled') and getattr(vs, 'disabled'):
+            enabled = False
+        elif hasattr(vs, 'state'):
+            # e.g. 'enabled' / 'disabled'
+            enabled = str(getattr(vs, 'state')).lower().startswith('enab')
         out.append({
-            "fullPath": getattr(vs, 'fullPath', None) or f"/{getattr(vs,'partition','Common')}/{getattr(vs,'name','')}",
+            "fullPath": full_path,
+            "partition": getattr(vs, 'partition', 'Common'),
+            "name": getattr(vs, 'name', None),
+            "destination": dest_tail,
+            "servicePort": svc_port,
+            "enabled": enabled,
             "profiles": prof_paths,
         })
     return out
@@ -850,18 +874,24 @@ def list_virtuals_min(hostname: str, username: str, password: str):
 
 def get_ssl_profile_vips(hostname: str, username: str, password: str, profile_fullpath: str):
     """
-    Dado el fullPath de un client-ssl profile, devuelve la lista de VS (fullPath)
-    que referencian ese perfil. Útil para poblar ssl_profile_vips_cache en fallback.
+    Dado el fullPath de un client-ssl profile, devuelve la lista de VS que referencian ese perfil.
+    Retorna lista de diccionarios:
+      { name, fullPath, partition, destination, servicePort, enabled }
     """
-    # Normalizamos el fullpath para comparar con y sin partición/nombre
     target = profile_fullpath
     target_tail = _safe_tail(profile_fullpath)
     vips = []
     for vs in list_virtuals_min(hostname, username, password):
         profs = vs.get('profiles') or []
-        # Coincidimos si el VS tiene el fullPath exacto o el tail del profile
         if any(p == target or _safe_tail(p) == target_tail for p in profs):
-            vips.append(vs.get('fullPath'))
+            vips.append({
+                "name": vs.get("name"),
+                "fullPath": vs.get("fullPath"),
+                "partition": vs.get("partition"),
+                "destination": vs.get("destination"),
+                "servicePort": vs.get("servicePort"),
+                "enabled": vs.get("enabled"),
+            })
     return vips
 
 # ----------------------------

@@ -1,160 +1,195 @@
-// frontend/src/services/api.js
+import axios from 'axios'
+import { authProvider } from '../pages/LoginPage'
 
-import axios from 'axios';
-import { authProvider } from '../pages/LoginPage';
-
+// Axios instance pointing at Vite proxy. In dev, Vite forwards `/api` to backend.
+// In prod (static build behind the same origin), `/api` should be routed by the reverse proxy.
 const apiClient = axios.create({
-  baseURL: '/api/v1', // use Vite proxy to backend
-  withCredentials: true, // allow cookies if backend uses session auth
-});
+  baseURL: '/api/v1',
+  withCredentials: true,
+  timeout: 30000,
+  headers: { Accept: 'application/json' },
+})
 
-// --- Interceptor de Petición (Request) ---
-// Se ejecuta ANTES de enviar cada petición
+// ---- Request interceptor: attach bearer token if present ----
 apiClient.interceptors.request.use(
   (config) => {
-    const token = authProvider.getToken();
+    const token = authProvider.getToken?.()
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers = config.headers || {}
+      config.headers.Authorization = `Bearer ${token}`
     }
-    return config;
+    console.debug('[api]', 'baseURL=', config.baseURL, 'url=', config.url);
+    // Normalize accidental absolute URLs like "http://backend:8000/api/v1/..." coming from older code paths
+    if (typeof config.url === 'string' && /^(https?:)?\/\/backend(:8000)?\//.test(config.url)) {
+      try {
+        const u = new URL(config.url, window.location.origin);
+        // Keep only path+search so Vite proxy handles it (dev) or same-origin reverse proxy (prod)
+        config.url = u.pathname + u.search + u.hash;
+        // Ensure we keep our relative baseURL
+        // (axios will ignore baseURL if url is absolute; now it's relative again)
+      } catch (e) {
+        // no-op if URL constructor fails; better to send as-is than break
+      }
+    }
+    return config
   },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  (error) => Promise.reject(error)
+)
 
-// --- ¡NUEVO! Interceptor de Respuesta (Response) ---
-// Se ejecuta DESPUÉS de recibir una respuesta (o un error)
+// ---- Response interceptor: auto-logout on 401 ----
 apiClient.interceptors.response.use(
-  // Si la respuesta es exitosa (ej. status 200), simplemente la devuelve
-  (response) => {
-    return response;
-  },
-  // Si la respuesta es un error...
+  (response) => response,
   (error) => {
-    // Comprobamos si el error es un 401 Unauthorized
-    if (error.response && error.response.status === 401) {
-      // Si es un 401, significa que nuestro token es inválido o ha expirado.
-      console.log("Authentication token is invalid or expired. Logging out.");
-      authProvider.logout(); // Borramos el token y el rol
-      // Recargamos la página. Nuestro ProtectedRoute nos redirigirá al login.
-      window.location.reload(); 
+    if (error?.response?.status === 401) {
+      try {
+        authProvider.logout?.()
+      } finally {
+        window.location.reload()
+      }
     }
-    
-    // Para cualquier otro error, simplemente lo devolvemos para que sea manejado
-    // por el componente que hizo la llamada (ej. para mostrar una notificación).
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-export default apiClient;
+export default apiClient
 
-// --- Convenience wrappers (optional) ---
+// ---------------- Convenience wrappers ----------------
 export async function deployPfxForRenewal(certId, file, password) {
-  const formData = new FormData();
-  formData.append('pfx_file', file);
-  if (password) formData.append('pfx_password', password);
+  const formData = new FormData()
+  formData.append('pfx_file', file)
+  if (password) formData.append('pfx_password', password)
   const { data } = await apiClient.post(`/certificates/${certId}/deploy-pfx`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  return data;
+  })
+  return data
 }
 
 export async function deployNewPfx(targetDeviceIds, file, password, installChainFromPfx = false) {
-  const formData = new FormData();
-  formData.append('pfx_file', file);
-  if (password) formData.append('pfx_password', password);
-  targetDeviceIds.forEach(id => formData.append('target_device_ids', id));
-  formData.append('install_chain_from_pfx', installChainFromPfx);
+  const formData = new FormData()
+  formData.append('pfx_file', file)
+  if (password) formData.append('pfx_password', password)
+  targetDeviceIds.forEach((id) => formData.append('target_device_ids', id))
+  formData.append('install_chain_from_pfx', installChainFromPfx)
   const { data } = await apiClient.post('/deployments/new-pfx', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  return data;
+  })
+  return data
 }
 
 export async function previewDeployment(deviceId, oldCertName, partition = 'Common') {
-  const form = new FormData();
-  form.append('device_id', deviceId);
-  form.append('old_cert_name', oldCertName);
-  form.append('partition', partition);
-  const { data } = await apiClient.post('/deployments/preview', form);
-  return data;
+  const form = new FormData()
+  form.append('device_id', deviceId)
+  form.append('old_cert_name', oldCertName)
+  form.append('partition', partition)
+  const { data } = await apiClient.post('/deployments/preview', form)
+  return data
 }
 
-export async function confirmDeployment(deviceId, oldCertName, newObjectName, chainName = 'DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1', selectedProfiles = null) {
-  const form = new FormData();
-  form.append('device_id', deviceId);
-  form.append('old_cert_name', oldCertName);
-  form.append('new_object_name', newObjectName);
-  form.append('chain_name', chainName);
+export async function confirmDeployment(
+  deviceId,
+  oldCertName,
+  newObjectName,
+  chainName = 'DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1',
+  selectedProfiles = null
+) {
+  const form = new FormData()
+  form.append('device_id', deviceId)
+  form.append('old_cert_name', oldCertName)
+  form.append('new_object_name', newObjectName)
+  form.append('chain_name', chainName)
   if (selectedProfiles) {
-    form.append('selected_profiles', JSON.stringify(selectedProfiles));
+    form.append('selected_profiles', JSON.stringify(selectedProfiles))
   }
-  const { data } = await apiClient.post('/deployments/confirm', form);
-  return data;
+  const { data } = await apiClient.post('/deployments/confirm', form)
+  return data
 }
 
 export async function verifyInstalledCert(deviceId, objectName) {
-  const { data } = await apiClient.get(`/certificates/devices/${deviceId}/verify/${objectName}`);
-  return data; // {version, san:[], serial, not_after, subject, issuer}
+  const { data } = await apiClient.get(`/certificates/devices/${deviceId}/verify/${objectName}`)
+  return data
 }
 
 export async function validateDeployment(payload) {
-  // payload: { mode: 'pfx'|'pem', pfxFile?, pfxPassword?, certPem?, keyPem?, chainPem? }
-  const form = new FormData();
-  form.append('mode', payload.mode);
+  const form = new FormData()
+  form.append('mode', payload.mode)
   if (payload.mode === 'pfx') {
-    if (payload.pfxFile) form.append('pfx_file', payload.pfxFile);
-    if (payload.pfxPassword) form.append('pfx_password', payload.pfxPassword);
+    if (payload.pfxFile) form.append('pfx_file', payload.pfxFile)
+    if (payload.pfxPassword) form.append('pfx_password', payload.pfxPassword)
   } else {
-    if (payload.certPem) form.append('cert_pem', payload.certPem);
-    if (payload.keyPem) form.append('key_pem', payload.keyPem);
-    if (payload.chainPem) form.append('chain_pem', payload.chainPem);
+    if (payload.certPem) form.append('cert_pem', payload.certPem)
+    if (payload.keyPem) form.append('key_pem', payload.keyPem)
+    if (payload.chainPem) form.append('chain_pem', payload.chainPem)
   }
-  const { data } = await apiClient.post('/deployments/validate', form);
-  return data; // { parsed: {cn, san[], not_after}, warnings: [] }
+  const { data } = await apiClient.post('/deployments/validate', form)
+  return data
 }
 
 export async function executeDeployment(opts) {
-  // opts: { deviceId, oldCertName, mode, pfxFile?, pfxPassword?, certPem?, keyPem?, installChainFromPfx?, chainName?, updateProfiles?, selectedProfiles?, dryRun? }
-  const form = new FormData();
-  form.append('device_id', opts.deviceId);
-  form.append('old_cert_name', opts.oldCertName || '');
-  form.append('mode', opts.mode);
+  const form = new FormData()
+  form.append('device_id', opts.deviceId)
+  form.append('old_cert_name', opts.oldCertName || '')
+  form.append('mode', opts.mode)
   if (opts.mode === 'pfx') {
-    if (opts.pfxFile) form.append('pfx_file', opts.pfxFile);
-    if (opts.pfxPassword) form.append('pfx_password', opts.pfxPassword);
-    if (opts.installChainFromPfx != null) form.append('install_chain_from_pfx', String(!!opts.installChainFromPfx));
+    if (opts.pfxFile) form.append('pfx_file', opts.pfxFile)
+    if (opts.pfxPassword) form.append('pfx_password', opts.pfxPassword)
+    if (opts.installChainFromPfx != null) form.append('install_chain_from_pfx', String(!!opts.installChainFromPfx))
   } else {
-    if (opts.certPem) form.append('cert_pem', opts.certPem);
-    if (opts.keyPem) form.append('key_pem', opts.keyPem);
+    if (opts.certPem) form.append('cert_pem', opts.certPem)
+    if (opts.keyPem) form.append('key_pem', opts.keyPem)
   }
-  if (opts.chainName) form.append('chain_name', opts.chainName);
-  if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles));
-  if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles));
-  if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun));
-  const { data } = await apiClient.post('/deployments/execute', form);
-  return data;
+  if (opts.chainName) form.append('chain_name', opts.chainName)
+  if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles))
+  if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles))
+  if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun))
+  const { data } = await apiClient.post('/deployments/execute', form)
+  return data
 }
 
 export async function planDeployment(opts) {
-  // opts: { deviceId, oldCertName, mode, pfxFile?, pfxPassword?, certPem?, keyPem?, installChainFromPfx?, chainName?, updateProfiles?, selectedProfiles?, dryRun? }
-  const form = new FormData();
-  form.append('device_id', opts.deviceId);
-  form.append('old_cert_name', opts.oldCertName || '');
-  form.append('mode', opts.mode);
+  const form = new FormData()
+  form.append('device_id', opts.deviceId)
+  form.append('old_cert_name', opts.oldCertName || '')
+  form.append('mode', opts.mode)
   if (opts.mode === 'pfx') {
-    if (opts.pfxFile) form.append('pfx_file', opts.pfxFile);
-    if (opts.pfxPassword) form.append('pfx_password', opts.pfxPassword);
-    if (opts.installChainFromPfx != null) form.append('install_chain_from_pfx', String(!!opts.installChainFromPfx));
+    if (opts.pfxFile) form.append('pfx_file', opts.pfxFile)
+    if (opts.pfxPassword) form.append('pfx_password', opts.pfxPassword)
+    if (opts.installChainFromPfx != null) form.append('install_chain_from_pfx', String(!!opts.installChainFromPfx))
   } else {
-    if (opts.certPem) form.append('cert_pem', opts.certPem);
-    if (opts.keyPem) form.append('key_pem', opts.keyPem);
+    if (opts.certPem) form.append('cert_pem', opts.certPem)
+    if (opts.keyPem) form.append('key_pem', opts.keyPem)
   }
-  if (opts.chainName) form.append('chain_name', opts.chainName);
-  if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles));
-  if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles));
-  if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun));
-  const { data } = await apiClient.post('/deployments/plan', form);
+  if (opts.chainName) form.append('chain_name', opts.chainName)
+  if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles))
+  if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles))
+  if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun))
+  const { data } = await apiClient.post('/deployments/plan', form)
+  return data
+}
+
+// ---------------- VIPs helpers ----------------
+export async function getVipsOverview() {
+  const { data } = await apiClient.get('/vips/overview')
+  return data
+}
+
+export async function searchVips(query, { limit = 200, deviceId, enabled } = {}) {
+  const params = {}
+  const q = (query ?? '').trim()
+  if (q) params.q = q
+  if (limit != null) params.limit = limit
+  if (deviceId !== undefined && deviceId !== null && `${deviceId}` !== '') params.device_id = Number(deviceId)
+  if (typeof enabled === 'boolean') params.enabled = enabled
+  const { data } = await apiClient.get('/vips/search', { params })
+  return data
+}
+
+export async function getImpactPreview(deviceId, certName) {
+  const params = { device_id: deviceId, cert_name: certName };
+  const { data } = await apiClient.get('/f5/cache/impact-preview', { params });
   return data;
+}
+
+export async function deleteCertificate(id) {
+  const { data } = await apiClient.delete(`/certificates/${id}`)
+  return data
 }

@@ -6,36 +6,51 @@ import {
   Button,
   Typography,
   CircularProgress,
-  Stack,
+  Snackbar,
+  Alert,
+  Tooltip,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import api from '../../services/api';
+import ScanModal from './ScanModal';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
-type Device = { id: number; hostname: string };
-
-interface CacheStatus {
+interface OverviewItem {
   device_id: number;
-  profiles_count: number;
-  vips_count: number;
-  links_count: number;
-  last_updated?: string | null;
+  hostname: string;
+  vips: number;
+  profiles: number;
+  last_sync?: string | null;
 }
 
-interface Row extends CacheStatus {
-  id: number; // same as device_id
-  hostname: string;
+interface Row extends OverviewItem {
+  id: number; // alias of device_id for DataGrid
 }
 
 const columns: GridColDef<Row>[] = [
   { field: 'hostname', headerName: 'Device', flex: 1, minWidth: 260 },
-  { field: 'vips_count', headerName: 'VIPs', width: 100 },
-  { field: 'profiles_count', headerName: 'Profiles', width: 110 },
-  { field: 'links_count', headerName: 'Links', width: 100 },
+  { field: 'vips', headerName: 'VIPs', width: 100 },
+  { field: 'profiles', headerName: 'Profiles', width: 110 },
   {
-    field: 'last_updated',
+    field: 'last_sync',
     headerName: 'Last Sync',
-    width: 180,
-    valueGetter: (params: { row: Row }) => params.row.last_updated ?? '',
+    width: 190,
+    sortable: true,
+    renderCell: (params: any) => {
+      const ts = params?.row?.last_sync as string | null | undefined;
+      if (!ts) return '—';
+      const d = dayjs(ts);
+      if (!d.isValid()) return String(ts);
+      const abs = d.format('YYYY-MM-DD HH:mm');
+      const rel = d.fromNow();
+      return (
+        <Tooltip title={abs} arrow>
+          <span>{rel}</span>
+        </Tooltip>
+      );
+    },
   },
 ];
 
@@ -43,47 +58,21 @@ const VipsOverviewPage: React.FC = () => {
   const [rows, setRows] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [filter, setFilter] = React.useState('');
+  const [scanOpen, setScanOpen] = React.useState(false);
+  const [toast, setToast] = React.useState<{open: boolean; msg: string; type: 'success'|'error'}>({ open: false, msg: '', type: 'success' });
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const devRes = await api.get<Device[]>('/api/v1/devices/');
-      const devices = devRes.data;
-
-      const statuses = await Promise.all(
-        devices.map(async (d) => {
-          try {
-            const s = await api.get<CacheStatus>(
-              `/api/v1/f5/cache/status?device_id=${d.id}`,
-            );
-            return {
-              id: d.id,
-              hostname: d.hostname,
-              ...s.data,
-            } as Row;
-          } catch {
-            return {
-              id: d.id,
-              hostname: d.hostname,
-              device_id: d.id,
-              profiles_count: 0,
-              vips_count: 0,
-              links_count: 0,
-              last_updated: null,
-            } as Row;
-          }
-        }),
-      );
-
-      setRows(statuses);
+      const res = await api.get<OverviewItem[]>('/vips/overview');
+      const mapped: Row[] = res.data.map((r) => ({ ...r, id: r.device_id }));
+      setRows(mapped);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  React.useEffect(() => {
-    load();
-  }, [load]);
+  React.useEffect(() => { load(); }, [load]);
 
   const filtered = React.useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -101,7 +90,7 @@ const VipsOverviewPage: React.FC = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr auto' },
+            gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' },
             gap: 2,
             alignItems: 'center',
           }}
@@ -113,11 +102,12 @@ const VipsOverviewPage: React.FC = () => {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
-          <Box>
-            <Button variant="outlined" onClick={load} disabled={loading}>
-              {loading ? <CircularProgress size={22} /> : 'Refresh'}
-            </Button>
-          </Box>
+          <Button variant="outlined" onClick={load} disabled={loading}>
+            {loading ? <CircularProgress size={22} /> : 'Refresh'}
+          </Button>
+          <Button variant="contained" onClick={() => setScanOpen(true)}>
+            Scan
+          </Button>
         </Box>
       </Paper>
 
@@ -130,6 +120,30 @@ const VipsOverviewPage: React.FC = () => {
           disableRowSelectionOnClick
         />
       </Paper>
+
+      <ScanModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onLaunched={(ok) => {
+          setToast({ open: true, msg: ok ? 'Scan launched successfully' : 'Failed to launch scan', type: ok ? 'success' : 'error' });
+          if (ok) load();
+        }}
+      />
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast((t) => ({ ...t, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={toast.type}
+          onClose={() => setToast((t) => ({ ...t, open: false }))}
+          sx={{ width: '100%' }}
+        >
+          {toast.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

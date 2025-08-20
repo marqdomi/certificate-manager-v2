@@ -13,10 +13,11 @@ const DeviceSelector = ({ selectedDevices, setSelectedDevices }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        apiClient.get('/devices')
+        apiClient.get('/devices/')
             .then(res => {
-                // Filtramos para mostrar solo los dispositivos con un escaneo exitoso
-                const activeDevices = res.data.filter(d => d.last_scan_status === 'success');
+                const list = Array.isArray(res.data) ? res.data : [];
+                // Si existe last_scan_status, filtramos por éxito; si no, mostramos todos
+                const activeDevices = list.filter(d => !('last_scan_status' in d) || d.last_scan_status === 'success');
                 setOptions(activeDevices);
             })
             .catch(error => console.error("Failed to fetch devices for selector:", error))

@@ -12,6 +12,7 @@ app = FastAPI(title="Certificate Management Tool V2")
 
 app.include_router(f5_cache.router, prefix="/api/v1")
 app.include_router(f5_vips.router)
+app.include_router(f5_vips.router, prefix="/api/v1/vips", tags=["vips"])
 
 # Read CORS allowlist from env (comma-separated), default to local dev
 _cors_origins = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173").split(",") if o.strip()]

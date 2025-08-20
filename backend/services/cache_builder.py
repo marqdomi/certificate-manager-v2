@@ -96,13 +96,37 @@ def _fallback_build_from_device(db, dev, password):
             profile_fullpath=fullpath,
         ) or []
         for vip in vips:
-            key_v = (fullpath, vip)
+            # vip puede ser str (fullPath/name) o dict enriquecido
+            if isinstance(vip, str):
+                vip_name = vip
+                vip_full_path = None
+                vip_partition = None
+                dest = None
+                svc_port = None
+                en = None
+                st = None
+            else:
+                vip_name = vip.get("name") or vip.get("fullPath") or vip.get("vip") or "unknown"
+                vip_full_path = vip.get("fullPath")
+                vip_partition = vip.get("partition")
+                dest = vip.get("destination")
+                svc_port = vip.get("servicePort")
+                en = vip.get("enabled")
+                st = vip.get("status")
+
+            key_v = (fullpath, vip_name)
             if key_v in vips_seen:
                 continue
             rows_vips.append({
                 "device_id": dev.id,
                 "profile_full_path": fullpath,
-                "vip_name": vip,
+                "vip_name": vip_name,
+                "vip_full_path": vip_full_path,
+                "partition": vip_partition,
+                "destination": dest,
+                "service_port": svc_port,
+                "enabled": en,
+                "status": st,
                 "updated_at": now,
             })
             vips_seen.add(key_v)
@@ -151,51 +175,57 @@ def _fallback_build_from_device(db, dev, password):
 def refresh_device_profiles_cache(device_id: int, limit_certs: Optional[int] = None) -> dict:
     """
     Reconstruye el caché de asociaciones Cert ↔ Profiles ↔ VIPs para un device.
-    Estrategia: primero intenta iterar certificados locales; si no hay, usa fallback consultando perfiles SSL directamente del dispositivo.
+    Estrategia: todo el trabajo ocurre dentro de UNA sola transacción, y
+    NUNCA accedemos a la sesión antes de abrirla con `begin()` para evitar
+    "A transaction is already begun on this Session."
     """
     db = SessionLocal()
     try:
-        dev = db.get(Device, device_id)
-        if not dev:
-            return {"status": "error", "message": f"Device {device_id} not found"}
-        if not dev.username or not dev.encrypted_password:
-            return {"status": "error", "message": "Device without credentials"}
-        try:
-            password = decrypt_data(dev.encrypted_password)
-        except Exception as e:
-            return {"status": "error", "message": f"Cannot decrypt password: {e}"}
-
-        total_certs = 0
-        profiles_seen = set()   # (partition, name)
-        links_seen = set()      # (cert_name, fullpath)
-        vips_seen = set()       # (fullpath, vip)
-
-        rows_profiles = []
-        rows_links = []
-        rows_vips = []
-
         with db.begin():
             # Serialize per-device rebuild to avoid race conditions between workers
             _acquire_device_lock(db, device_id)
 
-            # Clear old cache for this device
+            # --- Carga de device y validaciones DENTRO de la transacción ---
+            dev = db.get(Device, device_id)
+            if not dev:
+                return {"status": "error", "message": f"Device {device_id} not found"}
+            if not dev.username or not dev.encrypted_password:
+                return {"status": "error", "message": "Device without credentials"}
+            try:
+                password = decrypt_data(dev.encrypted_password)
+            except Exception as e:
+                return {"status": "error", "message": f"Cannot decrypt password: {e}"}
+
+            # --- Limpieza previa del caché del device ---
             db.query(SslProfilesCache).filter(SslProfilesCache.device_id == device_id).delete(synchronize_session=False)
             db.query(SslProfileVipsCache).filter(SslProfileVipsCache.device_id == device_id).delete(synchronize_session=False)
             db.query(CertProfileLinksCache).filter(CertProfileLinksCache.device_id == device_id).delete(synchronize_session=False)
 
-            # Pull certificates indexed locally for this device
+            # --- Preparación de sets/buffers ---
+            total_certs = 0
+            profiles_seen = set()   # (partition, name)
+            links_seen = set()      # (cert_name, fullpath)
+            vips_seen = set()       # (fullpath, vip)
+
+            rows_profiles = []
+            rows_links = []
+            rows_vips = []
+
+            # --- Obtener certificados locales del device ---
             certs_q = db.query(Certificate).filter(Certificate.device_id == device_id).order_by(Certificate.name.asc())
             if limit_certs:
                 certs_q = certs_q.limit(int(limit_certs))
             certs: Iterable[Certificate] = certs_q.all()
 
+            # --- Fallback si no hay certificados indexados localmente ---
             if not certs:
-                # No local certs: build from device profiles directly (fallback)
+                # _fallback_build_from_device realiza upserts en la MISMA sesión/transacción
                 result = _fallback_build_from_device(db, dev, password)
-                # All writes were staged via upserts inside the same transaction
-                return result
+                return result  # se hace commit al salir del with
 
             now = datetime.utcnow()
+
+            # --- Recorrer certificados y construir relaciones ---
             for cert in certs:
                 total_certs += 1
                 usage = f5_service_logic.get_certificate_usage(
@@ -209,12 +239,12 @@ def refresh_device_profiles_cache(device_id: int, limit_certs: Optional[int] = N
                 profile_fullpaths = usage.get("profiles", []) or []
                 virtual_servers = usage.get("virtual_servers", []) or []
 
-                # Build VS map: profile_fullpath -> [vip names]
+                # Mapa de VS: profile_fullpath -> [vip names/dicts]
                 vs_by_profile = {}
                 for vs in virtual_servers:
                     vs_name = vs.get("name") or vs.get("fullPath") or "unknown"
                     for pf in (vs.get("profiles", []) or []):
-                        vs_by_profile.setdefault(pf, []).append(vs_name)
+                        vs_by_profile.setdefault(pf, []).append(vs_name if isinstance(vs, dict) else vs)
 
                 for pf in profile_fullpaths:
                     # Parse partition/name
@@ -225,6 +255,28 @@ def refresh_device_profiles_cache(device_id: int, limit_certs: Optional[int] = N
                         partition = parts[1] or "Common"
                         name = parts[2]
                     fullpath = _fullpath(partition, name)
+
+                    # --- NEW: fetch enriched VIPs for this profile to populate destination/port/etc. ---
+                    try:
+                        enriched_vips = f5_service_logic.get_ssl_profile_vips(
+                            hostname=dev.ip_address,
+                            username=dev.username,
+                            password=password,
+                            profile_fullpath=fullpath,
+                        ) or []
+                    except Exception:
+                        enriched_vips = []
+
+                    # Build lookup by name and fullPath
+                    vip_enriched_by_key: dict[str, dict] = {}
+                    for ev in enriched_vips:
+                        if isinstance(ev, dict):
+                            k1 = ev.get("name")
+                            k2 = ev.get("fullPath")
+                            if k1:
+                                vip_enriched_by_key.setdefault(k1, ev)
+                            if k2:
+                                vip_enriched_by_key.setdefault(k2, ev)
 
                     key_p = (partition, name)
                     if key_p not in profiles_seen:
@@ -248,18 +300,44 @@ def refresh_device_profiles_cache(device_id: int, limit_certs: Optional[int] = N
                         links_seen.add(key_l)
 
                     for vip in (vs_by_profile.get(pf, []) or []):
-                        key_v = (fullpath, vip)
+                        # vip can be str or dict; enrich when it's only a name
+                        if isinstance(vip, str):
+                            vip_name = vip
+                            # try enriched lookups by name or by fullPath variant
+                            ev = vip_enriched_by_key.get(vip_name) or vip_enriched_by_key.get(fullpath.rstrip("/") + "/" + vip_name)
+                            vip_full_path = (ev.get("fullPath") if isinstance(ev, dict) else None) if ev else None
+                            vip_partition = (ev.get("partition") if isinstance(ev, dict) else None) if ev else None
+                            dest = (ev.get("destination") if isinstance(ev, dict) else None) if ev else None
+                            svc_port = (ev.get("servicePort") if isinstance(ev, dict) else None) if ev else None
+                            en = (ev.get("enabled") if isinstance(ev, dict) else None) if ev else None
+                            st = (ev.get("status") if isinstance(ev, dict) else None) if ev else None
+                        else:
+                            vip_name = vip.get("name") or vip.get("fullPath") or vip.get("vip") or "unknown"
+                            vip_full_path = vip.get("fullPath")
+                            vip_partition = vip.get("partition")
+                            dest = vip.get("destination")
+                            svc_port = vip.get("servicePort")
+                            en = vip.get("enabled")
+                            st = vip.get("status")
+
+                        key_v = (fullpath, vip_name)
                         if key_v in vips_seen:
                             continue
                         rows_vips.append({
                             "device_id": device_id,
                             "profile_full_path": fullpath,
-                            "vip_name": vip,
+                            "vip_name": vip_name,
+                            "vip_full_path": vip_full_path,
+                            "partition": vip_partition,
+                            "destination": dest,
+                            "service_port": svc_port,
+                            "enabled": en,
+                            "status": st,
                             "updated_at": now,
                         })
                         vips_seen.add(key_v)
 
-            # Bulk upserts (ignore duplicates) within the same transaction
+            # --- Upserts masivos dentro de la transacción ---
             if rows_profiles:
                 db.execute(
                     pg_insert(SslProfilesCache)
@@ -291,13 +369,14 @@ def refresh_device_profiles_cache(device_id: int, limit_certs: Optional[int] = N
                     ])
                 )
 
-        return {
-            "status": "success",
-            "message": (
-                f"Cache built for device {dev.hostname}. certs={total_certs}, "
-                f"profiles={len(profiles_seen)}, links={len(links_seen)}, vips={len(vips_seen)}"
-            ),
-        }
+            # Commit implícito al salir del with
+            return {
+                "status": "success",
+                "message": (
+                    f"Cache built for device {dev.hostname}. certs={total_certs}, "
+                    f"profiles={len(profiles_seen)}, links={len(links_seen)}, vips={len(vips_seen)}"
+                ),
+            }
 
     except Exception as e:
         try:

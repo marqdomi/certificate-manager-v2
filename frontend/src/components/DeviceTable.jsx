@@ -3,6 +3,13 @@ import apiClient from '../services/api';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, Button, IconButton, Tooltip, useTheme } from '@mui/material'; // Importamos useTheme
 import DeleteIcon from '@mui/icons-material/Delete';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const DeviceTable = ({ onSetCredentials, onDeleteDevice, searchTerm, refreshTrigger, userRole }) => {
     
@@ -14,7 +21,7 @@ const DeviceTable = ({ onSetCredentials, onDeleteDevice, searchTerm, refreshTrig
     useEffect(() => {
         const handler = setTimeout(() => {
             setLoading(true);
-            let apiUrl = '/devices'; 
+            let apiUrl = '/devices/'; 
             if (searchTerm) {
                 apiUrl += `?search=${encodeURIComponent(searchTerm)}`;
             }
@@ -129,10 +136,31 @@ const DeviceTable = ({ onSetCredentials, onDeleteDevice, searchTerm, refreshTrig
             },
         },
         {
-            field: 'last_scan_timestamp',
-            headerName: 'Last Scan Time',
-            width: 200,
-            valueGetter: (value) => (value ? new Date(value).toLocaleString() : 'N/A'),
+            field: 'last_sync',
+            headerName: 'Last Sync',
+            width: 240,
+            sortable: true,
+            renderCell: (params) => {
+                const raw = params?.row?.last_sync ?? params?.row?.last_scan_timestamp ?? null;
+                if (!raw) {
+                    return <span>N/A</span>;
+                }
+                const d = dayjs.utc(raw).tz(dayjs.tz.guess());
+                const absolute = d.isValid() ? d.format('YYYY-MM-DD HH:mm') : 'N/A';
+                const relative = d.isValid() ? d.fromNow() : '';
+                const title = d.isValid() ? d.toISOString() : 'No sync timestamp';
+                return (
+                    <Tooltip title={title} arrow>
+                        <span>{absolute}{relative ? ` (${relative})` : ''}</span>
+                    </Tooltip>
+                );
+            },
+            valueGetter: (params) => params?.row?.last_sync ?? params?.row?.last_scan_timestamp ?? null,
+            sortComparator: (v1, v2) => {
+                const t1 = v1 ? new Date(v1).getTime() : 0;
+                const t2 = v2 ? new Date(v2).getTime() : 0;
+                return t1 - t2;
+            },
         },
     ];
 

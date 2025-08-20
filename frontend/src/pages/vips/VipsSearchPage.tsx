@@ -1,3 +1,9 @@
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import React from 'react';
 import {
   Box,
@@ -10,10 +16,27 @@ import {
   Typography,
   CircularProgress,
   Stack,
+  Tooltip,
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import api from '../../services/api';
 import { searchVips } from '../../api/vips';
+
+// Helper to display timestamps that may include microseconds, using local timezone with dayjs
+const fmtTimestamp = (v: string | null | undefined): string => {
+  if (!v) return '';
+  let s = String(v).replace(' ', 'T');
+  // Trim fractional seconds to milliseconds (JS Date only supports 3 digits)
+  s = s.replace(/(\.\d{3})\d+/, '$1');
+  try {
+    const d = dayjs(s).tz(dayjs.tz.guess());
+    // Check if valid date
+    if (!d.isValid()) return String(v);
+    return d.format('YYYY-MM-DD HH:mm:ss');
+  } catch {
+    return String(v);
+  }
+};
 
 type Device = { id: number; hostname: string };
 
@@ -26,10 +49,11 @@ interface SearchParams {
 
 interface VipRow {
   id: string;
-  device_id: number;
   device_hostname: string;
   vip_name: string;
   destination?: string | null;
+  destination_raw?: string | null;
+  partition?: string | null;
   enabled?: boolean | null;
   profiles_count: number;
   last_updated?: string | null;
@@ -37,27 +61,39 @@ interface VipRow {
 
 const columns: GridColDef<VipRow>[] = [
   { field: 'vip_name', headerName: 'VIP Name', flex: 1, minWidth: 220 },
+
+  { field: 'partition', headerName: 'Partition', width: 120 },
+
   {
     field: 'destination',
     headerName: 'Destination',
     flex: 1,
     minWidth: 180,
-    valueGetter: (params: { row: VipRow }) => params.row.destination ?? '',
+    renderCell: (params: GridRenderCellParams<VipRow, string | null>) => {
+      const value = params.row?.destination ?? '';
+      const raw = params.row?.destination_raw ?? '';
+      const showTooltip = !!raw && raw !== value;
+      return showTooltip ? (
+        <Tooltip title={`raw: ${raw}`} placement="top" arrow>
+          <span>{value}</span>
+        </Tooltip>
+      ) : (
+        <span>{value}</span>
+      );
+    },
+    valueGetter: (_value, row) => row?.destination ?? '',
   },
+
   { field: 'device_hostname', headerName: 'Device', flex: 1, minWidth: 240 },
-  {
-    field: 'enabled',
-    headerName: 'Enabled',
-    width: 110,
-    valueFormatter: (params: { value: boolean | null | undefined }) =>
-      params?.value === true ? 'Yes' : params?.value === false ? 'No' : '-',
-  },
+
   { field: 'profiles_count', headerName: '# Profiles', width: 120 },
+
   {
     field: 'last_updated',
     headerName: 'Last Sync',
-    width: 180,
-    valueGetter: (params: { row: VipRow }) => params.row.last_updated ?? '',
+    width: 200,
+    valueGetter: (_value, row) => row?.last_updated ?? '',
+    valueFormatter: (value) => fmtTimestamp(value as string | null | undefined),
   },
 ];
 
@@ -69,7 +105,7 @@ const VipsSearchPage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
 
   const loadDevices = React.useCallback(async () => {
     try {
-      const res = await api.get('/api/v1/devices/');
+      const res = await api.get('/devices/');
       setDevices(res.data);
     } catch {
       setDevices([]);
@@ -84,16 +120,31 @@ const VipsSearchPage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
     setLoading(true);
     try {
       const data = await searchVips(params);
-      const mapped: VipRow[] = data.map((r: any) => ({
-        id: `${r.device.id}:${r.vip_name}`,
-        device_id: r.device.id,
-        device_hostname: r.device.hostname,
-        vip_name: r.vip_name,
-        destination: r.destination ?? null,
-        enabled: typeof r.enabled === 'boolean' ? r.enabled : null,
-        profiles_count: r.profiles_count ?? 0,
-        last_updated: r.last_updated ?? null,
-      }));
+      const mapped: VipRow[] = data.map((r: any) => {
+        const destination =
+          r.destination ||
+          (r.ip && r.service_port ? `${r.ip}:${r.service_port}` : r.destination_raw || '');
+        const enabled =
+          typeof r.enabled === 'boolean'
+            ? r.enabled
+            : (r.status ?? '').toString().toLowerCase() === 'enabled'
+              ? true
+              : (r.status ?? '').toString().toLowerCase() === 'disabled'
+                ? false
+                : null;
+        const last_updated = r.last_sync || r.updated_at || r.last_updated || null;
+
+        return {
+          id: `${r.device}:${r.vip_name}`,
+          device_hostname: r.device,
+          vip_name: r.vip_name,
+          destination,
+          destination_raw: r.destination_raw ?? null,
+          partition: r.partition ?? (typeof r.vip_full_path === 'string' && r.vip_full_path.startsWith('/') ? (r.vip_full_path.split('/')[1] || null) : null),
+          profiles_count: r.profiles ?? 0,
+          last_updated,
+        };
+      });
       setRows(mapped);
     } catch {
       setRows([]);

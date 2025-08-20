@@ -1,5 +1,3 @@
-
-// frontend/src/pages/vips/VipsDashboard.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box, Typography, TextField, IconButton, Tooltip, Paper,
@@ -9,7 +7,23 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SyncIcon from '@mui/icons-material/Sync';
-import { fetchDevices, fetchCacheStatus, triggerCacheRefresh, type Device, type CacheStatus } from '../../api/devices';
+import api from '../../services/api';
+
+// Tipos locales para este componente
+export type Device = {
+  id: number;
+  hostname: string;
+  ip_address?: string;
+  site?: string | null;
+};
+
+export type CacheStatus = {
+  device_id: number;
+  profiles_count: number;
+  vips_count: number;
+  links_count: number;
+  last_updated: string | null;
+};
 
 type Row = {
   device: Device;
@@ -28,8 +42,14 @@ const VipsDashboard: React.FC = () => {
   // load devices once
   useEffect(() => {
     let cancelled = false;
-    fetchDevices()
-      .then(d => { if (!cancelled){ setDevices(d); setRows(d.map(dev => ({ device: dev, loading: true }))); } })
+    api.get<Device[]>('/devices/')
+      .then(res => {
+        if (!cancelled) {
+          const d = res.data;
+          setDevices(d);
+          setRows(d.map(dev => ({ device: dev, loading: true })));
+        }
+      })
       .catch(e => setToast({open:true,msg:String(e),sev:'error'}));
     return () => { cancelled = true; };
   }, []);
@@ -41,7 +61,7 @@ const VipsDashboard: React.FC = () => {
       const next: Row[] = [];
       for (const dev of devices) {
         try {
-          const st = await fetchCacheStatus(dev.id);
+          const { data: st } = await api.get<CacheStatus>('/f5/cache/status', { params: { device_id: dev.id } });
           if (cancelled) return;
           next.push({ device: dev, status: st, loading: false });
         } catch (e:any) {
@@ -66,7 +86,7 @@ const VipsDashboard: React.FC = () => {
   const handleRescanOne = async (id: number) => {
     try {
       setBusy(true);
-      await triggerCacheRefresh([id]);
+      await api.post('/f5/cache/refresh', { device_ids: [id], full_resync: false });
       setToast({open:true, msg:'Refresh encolado', sev:'success'});
     } catch (e:any) {
       setToast({open:true, msg:String(e), sev:'error'});
@@ -79,7 +99,7 @@ const VipsDashboard: React.FC = () => {
     try {
       setBusy(true);
       const ids = filtered.map(r => r.device.id);
-      await triggerCacheRefresh(ids);
+      await api.post('/f5/cache/refresh', { device_ids: ids, full_resync: false });
       setToast({open:true, msg:`Refresh encolado para ${ids.length} device(s)`, sev:'success'});
     } catch (e:any) {
       setToast({open:true, msg:String(e), sev:'error'});

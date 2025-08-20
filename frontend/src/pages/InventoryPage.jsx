@@ -18,7 +18,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close'; 
 
 // --- (Imports de componentes no cambian) ---
-import apiClient from '../services/api';
+import apiClient, { getImpactPreview, deleteCertificate } from '../services/api';
 import CertificateTable from '../components/CertificateTable';
 import RenewalChoiceDialog from '../components/RenewalChoiceDialog';
 import CertificateUsageDetail from '../components/CertificateUsageDetail';
@@ -73,7 +73,7 @@ function InventoryPage() {
     };
   
   const fetchData = () => {
-    apiClient.get('/certificates')
+    apiClient.get('/certificates/')
       .then(response => {
         setAllCerts(response.data);
       })
@@ -148,29 +148,50 @@ function InventoryPage() {
     setConfirmOpen(true);      // Abrimos nuestro diálogo personalizado
   };
 
-  const handleConfirmDelete = () => {
-    setConfirmOpen(false); // Cerramos el diálogo de confirmación
+  const handleConfirmDelete = async () => {
+    setConfirmOpen(false);
     if (!certToDeleteId) return;
 
-    setActionLoading(true);
-    setActiveActionCertId(certToDeleteId);
-      
-    apiClient.delete(`/certificates/${certToDeleteId}`)
-      .then(() => {
-        setNotification({ open: true, message: 'Certificate deleted successfully. Refreshing list...', severity: 'success' });
-        setTimeout(() => {
-          fetchData();
-          setActionLoading(false);
-          setActiveActionCertId(null);
-          setCertToDeleteId(null); // Limpiamos el ID
-        }, 1500);
-      })
-      .catch(err => {
-        setNotification({ open: true, message: `Failed to delete certificate: ${err.response?.data?.detail || 'Unknown error'}.`, severity: 'error' });
+    const cert = allCerts.find((c) => c.id === certToDeleteId);
+    if (!cert) {
+      setNotification({ open: true, message: 'Certificate not found in current view.', severity: 'error' });
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setActiveActionCertId(certToDeleteId);
+
+      // 1) Preview en caché (no golpea F5)
+      const preview = await getImpactPreview(cert.device_id, cert.name);
+      if (!preview.can_delete_safely) {
+        const msg = preview.profiles_using_cert > 0
+          ? `Cannot delete: referenced by ${preview.profiles_using_cert} profile(s) and ${preview.vip_refs} VIP(s).`
+          : `Cannot delete: referenced by ${preview.vip_refs} VIP(s).`;
+        setNotification({ open: true, message: msg, severity: 'warning' });
         setActionLoading(false);
         setActiveActionCertId(null);
-        setCertToDeleteId(null); // Limpiamos el ID
-      });
+        setCertToDeleteId(null);
+        return;
+      }
+
+      // 2) Borrado definitivo
+      console.debug('[delete] calling', 'certificates/' + certToDeleteId, 'baseURL=', apiClient.defaults?.baseURL);
+      await deleteCertificate(certToDeleteId);
+      setNotification({ open: true, message: 'Certificate deleted successfully. Refreshing list...', severity: 'success' });
+      setTimeout(() => {
+        fetchData();
+        setActionLoading(false);
+        setActiveActionCertId(null);
+        setCertToDeleteId(null);
+      }, 800);
+    } catch (err) {
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+      setNotification({ open: true, message: `Failed to delete certificate: ${detail}.`, severity: 'error' });
+      setActionLoading(false);
+      setActiveActionCertId(null);
+      setCertToDeleteId(null);
+    }
   };
 
   // --- RENDERIZADO (Se mantiene el nuevo diseño) ---

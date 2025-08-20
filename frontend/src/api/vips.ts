@@ -8,6 +8,6 @@ export interface SearchVipsParams {
 }
 
 export async function searchVips(params: SearchVipsParams) {
-  const res = await api.get('/api/v1/vips/search', { params: { ...params } });
+  const res = await api.get('/vips/search', { params });
   return res.data;
 }

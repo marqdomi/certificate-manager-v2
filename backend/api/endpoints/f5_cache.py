@@ -1,4 +1,3 @@
-# backend/api/endpoints/f5_cache.py
 from __future__ import annotations
 
 from datetime import datetime
@@ -40,16 +39,13 @@ def cached_impact_preview(
     if not dev:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    # Traer profiles linkeados al certificado
+    # Traer profiles linkeados al certificado (desde caché)
     links = (
         db.query(CertProfileLinksCache)
           .filter(CertProfileLinksCache.device_id == device_id,
                   CertProfileLinksCache.cert_name == cert_name)
           .all()
     )
-    if not links:
-        # 404 para que el frontend muestre “no cache” y, si quiere, caiga al live o al endpoint legacy
-        raise HTTPException(status_code=404, detail="No cached data for this cert/device")
 
     def _normalize_fp(fp: str) -> str:
         fp = (fp or "").strip()
@@ -57,10 +53,28 @@ def cached_impact_preview(
             return fp
         if not fp.startswith("/"):
             fp = "/" + fp
-        # collapse multiple slashes
         while "//" in fp:
             fp = fp.replace("//", "/")
         return fp
+
+    # Si no hay vínculos, responder 200 con impacto cero (permite borrar con seguridad)
+    if not links:
+        return {
+            "device": {
+                "id": dev.id,
+                "hostname": dev.hostname,
+                "ip_address": dev.ip_address,
+                "site": dev.site,
+            },
+            "profiles": [],
+            # Campos de resumen para la UI
+            "profiles_using_cert": 0,
+            "vip_refs": 0,
+            "can_delete_safely": True,
+            "details": [],
+            "error": None,
+        }
+
     fullpaths = [_normalize_fp(l.profile_full_path) for l in links]
 
     # Resolver info de profile (partition/name/context)
@@ -72,8 +86,7 @@ def cached_impact_preview(
     info_by_full = {}
     info_by_full_lc = {}
     for r in profiles_rows:
-        key = f"/{r.partition}/{r.profile_name}"
-        key = key.replace("//", "/")
+        key = f"/{r.partition}/{r.profile_name}".replace("//", "/")
         info_by_full[key] = r
         info_by_full_lc[key.lower()] = r
 
@@ -92,6 +105,7 @@ def cached_impact_preview(
         vips_map_lc.setdefault(k.lower(), set()).add(v.vip_name)
 
     results = []
+    details = []
     for fp in fullpaths:
         nfp = _normalize_fp(fp)
         info = info_by_full.get(nfp) or info_by_full_lc.get(nfp.lower())
@@ -116,6 +130,14 @@ def cached_impact_preview(
                 "vips": vip_list,
                 "profile_full_path": nfp,
             })
+        # detalle para UI (hasta 25 elementos se truncarán en frontend si se desea)
+        for vip in vip_list:
+            details.append({
+                "profile": nfp,
+                "vip": vip,
+            })
+
+    vip_count = sum(len(r.get("vips", [])) for r in results)
 
     return {
         "device": {
@@ -125,6 +147,10 @@ def cached_impact_preview(
             "site": dev.site,
         },
         "profiles": results,
+        "profiles_using_cert": len(results),
+        "vip_refs": vip_count,
+        "can_delete_safely": (len(results) == 0 and vip_count == 0),
+        "details": details[:25],
         "error": None,
     }
 
