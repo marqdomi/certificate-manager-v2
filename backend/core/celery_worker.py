@@ -81,6 +81,7 @@ celery_app.conf.beat_schedule = {
     }
 }
 
+
 # Attempt to import and register cache refresh tasks (optional)
 try:
     from services.cache_builder import (
@@ -95,10 +96,23 @@ except Exception:
     # Cache builder not present; skip without failing startup
     pass
 
+# Attempt to import and register device facts refresh tasks (explicit)
+try:
+    from services import f5_service_tasks as _facts_tasks  # wrappers over services.f5_facts
+    # Register with stable names used by API
+    if "devices.refresh_facts" not in celery_app.tasks:
+        celery_app.task(name="devices.refresh_facts")(_facts_tasks.refresh_device_facts_task)
+    if "devices.refresh_facts_all" not in celery_app.tasks:
+        celery_app.task(name="devices.refresh_facts_all")(_facts_tasks.refresh_device_facts_all_task)
+except Exception:
+    # Facts task module may be absent in some builds; skip without failing startup
+    pass
+
 # --- Cache refresh task (explicit name expected by callers) ---
 @celery_app.task(name="f5_cache.refresh_profiles_cache_task")
 def refresh_profiles_cache_task(device_ids: list[int] | None = None,
-                                full_resync: bool = False):
+                                full_resync: bool = False,
+                                primaries_only: bool = False):
     """
     Refresh the local F5 profiles cache tables.
 
@@ -157,7 +171,7 @@ def refresh_profiles_cache_task(device_ids: list[int] | None = None,
         if _cache_refresh_all is None:
             raise RuntimeError("cache_builder.task_refresh_all_profiles no disponible")
         try:
-            res_all = _cache_refresh_all(full_resync=full_resync)  # type: ignore[misc]
+            res_all = _cache_refresh_all(primaries_only=primaries_only)  # type: ignore[misc]
         except TypeError:
             res_all = _cache_refresh_all()  # type: ignore[misc]
         return {"status": "success", "mode": "fallback/cache_builder/all", "result": res_all}

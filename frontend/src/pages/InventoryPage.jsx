@@ -58,6 +58,9 @@ function InventoryPage() {
   // --- New orphanOnly state ---
   const [orphanOnly, setOrphanOnly] = useState(false);
   const [noProfilesOnly, setNoProfilesOnly] = useState(false);
+  // View controls for cluster reduction
+  const [onlyPrimaries, setOnlyPrimaries] = useState(true);
+  const [dedupe, setDedupe] = useState(true);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -73,7 +76,11 @@ function InventoryPage() {
     };
   
   const fetchData = () => {
-    apiClient.get('/certificates/')
+    const params = new URLSearchParams();
+    if (onlyPrimaries) params.set('primaries_only', '1');
+    if (dedupe) params.set('dedupe', '1');
+
+    apiClient.get(`/certificates/?${params.toString()}`)
       .then(response => {
         setAllCerts(response.data);
       })
@@ -93,7 +100,7 @@ function InventoryPage() {
       navigate(location.pathname, { replace: true, state: {} }); 
     }
     fetchData();
-  }, []); 
+  }, [onlyPrimaries, dedupe]);
 
   const displayCerts = useMemo(() => {
     let dataToFilter = [...allCerts];
@@ -249,6 +256,20 @@ function InventoryPage() {
                 color={orphanOnly ? 'warning' : 'default'}
                 label="Only orphans"
                 onClick={() => setOrphanOnly(!orphanOnly)}
+              />
+              <Chip
+                size="small"
+                variant={onlyPrimaries ? 'filled' : 'outlined'}
+                color={onlyPrimaries ? 'primary' : 'default'}
+                label="Cluster primaries"
+                onClick={() => setOnlyPrimaries(!onlyPrimaries)}
+              />
+              <Chip
+                size="small"
+                variant={dedupe ? 'filled' : 'outlined'}
+                color={dedupe ? 'info' : 'default'}
+                label="De-duplicate"
+                onClick={() => setDedupe(!dedupe)}
               />
             </Box>
           </Box>

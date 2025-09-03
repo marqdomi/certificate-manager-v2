@@ -1,5 +1,3 @@
-
-
 // frontend/src/components/wizard/UploadCertStep.jsx
 import React, { useState } from 'react';
 import { Box, Tabs, Tab, TextField, Button, Alert, Typography } from '@mui/material';
@@ -93,14 +91,38 @@ export default function UploadCertStep({ onValidated, defaultMode = 'pfx' }) {
       </Box>
 
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-      {result && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          <div><strong>CN:</strong> {result.parsed.cn || 'N/A'}</div>
-          <div><strong>Not After:</strong> {result.parsed.not_after || 'N/A'}</div>
-          <div><strong>SAN:</strong> {Array.isArray(result.parsed.san) ? result.parsed.san.slice(0, 5).join(', ') : 'N/A'}{Array.isArray(result.parsed.san) && result.parsed.san.length > 5 ? ' …' : ''}</div>
-          {result.warnings?.length ? <div style={{ marginTop: 8 }}><strong>Warnings:</strong> {result.warnings.join(' | ')}</div> : null}
-        </Alert>
-      )}
+      {result && (() => {
+        const parsed = result.parsed || {};
+        // Try multiple shapes the backend might return
+        let sanList = [];
+        if (Array.isArray(parsed.san)) sanList = parsed.san;
+        else if (Array.isArray(parsed.subjectAltName)) sanList = parsed.subjectAltName;
+        else if (Array.isArray(result.info?.san)) sanList = result.info.san;
+        else if (Array.isArray(result.san)) sanList = result.san;
+
+        return (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            <div><strong>CN:</strong> {parsed.cn || 'N/A'}</div>
+            <div><strong>Not After:</strong> {parsed.not_after || 'N/A'}</div>
+            <div>
+              <strong>SAN:</strong>{' '}
+              {sanList.length ? (
+                <>
+                  {sanList.slice(0, 5).join(', ')}
+                  {sanList.length > 5 ? ' …' : ''}
+                </>
+              ) : (
+                'N/A'
+              )}
+            </div>
+            {result.warnings?.length ? (
+              <div style={{ marginTop: 8 }}>
+                <strong>Warnings:</strong> {result.warnings.join(' | ')}
+              </div>
+            ) : null}
+          </Alert>
+        );
+      })()}
     </Box>
   );
 }

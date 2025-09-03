@@ -1,5 +1,3 @@
-# backend/api/endpoints/f5_scans.py
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from sqlalchemy.orm import Session
 from db.base import SessionLocal
@@ -7,6 +5,9 @@ from db.models import Device
 from services.encryption_service import decrypt_data
 from services import f5_service_logic
 from typing import Optional, List
+
+import os
+from requests.exceptions import ConnectionError as RequestsConnectionError, ReadTimeout as RequestsReadTimeout
 
 router = APIRouter(prefix="/f5", tags=["f5"])
 
@@ -81,64 +82,85 @@ def impact_preview(
             "error": f"Cannot decrypt password: {e}"
         }
 
-    # --- 2) Llamada live al F5 ---
-    try:
-        usage = f5_service_logic.get_certificate_usage(
-            hostname=device.ip_address,
-            username=device.username,
-            password=password,
-            cert_name=cert_name,
-            partition="Common"
-        )
+    # --- 2) Llamada live al F5 (con fallback IP/hostname controlado por env) ---
+    # Fallback control:
+    #   F5_CONNECT_FALLBACK=1    -> probar host alterno si falla conexión
+    #   F5_CONNECT_ORDER=hostname_first -> intenta hostname y luego IP
+    #
+    # Siempre preferimos IP por defecto (robusto cuando DNS falla).
+    try_hosts = []
+    order = (os.getenv("F5_CONNECT_ORDER") or "").lower().strip()
+    if order == "hostname_first":
+        try_hosts = [device.hostname, device.ip_address]
+    else:
+        try_hosts = [device.ip_address, device.hostname]
 
-        profiles = []
-        profile_fullpaths = usage.get("profiles", []) if usage else []
-        virtual_servers = usage.get("virtual_servers", []) if usage else []
+    enable_fallback = (os.getenv("F5_CONNECT_FALLBACK") or "1").strip() not in ("0", "false", "False")
 
-        for pf in profile_fullpaths:
-            # Parse partition and name from fullPath (e.g. /Common/profilename)
-            parts = pf.split("/")
-            partition = "Common"
-            name = pf
-            if len(parts) >= 3:
-                partition = parts[1] or "Common"
-                name = parts[2]
-            context = "clientside"
-            # Find VS that reference this profile
-            vips = []
-            for vs in virtual_servers:
-                if "profiles" in vs and pf in vs["profiles"]:
-                    vips.append(vs["name"])
-            profiles.append({
-                "name": name,
-                "partition": partition,
-                "context": context,
-                "vips": vips
-            })
+    last_err = None
+    usage = None
 
-        return {
-            "device": {
-                "id": device.id,
-                "hostname": device.hostname,
-                "ip_address": device.ip_address,
-                "site": device.site,
-            },
-            "profiles": profiles,
-            "error": None
-        }
+    for idx, host_candidate in enumerate(try_hosts):
+        if not host_candidate:
+            continue
+        try:
+            usage = f5_service_logic.get_certificate_usage(
+                hostname=host_candidate,
+                username=device.username,
+                password=password,
+                cert_name=cert_name,
+                partition="Common"
+            )
+            # Éxito: dejamos de intentar siguientes
+            break
+        except (RequestsConnectionError, RequestsReadTimeout) as e:
+            last_err = e
+            # si no hay fallback o ya probamos el último, salimos
+            if not enable_fallback or idx == len(try_hosts) - 1:
+                raise
+            # si hay fallback, seguimos al siguiente host
+            continue
+        except Exception as e:
+            # Errores lógicos (auth/SSL/HTTP) no intentan fallback; devolvemos el error
+            last_err = e
+            raise
 
-    except Exception as e:
-        # No 500 duro: devolvemos error en payload para que el wizard lo visualice como “AUTH/TIMEOUT/SSL/etc.”
-        return {
-            "device": {
-                "id": device.id,
-                "hostname": device.hostname,
-                "ip_address": device.ip_address,
-                "site": device.site,
-            },
-            "profiles": [],
-            "error": str(e)
-        }
+    # Si llegamos aquí y no hubo excepción, devolvemos la respuesta transformada
+    profiles = []
+    profile_fullpaths = usage.get("profiles", []) if usage else []
+    virtual_servers = usage.get("virtual_servers", []) if usage else []
+
+    for pf in profile_fullpaths:
+        # Parse partition and name from fullPath (e.g. /Common/profilename)
+        parts = pf.split("/")
+        partition = "Common"
+        name = pf
+        if len(parts) >= 3:
+            partition = parts[1] or "Common"
+            name = parts[2]
+        context = "clientside"
+        # Find VS that reference this profile
+        vips = []
+        for vs in virtual_servers:
+            if "profiles" in vs and pf in vs["profiles"]:
+                vips.append(vs["name"])
+        profiles.append({
+            "name": name,
+            "partition": partition,
+            "context": context,
+            "vips": vips
+        })
+
+    return {
+        "device": {
+            "id": device.id,
+            "hostname": device.hostname,
+            "ip_address": device.ip_address,
+            "site": device.site,
+        },
+        "profiles": profiles,
+        "error": None
+    }
 
 
 # --- New endpoint: queue_scan_all ---

@@ -315,7 +315,11 @@ function ImpactPreviewStep({
   return (
     <Box sx={{ mt: 1 }}>
       <Typography variant="body2" sx={{ mb: 1 }}>
-        Live lookup on device <strong>{device?.hostname || `#${device?.id}`}</strong>
+        Live lookup on device{" "}
+        <strong>
+          {device?.hostname || `#${device?.id}`}
+          {device?.ip_address ? ` — ${device.ip_address}` : ""}
+        </strong>
       </Typography>
 
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>

@@ -42,6 +42,8 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       __API_BASE__: JSON.stringify(apiBase),
+      __APP_NAME__: JSON.stringify(env.VITE_APP_NAME || 'Certificate Management Tool'),
+      __APP_VERSION__: JSON.stringify(env.VITE_APP_VERSION || '2.0.0'),
     },
   }
 })

@@ -1,75 +1,108 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, Typography, Divider, Table, TableHead, TableRow, TableCell, TableBody, Chip, List, ListItem } from '@mui/material';
+
+// Helpers to render possibly-object items coming from the plan API
+function labelForProfile(p) {
+  if (p == null) return '—';
+  if (typeof p === 'string' || typeof p === 'number') return String(p);
+  if (typeof p === 'object') {
+    const name = p.name || p.profile || p.id || 'Profile';
+    const parts = [name];
+    if (p.partition) parts.push(p.partition);
+    if (p.context) parts.push(p.context);
+    // If the backend includes VIPs, show a short hint like "+3 vips"
+    if (Array.isArray(p.vips) && p.vips.length) parts.push(`+${p.vips.length} vips`);
+    return parts.join(' / ');
+  }
+  return String(p);
+}
+
+function textForAction(a) {
+  if (a == null) return '—';
+  if (typeof a === 'string' || typeof a === 'number') return String(a);
+  if (typeof a === 'object') {
+    // Try to build a concise sentence
+    const t = a.type || a.action || 'action';
+    const what = a.name || a.target || a.profile || '';
+    const extra = a.detail || a.reason || '';
+    const pieces = [t, what, extra].filter(Boolean);
+    return pieces.join(' — ');
+  }
+  return String(a);
+}
 
 export default function PlanPreview({ plan }) {
   if (!plan) return null;
+
+  // Some backends send `{ plan: {...} }`, others give the plan directly
+  const p = plan.plan ? plan.plan : plan;
 
   return (
     <Box>
       <Typography variant="h6" gutterBottom>Plan Preview</Typography>
 
-      {plan.device && (
-        <Typography><strong>Device:</strong> {plan.device}</Typography>
+      {p.device && (
+        <Typography><strong>Device:</strong> {String(p.device)}</Typography>
       )}
-      {plan.device_ip && (
-        <Typography><strong>Device IP:</strong> {plan.device_ip}</Typography>
+      {p.device_ip && (
+        <Typography><strong>Device IP:</strong> {String(p.device_ip)}</Typography>
       )}
-      {plan.old_cert_name && (
-        <Typography><strong>Old Certificate Name:</strong> {plan.old_cert_name}</Typography>
+      {p.old_cert_name && (
+        <Typography><strong>Old Certificate Name:</strong> {String(p.old_cert_name)}</Typography>
       )}
-      {plan.mode && (
-        <Typography><strong>Mode:</strong> {plan.mode}</Typography>
+      {p.mode && (
+        <Typography><strong>Mode:</strong> {String(p.mode)}</Typography>
       )}
-      {plan.derived_new_object && (
-        <Typography><strong>Derived New Object:</strong> {plan.derived_new_object}</Typography>
+      {p.derived_new_object && (
+        <Typography><strong>Derived New Object:</strong> {String(p.derived_new_object)}</Typography>
       )}
-      {plan.chain_name && (
-        <Typography><strong>Chain Name:</strong> {plan.chain_name}</Typography>
+      {p.chain_name && (
+        <Typography><strong>Chain Name:</strong> {String(p.chain_name)}</Typography>
       )}
-      {typeof plan.install_chain_from_pfx !== 'undefined' && (
-        <Typography><strong>Install Chain From PFX:</strong> {String(plan.install_chain_from_pfx)}</Typography>
+      {typeof p.install_chain_from_pfx !== 'undefined' && (
+        <Typography><strong>Install Chain From PFX:</strong> {String(!!p.install_chain_from_pfx)}</Typography>
       )}
-      {typeof plan.update_profiles !== 'undefined' && (
-        <Typography><strong>Update Profiles:</strong> {String(plan.update_profiles)}</Typography>
+      {typeof p.update_profiles !== 'undefined' && (
+        <Typography><strong>Update Profiles:</strong> {String(!!p.update_profiles)}</Typography>
       )}
 
-      {plan.actions && plan.actions.length > 0 && (
+      {Array.isArray(p.actions) && p.actions.length > 0 && (
         <>
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1">Actions</Typography>
           <List dense>
-            {plan.actions.map((action, idx) => (
-              <ListItem key={idx}>{action}</ListItem>
+            {p.actions.map((a, idx) => (
+              <ListItem key={idx}>{textForAction(a)}</ListItem>
             ))}
           </List>
         </>
       )}
 
-      {plan.profiles_detected && plan.profiles_detected.length > 0 && (
+      {Array.isArray(p.profiles_detected) && p.profiles_detected.length > 0 && (
         <>
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1">Profiles Detected</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {plan.profiles_detected.map((profile, idx) => (
-              <Chip key={idx} label={profile} />
+            {p.profiles_detected.map((pf, idx) => (
+              <Chip key={idx} label={labelForProfile(pf)} />
             ))}
           </Box>
         </>
       )}
 
-      {plan.profiles_to_update && plan.profiles_to_update.length > 0 && (
+      {Array.isArray(p.profiles_to_update) && p.profiles_to_update.length > 0 && (
         <>
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1">Profiles to Update</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {plan.profiles_to_update.map((profile, idx) => (
-              <Chip key={idx} label={profile} color="primary" />
+            {p.profiles_to_update.map((pf, idx) => (
+              <Chip key={idx} label={labelForProfile(pf)} color="primary" />
             ))}
           </Box>
         </>
       )}
 
-      {plan.virtual_servers && plan.virtual_servers.length > 0 && (
+      {Array.isArray(p.virtual_servers) && p.virtual_servers.length > 0 && (
         <>
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1" gutterBottom>Virtual Servers</Typography>
@@ -82,11 +115,11 @@ export default function PlanPreview({ plan }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {plan.virtual_servers.map((vs, idx) => (
+              {p.virtual_servers.map((vs, idx) => (
                 <TableRow key={idx}>
-                  <TableCell>{vs.name || '—'}</TableCell>
-                  <TableCell>{vs.destination || '—'}</TableCell>
-                  <TableCell>{vs.partition || '—'}</TableCell>
+                  <TableCell>{(vs && (vs.name || vs.id)) ? String(vs.name || vs.id) : '—'}</TableCell>
+                  <TableCell>{vs && vs.destination ? String(vs.destination) : '—'}</TableCell>
+                  <TableCell>{vs && vs.partition ? String(vs.partition) : '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -41,6 +41,8 @@ def get_certificates(
     db: Session = Depends(get_db),
     expires_in_days: int | None = Query(default=None, description="Filter certificates expiring within this many days"),
     search: str | None = Query(default=None, description="Search term for CN or cert name"),
+    primaries_only: bool = Query(default=False, description="If true, return only Standalone devices and cluster primaries"),
+    dedupe: bool = Query(default=False, description="If true, de-duplicate by (cluster_key, cert_name) keeping cluster primary"),
     current_user: User = Depends(auth_service.get_current_active_user) # Requiere login
 ):
     # (La lógica de esta función se queda igual, ya era correcta)
@@ -50,6 +52,16 @@ def get_certificates(
     ).where(
         RenewalRequest.status == RenewalStatus.CSR_GENERATED
     ).group_by(RenewalRequest.original_certificate_id).subquery()
+
+    # --- DEVICE LOOKUP HELPER ---
+    def _is_standalone(dev: Device) -> bool:
+        if not dev:
+            return False
+        ha = (dev.ha_state or "").lower()
+        if ha == "standalone":
+            return True
+        # treat devices without cluster_key as standalone
+        return not (dev.cluster_key and dev.cluster_key.strip())
 
     RenewalAlias = aliased(RenewalRequest)
 
@@ -81,12 +93,60 @@ def get_certificates(
     query = query.order_by(Certificate.expiration_date.asc())
     results = db.execute(query).all()
 
+    # ---- Preload devices to allow filtering and dedupe without changing existing query ----
+    device_ids_all: set[int] = set()
+    for cert, _, _ in results:
+        if cert and cert.device_id:
+            device_ids_all.add(cert.device_id)
+
+    devices_by_id: dict[int, Device] = {}
+    if device_ids_all:
+        for d in db.query(Device).filter(Device.id.in_(device_ids_all)).all():
+            devices_by_id[d.id] = d
+
+    # Optionally filter to primaries_only (Standalone OR cluster primary)
+    filtered_rows = []
+    if primaries_only:
+        for cert, rid, rstatus in results:
+            dev = devices_by_id.get(cert.device_id) if cert else None
+            if not dev:
+                continue
+            if _is_standalone(dev) or bool(dev.is_primary_preferred):
+                filtered_rows.append((cert, rid, rstatus))
+    else:
+        filtered_rows = results
+
+    # Optionally de-duplicate within cluster by cert name
+    if dedupe:
+        # key: (cluster_key_or_empty, cert_name) -> pick best
+        best_by_key = {}
+        for cert, rid, rstatus in filtered_rows:
+            dev = devices_by_id.get(cert.device_id) if cert else None
+            if not dev:
+                continue
+            key = ((dev.cluster_key or "").strip(), cert.name)
+            # choose preferred: primary first, then newest last_scan_timestamp, then smallest device_id
+            score = (
+                0 if dev.is_primary_preferred else 1,
+                (dev.last_scan_timestamp or datetime.min),
+                -dev.id,  # larger id loses; we invert to keep deterministic
+            )
+            prev = best_by_key.get(key)
+            if not prev:
+                best_by_key[key] = (score, (cert, rid, rstatus))
+            else:
+                if score < prev[0]:
+                    best_by_key[key] = (score, (cert, rid, rstatus))
+        rows = [tpl for _, tpl in (v[1] for v in best_by_key.items())]
+    else:
+        rows = filtered_rows
+
     # --- USAGE STATE BATCH LOGIC ---
     # Build keys for all certs: (device_id, cert.name)
     keys = []
     device_ids = set()
     cert_names = set()
-    for cert, _, _ in results:
+    for cert, _, _ in rows:
         if cert and cert.device_id is not None and cert.name is not None:
             keys.append((cert.device_id, cert.name))
             device_ids.add(cert.device_id)
@@ -135,13 +195,18 @@ def get_certificates(
 
     # Build response certs
     response_certs = []
-    for cert, renewal_id, renewal_status in results:
+    for cert, renewal_id, renewal_status in rows:
         days_remaining = (cert.expiration_date - datetime.utcnow()).days if cert.expiration_date else None
         cert_data = cert.__dict__
         cert_data['days_remaining'] = days_remaining
         cert_data['renewal_id'] = renewal_id
         cert_data['renewal_status'] = renewal_status.name if renewal_status else None
         cert_data['device_id'] = cert.device_id
+        dev_obj = devices_by_id.get(cert.device_id)
+        if dev_obj:
+            cert_data['device_hostname'] = dev_obj.hostname
+            cert_data['cluster_key'] = dev_obj.cluster_key
+            cert_data['is_primary_preferred'] = bool(dev_obj.is_primary_preferred)
         # Set usage_state
         cert_data['usage_state'] = usage_state_by_key.get((cert.device_id, cert.name))
         response_certs.append(cert_data)

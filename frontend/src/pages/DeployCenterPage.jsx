@@ -212,7 +212,7 @@ function DeployCenterPage() {
                 </Alert>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Note: some F5 GUIs display "Version 2" while the certificate is actually X.509 v3 (ASN.1 index 0x2). Use this verification as the source of truth.
+                    Note: some F5 GUIs display "Version 1" or "Version 2" while the certificate is actually X.509 v3 (ASN.1 index 0x2). This post‑install check reads the object via tmsh and is the source of truth.
                   </Typography>
                   <Button variant="outlined" size="small" onClick={handleVerifyNow} disabled={verifyLoading}>
                     {verifyLoading ? 'Verifying…' : 'Verify now'}

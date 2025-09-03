@@ -29,6 +29,15 @@ interface Row extends OverviewItem {
   id: number; // alias of device_id for DataGrid
 }
 
+// Mínimo necesario desde /devices/ para decidir qué mostrar
+interface DeviceMin {
+  id: number;
+  active?: boolean;
+  ha_state?: string | null;
+  cluster_key?: string | null;
+  is_primary_preferred?: boolean | null;
+}
+
 const columns: GridColDef<Row>[] = [
   { field: 'hostname', headerName: 'Device', flex: 1, minWidth: 260 },
   { field: 'vips', headerName: 'VIPs', width: 100 },
@@ -58,14 +67,31 @@ const VipsOverviewPage: React.FC = () => {
   const [rows, setRows] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [filter, setFilter] = React.useState('');
+
+  // Nuevo: mapa de devices por id, para filtrar solo Standalone ACTIVE y MAIN de cluster
+  const [devicesById, setDevicesById] = React.useState<Record<number, DeviceMin>>({});
+
   const [scanOpen, setScanOpen] = React.useState(false);
   const [toast, setToast] = React.useState<{open: boolean; msg: string; type: 'success'|'error'}>({ open: false, msg: '', type: 'success' });
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<OverviewItem[]>('/vips/overview');
-      const mapped: Row[] = res.data.map((r) => ({ ...r, id: r.device_id }));
+      // Cargamos overview + devices en paralelo
+      const [overviewRes, devicesRes] = await Promise.all([
+        api.get<OverviewItem[]>('/vips/overview'),
+        api.get<DeviceMin[]>('/devices/'),
+      ]);
+
+      const mapped: Row[] = overviewRes.data.map((r) => ({ ...r, id: r.device_id }));
+
+      // Construimos mapa id -> device min
+      const dMap: Record<number, DeviceMin> = {};
+      for (const d of devicesRes.data) {
+        if (typeof d.id === 'number') dMap[d.id] = d;
+      }
+
+      setDevicesById(dMap);
       setRows(mapped);
     } finally {
       setLoading(false);
@@ -74,11 +100,32 @@ const VipsOverviewPage: React.FC = () => {
 
   React.useEffect(() => { load(); }, [load]);
 
-  const filtered = React.useMemo(() => {
+  // Decide si un device se debe mostrar (Standalone ACTIVE o MAIN del cluster)
+  const includeDevice = React.useCallback((dev?: DeviceMin) => {
+    if (!dev) return false;
+    if (dev.active === false) return false;
+
+    const ha = (dev.ha_state || '').toUpperCase().trim();
+    const inCluster = !!(dev.cluster_key && dev.cluster_key.trim() !== '');
+
+    if (inCluster) {
+      // Mostrar solo el "main" del cluster y que esté ACTIVE
+      return (!!dev.is_primary_preferred) && ha === 'ACTIVE';
+    }
+
+    // Standalone: si está ACTIVE o sin ha_state (algunos appliances no reportan HA)
+    return ha === 'ACTIVE' || ha === '';
+  }, []);
+
+  const rowsScoped = React.useMemo(() => {
+    // 1) aplicamos la regla de "solo activos / main"
+    const scoped = rows.filter((r) => includeDevice(devicesById[r.device_id]));
+
+    // 2) aplicamos filtro de texto por hostname
     const q = filter.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => r.hostname.toLowerCase().includes(q));
-  }, [rows, filter]);
+    if (!q) return scoped;
+    return scoped.filter((r) => r.hostname.toLowerCase().includes(q));
+  }, [rows, devicesById, filter, includeDevice]);
 
   return (
     <Box>
@@ -113,11 +160,12 @@ const VipsOverviewPage: React.FC = () => {
 
       <Paper sx={{ height: 560, p: 1 }}>
         <DataGrid
-          rows={filtered}
+          rows={rowsScoped}
           columns={columns}
           getRowId={(r) => r.id}
           density="compact"
           disableRowSelectionOnClick
+          loading={loading}
         />
       </Paper>
 

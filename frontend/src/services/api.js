@@ -105,8 +105,9 @@ export async function confirmDeployment(
 }
 
 export async function verifyInstalledCert(deviceId, objectName) {
-  const { data } = await apiClient.get(`/certificates/devices/${deviceId}/verify/${objectName}`)
-  return data
+  const params = { device_id: deviceId, cert_name: objectName };
+  const { data } = await apiClient.get('/certificates/verify', { params });
+  return data;
 }
 
 export async function validateDeployment(payload) {
@@ -141,7 +142,10 @@ export async function executeDeployment(opts) {
   if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles))
   if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles))
   if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun))
-  const { data } = await apiClient.post('/deployments/execute', form)
+  // timeoutSeconds option (default 120)
+  const timeoutSeconds = opts.timeoutSeconds != null ? opts.timeoutSeconds : 120
+  form.append('timeout_seconds', timeoutSeconds)
+  const { data } = await apiClient.post('/deployments/execute', form, { timeout: timeoutSeconds * 1000 })
   return data
 }
 
@@ -162,8 +166,61 @@ export async function planDeployment(opts) {
   if (opts.updateProfiles != null) form.append('update_profiles', String(!!opts.updateProfiles))
   if (opts.selectedProfiles) form.append('selected_profiles', JSON.stringify(opts.selectedProfiles))
   if (opts.dryRun != null) form.append('dry_run', String(!!opts.dryRun))
-  const { data } = await apiClient.post('/deployments/plan', form)
-  return data
+  // timeoutSeconds option (default 90)
+  const timeoutSeconds = opts.timeoutSeconds != null ? opts.timeoutSeconds : 90
+  form.append('timeout_seconds', timeoutSeconds)
+
+  try {
+    const { data } = await apiClient.post('/deployments/plan', form, { timeout: timeoutSeconds * 1000 })
+
+    // --- Normalize response shape for the UI ---
+    const rawPlan = (data && data.plan) ? data.plan : data || {}
+    const normalized = {
+      dry_run: (data && typeof data.dry_run === 'boolean') ? data.dry_run : true,
+      plan: {
+        device: rawPlan.device || '',
+        device_ip: rawPlan.device_ip || '',
+        old_cert_name: rawPlan.old_cert_name ?? null,
+        mode: rawPlan.mode || opts.mode,
+        derived_new_object: rawPlan.derived_new_object ?? null,
+        chain_name: rawPlan.chain_name || opts.chainName || '',
+        install_chain_from_pfx: !!rawPlan.install_chain_from_pfx,
+        update_profiles: !!rawPlan.update_profiles,
+        profiles_detected: Array.isArray(rawPlan.profiles_detected) ? rawPlan.profiles_detected : [],
+        virtual_servers: Array.isArray(rawPlan.virtual_servers) ? rawPlan.virtual_servers : [],
+        profiles_to_update: Array.isArray(rawPlan.profiles_to_update) ? rawPlan.profiles_to_update : [],
+        actions: Array.isArray(rawPlan.actions) ? rawPlan.actions : [],
+      },
+    }
+
+    return normalized
+  } catch (err) {
+    // Keep the page from crashing; surface error upstream
+    console.error('[planDeployment] failed:', err)
+    throw err
+  }
+}
+
+export async function refreshDeviceCerts(deviceId, { fast = true } = {}) {
+  // Try a device-scoped endpoint first; fall back to certificates/scan for older backends.
+  try {
+    const payload = { fast };
+    const { data } = await apiClient.post(`/devices/${deviceId}/scan-certs`, payload);
+    return data;
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status !== 404) throw err;
+    // Fallback shape: some backends expect form data with device_id
+    try {
+      const form = new FormData();
+      form.append('device_id', deviceId);
+      form.append('fast', String(!!fast));
+      const { data } = await apiClient.post('/certificates/scan', form);
+      return data;
+    } catch (err2) {
+      throw err2;
+    }
+  }
 }
 
 // ---------------- VIPs helpers ----------------

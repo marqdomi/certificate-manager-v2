@@ -43,6 +43,7 @@ async def build_deployment_plan(
     update_profiles: Optional[bool] = Form(True),
     selected_profiles: Optional[str] = Form(None),
     partition: str = Form("Common"),
+    timeout_seconds: Optional[int] = Form(45),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
     device = db.query(Device).filter(Device.id == device_id).first()
@@ -86,6 +87,7 @@ async def build_deployment_plan(
                 password=password,
                 cert_name=old_cert_name,
                 partition=partition,
+                timeout=timeout_seconds,
             )
         else:
             usage = {"profiles": [], "virtual_servers": []}
@@ -285,12 +287,21 @@ async def validate_deployment(
                 raise HTTPException(status_code=400, detail=f"Could not open PFX. Is the password correct? {e}")
 
             parsed["cn"] = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value if cert_obj else None
-            # SANs
+            # SANs (DNS + IPs)
             try:
                 san_ext = cert_obj.extensions.get_extension_for_class(x509.SubjectAlternativeName)
-                parsed["san"] = [n.value for n in san_ext.value.get_values_for_type(x509.DNSName)]
-            except Exception:
+                dns_names = list(san_ext.value.get_values_for_type(x509.DNSName))
+                ip_addrs = [str(ip) for ip in san_ext.value.get_values_for_type(x509.IPAddress)]
+                combined = dns_names + ip_addrs
+                # de-duplicate while preserving order
+                parsed["san"] = list(dict.fromkeys(combined))
+            except x509.ExtensionNotFound:
+                # No SAN extension present
+                parsed["san"] = []
                 warnings.append("Certificate has no SAN extension.")
+            except Exception as e:
+                # Unexpected parsing issue; do not incorrectly claim "no SAN"
+                warnings.append(f"Could not parse SAN extension: {e}")
             # not_after
             try:
                 not_after = getattr(cert_obj, "not_valid_after_utc", None) or cert_obj.not_valid_after
@@ -313,9 +324,15 @@ async def validate_deployment(
             parsed["cn"] = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
             try:
                 san_ext = cert_obj.extensions.get_extension_for_class(x509.SubjectAlternativeName)
-                parsed["san"] = [n.value for n in san_ext.value.get_values_for_type(x509.DNSName)]
-            except Exception:
+                dns_names = list(san_ext.value.get_values_for_type(x509.DNSName))
+                ip_addrs = [str(ip) for ip in san_ext.value.get_values_for_type(x509.IPAddress)]
+                combined = dns_names + ip_addrs
+                parsed["san"] = list(dict.fromkeys(combined))
+            except x509.ExtensionNotFound:
+                parsed["san"] = []
                 warnings.append("Certificate has no SAN extension.")
+            except Exception as e:
+                warnings.append(f"Could not parse SAN extension: {e}")
             try:
                 not_after = getattr(cert_obj, "not_valid_after_utc", None) or cert_obj.not_valid_after
                 parsed["not_after"] = _dt_to_iso(not_after)
@@ -352,6 +369,7 @@ async def execute_deployment(
     update_profiles: Optional[bool] = Form(True),
     selected_profiles: Optional[str] = Form(None),
     dry_run: Optional[bool] = Form(False),
+    timeout_seconds: Optional[int] = Form(60),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
     device = db.query(Device).filter(Device.id == device_id).first()
@@ -401,7 +419,8 @@ async def execute_deployment(
                 pfx_data=pfx_data,
                 pfx_password=pfx_password,
                 chain_name=chain_name,
-                install_chain_from_pfx=install_chain_from_pfx
+                install_chain_from_pfx=install_chain_from_pfx,
+                timeout=timeout_seconds
             )
 
             # If update_profiles is False, ensure we didn't touch profiles
@@ -417,7 +436,8 @@ async def execute_deployment(
                         old_cert_name=old_cert_name,
                         new_cert_name=result["new_cert_object"],
                         chain_name=chain_name,
-                        selected_profiles=profiles_list
+                        selected_profiles=profiles_list,
+                        timeout=timeout_seconds
                     )
                     result["updated_profiles"] = ups
 
@@ -438,7 +458,8 @@ async def execute_deployment(
                 old_cert_name=old_cert_name or "",
                 cert_pem=cert_pem,
                 key_pem=key_pem,
-                chain_name=chain_name
+                chain_name=chain_name,
+                timeout=timeout_seconds
             )
 
             if not update_profiles:
@@ -452,7 +473,8 @@ async def execute_deployment(
                         old_cert_name=old_cert_name,
                         new_cert_name=result["new_cert_object"],
                         chain_name=chain_name,
-                        selected_profiles=profiles_list
+                        selected_profiles=profiles_list,
+                        timeout=timeout_seconds
                     )
                     result["updated_profiles"] = ups
 

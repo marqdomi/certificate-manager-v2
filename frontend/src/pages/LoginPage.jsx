@@ -154,6 +154,22 @@ const LoginPage = () => {
           </Button>
         </form>
       </Paper>
+      {/* App name and version footer */}
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 12,
+          left: 0,
+          right: 0,
+          textAlign: 'center',
+          opacity: 0.85,
+        }}
+      >
+        <Typography variant="caption">
+          {typeof __APP_NAME__ !== 'undefined' ? __APP_NAME__ : 'CMT'}
+          {typeof __APP_VERSION__ !== 'undefined' ? ` v${__APP_VERSION__}` : ''}
+        </Typography>
+      </Box>
     </Box>
   );
 };

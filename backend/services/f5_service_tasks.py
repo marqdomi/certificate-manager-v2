@@ -96,3 +96,19 @@ def normalize_object_names_task(device_id: int):
         return {"status": "success", "report": report}
     finally:
         db.close()
+
+@celery_app.task(name="devices.refresh_facts")
+def refresh_device_facts_task(device_id: int):
+    from services.f5_facts import fetch_and_store_device_facts
+    return fetch_and_store_device_facts(device_id)
+
+@celery_app.task(name="devices.refresh_facts_all")
+def refresh_device_facts_all_task():
+    db = SessionLocal()
+    try:
+        ids = [d.id for d in db.query(Device.id).all()]
+        for did in ids:
+            refresh_device_facts_task.delay(did)
+        return {"status":"queued","count":len(ids)}
+    finally:
+        db.close()

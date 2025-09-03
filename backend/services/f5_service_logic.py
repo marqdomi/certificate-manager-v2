@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 def derive_object_name_from_pem(cert_pem: str) -> str:
     """
@@ -33,7 +34,6 @@ from f5.sdk_exception import F5SDKError
 from sqlalchemy.orm import Session
 from db.models import Certificate, Device
 from cryptography.hazmat.primitives.serialization import pkcs12
-from typing import Optional
 import time
 # ----------------------------
 # Helper utilities (REST upload + tmsh + PEM sanitize)
@@ -54,7 +54,7 @@ def _get_not_after_dt(cert_obj) -> datetime:
     except AttributeError:
         return cert_obj.not_valid_after      # versiones anteriores
 
-def _rest_upload_bytes(mgmt: ManagementRoot, data: bytes, remote_filename: str) -> str:
+def _rest_upload_bytes(mgmt: ManagementRoot, data: bytes, remote_filename: str, timeout: int = 120) -> str:
     """Sube bytes a /var/config/rest/downloads/<remote_filename> usando uploads (chunked)."""
     session: requests.Session = mgmt._meta_data['icr_session']
     uri = f"https://{mgmt.hostname}/mgmt/shared/file-transfer/uploads/{remote_filename}"
@@ -69,18 +69,18 @@ def _rest_upload_bytes(mgmt: ManagementRoot, data: bytes, remote_filename: str) 
             'Content-Type': 'application/octet-stream',
             'Content-Range': content_range
         }
-        resp = session.post(uri, data=data[start:end], headers=headers, timeout=120)
+        resp = session.post(uri, data=data[start:end], headers=headers, timeout=timeout)
         if resp.status_code not in (200, 202):
             raise ValueError(f"Upload failed for {remote_filename}: {resp.status_code} {resp.text}")
         start = end
     # Archivo quedará en /var/config/rest/downloads/<remote_filename>
     return f"/var/config/rest/downloads/{remote_filename}"
 
-def _tmsh_run(mgmt: ManagementRoot, cmd: str) -> str:
+def _tmsh_run(mgmt: ManagementRoot, cmd: str, timeout: int = 120) -> str:
     session: requests.Session = mgmt._meta_data['icr_session']
     uri = f"https://{mgmt.hostname}/mgmt/tm/util/bash"
     payload = {"command": "run", "utilCmdArgs": f"-c \"{cmd}\""}
-    resp = session.post(uri, json=payload, timeout=120)
+    resp = session.post(uri, json=payload, timeout=timeout)
     if resp.status_code not in (200, 202):
         raise ValueError(f"tmsh run failed: {resp.status_code} {resp.text}")
     return resp.json().get('commandResult', '')
@@ -313,20 +313,21 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
 # NUEVAS FUNCIONES DE DESPLIEGUE: PEM y PFX, y alias legacy
 # -------------------------------------------------------------------
 
-def _install_cert_and_key_from_local(mgmt: ManagementRoot, cert_local_path: str, key_local_path: str, object_name: str) -> None:
+def _install_cert_and_key_from_local(mgmt: ManagementRoot, cert_local_path: str, key_local_path: str, object_name: str, timeout: int = 120) -> None:
     # Instala el cert y key en objetos sys crypto usando rutas locales ya subidas
-    _tmsh_run(mgmt, f"tmsh install sys crypto cert {object_name} from-local-file {cert_local_path}")
-    _tmsh_run(mgmt, f"tmsh install sys crypto key {object_name} from-local-file {key_local_path}")
+    _tmsh_run(mgmt, f"tmsh install sys crypto cert {object_name} from-local-file {cert_local_path}", timeout=timeout)
+    _tmsh_run(mgmt, f"tmsh install sys crypto key {object_name} from-local-file {key_local_path}", timeout=timeout)
 
-def _install_chain_from_local(mgmt: ManagementRoot, chain_local_path: str, chain_object_name: str) -> None:
-    _tmsh_run(mgmt, f"tmsh install sys crypto cert {chain_object_name} from-local-file {chain_local_path}")
+def _install_chain_from_local(mgmt: ManagementRoot, chain_local_path: str, chain_object_name: str, timeout: int = 120) -> None:
+    _tmsh_run(mgmt, f"tmsh install sys crypto cert {chain_object_name} from-local-file {chain_local_path}", timeout=timeout)
 
 def deploy_from_pem_and_update_profiles(
     hostname: str, username: str, password: str,
     old_cert_name: str,
     cert_pem: str,
     key_pem: str,
-    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
+    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
+    timeout: int = 60,
 ):
     """
     Sube cert/key por file-transfer + instala con tmsh (como la GUI),
@@ -347,11 +348,11 @@ def deploy_from_pem_and_update_profiles(
     key_filename = f"{object_name}.key"
 
     # 3) Upload a /var/config/rest/downloads
-    cert_path = _rest_upload_bytes(mgmt, cert_pem_clean.encode('utf-8'), cert_filename)
-    key_path = _rest_upload_bytes(mgmt, key_pem.encode('utf-8'), key_filename)
+    cert_path = _rest_upload_bytes(mgmt, cert_pem_clean.encode('utf-8'), cert_filename, timeout=timeout)
+    key_path = _rest_upload_bytes(mgmt, key_pem.encode('utf-8'), key_filename, timeout=timeout)
 
     # 4) Instalar con tmsh (equivalente a GUI)
-    _install_cert_and_key_from_local(mgmt, cert_path, key_path, object_name)
+    _install_cert_and_key_from_local(mgmt, cert_path, key_path, object_name, timeout=timeout)
 
     # Post-install verification: check version and SAN via openssl
     details = verify_cert_object(mgmt, object_name)
@@ -403,7 +404,8 @@ def deploy_from_pfx_and_update_profiles(
     pfx_data: bytes,
     pfx_password: Optional[str],
     chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
-    install_chain_from_pfx: bool = False
+    install_chain_from_pfx: bool = False,
+    timeout: int = 60,
 ):
     """Desempaqueta PFX, sanea PEM, sube por file-transfer, instala con tmsh y actualiza perfiles."""
     mgmt = ManagementRoot(hostname, username, password, token=True)
@@ -436,18 +438,20 @@ def deploy_from_pfx_and_update_profiles(
         safe_cn = cn.replace("*.", "star_").replace(".", "_")
         chain_object_name = f"{safe_cn}_{not_after}_chain"
         chain_filename = f"{chain_object_name}.crt"
-        chain_path = _rest_upload_bytes(mgmt, chain_pem.encode('utf-8'), chain_filename)
-        _install_chain_from_local(mgmt, chain_path, chain_object_name)
+        chain_path = _rest_upload_bytes(mgmt, chain_pem.encode('utf-8'), chain_filename, timeout=timeout)
+        _install_chain_from_local(mgmt, chain_path, chain_object_name, timeout=timeout)
         return deploy_from_pem_and_update_profiles(
             hostname=hostname, username=username, password=password,
             old_cert_name=old_cert_name,
-            cert_pem=cert_pem, key_pem=key_pem, chain_name=chain_object_name
+            cert_pem=cert_pem, key_pem=key_pem, chain_name=chain_object_name,
+            timeout=timeout
         )
     else:
         return deploy_from_pem_and_update_profiles(
             hostname=hostname, username=username, password=password,
             old_cert_name=old_cert_name,
-            cert_pem=cert_pem, key_pem=key_pem, chain_name=chain_name
+            cert_pem=cert_pem, key_pem=key_pem, chain_name=chain_name,
+            timeout=timeout
         )
 
 # Alias para mantener compatibilidad con llamadas antiguas que usaban el nombre anterior
@@ -701,15 +705,18 @@ def get_realtime_certs_from_f5(hostname: str, username: str, password: str, devi
 def update_profiles_with_new_cert(
     hostname: str, username: str, password: str,
     old_cert_name: str,
-    new_cert_name: str, 
+    new_cert_name: str,
     chain_name: str,
-    selected_profiles: Optional[list] = None
+    selected_profiles: Optional[list] = None,
+    timeout: int = 60,
 ):
     """
     Busca perfiles SSL y los actualiza usando el nombre base del objeto,
     imitando el comportamiento de la GUI del F5.
     Si selected_profiles es provisto, solo modifica los perfiles cuyo nombre o fullPath coincida.
     """
+    # Note: "timeout" is accepted for compatibility with callers; current F5 SDK modify calls do not expose a timeout,
+    # but we keep the parameter to avoid unexpected-keyword errors and for future use.
     mgmt = ManagementRoot(hostname, username, password, token=True)
 
     new_object_name = new_cert_name
@@ -901,11 +908,11 @@ def get_ssl_profile_vips(hostname: str, username: str, password: str, profile_fu
 def _list_client_ssl_profiles(mgmt: ManagementRoot):
     return mgmt.tm.ltm.profile.client_ssls.get_collection()
 
-def _rename_cert_object(mgmt: ManagementRoot, old: str, new: str) -> None:
-    _tmsh_run(mgmt, f"tmsh mv sys file ssl-cert {old} {new}")
+def _rename_cert_object(mgmt: ManagementRoot, old: str, new: str, timeout: int = 120) -> None:
+    _tmsh_run(mgmt, f"tmsh mv sys file ssl-cert {old} {new}", timeout=timeout)
 
-def _rename_key_object(mgmt: ManagementRoot, old: str, new: str) -> None:
-    _tmsh_run(mgmt, f"tmsh mv sys file ssl-key {old} {new}")
+def _rename_key_object(mgmt: ManagementRoot, old: str, new: str, timeout: int = 120) -> None:
+    _tmsh_run(mgmt, f"tmsh mv sys file ssl-key {old} {new}", timeout=timeout)
 
 def _update_profiles_reference(mgmt: ManagementRoot, old_name: str, new_name: str) -> list:
     """Cambia referencias en client-ssl profiles de /Common/old_name(.crt|.key) a /Common/new_name."""

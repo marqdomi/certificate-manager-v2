@@ -27,6 +27,16 @@ class Device(Base):
     ip_address = Column(String, unique=True, nullable=False)
     site = Column(String, nullable=True)
     version = Column(String, nullable=True)
+    platform = Column(String, nullable=True)                  # e.g. BIG-IP, TMOS
+    serial_number = Column(String, nullable=True)             # device serial
+    ha_state = Column(String, nullable=True)                  # active | standby | offline | unknown
+    cluster_key = Column(String, nullable=True, index=True)   # e.g., cluster discriminator (site+pair)
+    is_primary_preferred = Column(Boolean, nullable=False, default=False)  # scan/ops target flag
+    sync_status = Column(String, nullable=True)               # In Sync | Changes Pending | Unknown
+    last_sync_color = Column(String, nullable=True)           # green | yellow | red | unknown (UI hint)
+    dns_servers = Column(Text, nullable=True)                 # JSON string or comma-separated
+    last_facts_refresh = Column(DateTime, nullable=True)      # when facts were last pulled
+    active = Column(Boolean, nullable=False, default=True)    # whether to include in scheduled scans
     username = Column(String, nullable=False, default="admin")
     encrypted_password = Column(Text, nullable=True)
     last_scan_status = Column(String, default="pending")

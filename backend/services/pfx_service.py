@@ -1,8 +1,7 @@
-# backend/services/pfx_service.py
-
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives import serialization
+from datetime import timezone
 
 # ✅ --- FUNCIÓN CREATE_PFX MEJORADA Y A PRUEBA DE ERRORES --- ✅
 def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, password: str | None):
@@ -90,7 +89,8 @@ def unpack_pfx(pfx_data: bytes, password: str | None):
             encoding=serialization.Encoding.PEM
         ).decode('utf-8')
         
-        return { "key": key_pem, "cert": cert_pem }
+        info = cert_metadata_from_pem(cert_pem.encode("utf-8"))
+        return { "key": key_pem, "cert": cert_pem, "info": info, "san": info.get("san", []) }
     
     except ValueError:
         # Este error suele ocurrir si la contraseña es incorrecta
@@ -98,3 +98,35 @@ def unpack_pfx(pfx_data: bytes, password: str | None):
     except Exception as e:
         # Para cualquier otro error inesperado
         raise ValueError(f"Failed to unpack PFX file. Details: {e}")
+
+
+# --- NEW: helpers to extract certificate metadata ---
+
+def _extract_cert_metadata(cert: x509.Certificate) -> dict:
+    cn = None
+    try:
+        attrs = cert.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)
+        cn = attrs[0].value if attrs else None
+    except Exception:
+        pass
+
+    not_after = cert.not_valid_after.replace(tzinfo=timezone.utc).isoformat()
+
+    san_list: list[str] = []
+    try:
+        ext = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+        # collect DNS names and IPs as strings
+        for name in ext.value:
+            if isinstance(name, x509.DNSName):
+                san_list.append(name.value)
+            elif isinstance(name, x509.IPAddress):
+                san_list.append(str(name.value))
+    except x509.ExtensionNotFound:
+        pass
+
+    return {"cn": cn, "not_after": not_after, "san": san_list}
+
+
+def cert_metadata_from_pem(cert_pem: bytes) -> dict:
+    cert = x509.load_pem_x509_certificate(cert_pem)
+    return _extract_cert_metadata(cert)

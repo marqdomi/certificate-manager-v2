@@ -163,19 +163,21 @@ def cached_impact_preview_alt(device_id: int, cert_name: str, db: Session = Depe
 
 @router.post("/refresh", status_code=status.HTTP_202_ACCEPTED)
 def queue_cache_refresh(
-    payload: dict | None = Body(None, description='{"device_ids":[...]} opcional'),
+    payload: dict | None = Body(None, description='{"device_ids":[...], "include_standby": false} opcional'),
 ):
     from core.celery_worker import celery_app
 
     device_ids = (payload or {}).get("device_ids")
+    include_standby = bool((payload or {}).get("include_standby", False))
+
     if device_ids:
         for d in device_ids:
             celery_app.send_task("cache.refresh_device_profiles", kwargs={"device_id": int(d)})
         return {"queued": True, "device_ids": device_ids}
 
-    # Si no viene lista, encola para todos
-    res = celery_app.send_task("cache.refresh_all_profiles", kwargs={})
-    return {"queued": True, "task_id": res.id}
+    # Si no viene lista, encola para todos (respetando include_standby)
+    res = celery_app.send_task("cache.refresh_all_profiles", kwargs={"include_standby": include_standby})
+    return {"queued": True, "task_id": res.id, "include_standby": include_standby}
 
 
 @router.get("/status")
