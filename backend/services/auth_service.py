@@ -27,6 +27,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(6
 
 # Contexto para el hasheo de contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# NOTE: This is the single source of truth for hashing. All scripts must import from here.
 
 # Esquema OAuth2 que le dice a FastAPI cómo esperar el token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
