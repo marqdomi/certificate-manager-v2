@@ -87,9 +87,17 @@ export default function ConfirmDeploymentStep({ device, certName, previewData, u
         } catch (_) { /* no-op */ }
 
         if (typeof onNotify === 'function') {
-          const upd = Array.isArray(data?.result?.updated_profiles)
-            ? data.result.updated_profiles.length
-            : (data?.updated_profiles?.length ?? data?.updated_count ?? null);
+          const upd = (() => {
+            const res = data?.result ?? data ?? {};
+            if (Array.isArray(res.updated_profiles)) return res.updated_profiles.length;
+            if (res.updated_profiles && typeof res.updated_profiles === "object") {
+              try { return Object.keys(res.updated_profiles).length; } catch { /* no-op */ }
+            }
+            if (typeof res.updated_count === "number") return res.updated_count;
+            if (typeof data?.updated_count === "number") return data.updated_count;
+            if (Array.isArray(data?.updated_profiles)) return data.updated_profiles.length;
+            return null;
+          })();
           const msg = upd != null
             ? `Deployment completed on ${device?.hostname || 'device'}. Updated ${upd} SSL profile${upd === 1 ? '' : 's'}.`
             : `Deployment completed on ${device?.hostname || 'device'}.`;

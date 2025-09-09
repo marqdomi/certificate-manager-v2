@@ -26,6 +26,7 @@ if str(PARENT) not in sys.path:
 celery_app = Celery("certificate_manager")
 celery_app.config_from_object(celery_config)
 
+
 # Autodiscover tasks inside the 'services' and 'api' packages (and subpackages)
 # We look for modules named "tasks.py" within those packages.
 celery_app.autodiscover_tasks(packages=["services", "api"], related_name="tasks")
@@ -96,17 +97,59 @@ except Exception:
     # Cache builder not present; skip without failing startup
     pass
 
-# Attempt to import and register device facts refresh tasks (explicit)
-try:
-    from services import f5_service_tasks as _facts_tasks  # wrappers over services.f5_facts
-    # Register with stable names used by API
-    if "devices.refresh_facts" not in celery_app.tasks:
-        celery_app.task(name="devices.refresh_facts")(_facts_tasks.refresh_device_facts_task)
-    if "devices.refresh_facts_all" not in celery_app.tasks:
-        celery_app.task(name="devices.refresh_facts_all")(_facts_tasks.refresh_device_facts_all_task)
-except Exception:
-    # Facts task module may be absent in some builds; skip without failing startup
-    pass
+# --- Register device facts refresh tasks (wrappers, no import-time coupling) ---
+import importlib
+
+@celery_app.task(name="devices.refresh_facts")
+def devices_refresh_facts(device_id: int):
+    """
+    Wrapper task that locates the actual implementation at call time to avoid
+    circular imports and to work across slightly different module layouts.
+    """
+    impl = None
+    # Try services.f5_service_tasks first
+    try:
+        m = importlib.import_module("services.f5_service_tasks")
+        impl = getattr(m, "refresh_device_facts_task", None) or getattr(m, "refresh_device_facts", None)
+    except ModuleNotFoundError:
+        pass
+    # Fallback: services.f5_facts.refresh_device_facts
+    if impl is None:
+        try:
+            m = importlib.import_module("services.f5_facts")
+            impl = getattr(m, "refresh_device_facts", None)
+        except ModuleNotFoundError:
+            pass
+    if impl is None:
+        raise RuntimeError("No implementation found for devices.refresh_facts")
+    return impl(device_id)
+
+@celery_app.task(name="devices.refresh_facts_all")
+def devices_refresh_facts_all(device_ids: list[int] | None = None):
+    """
+    Wrapper task; see devices_refresh_facts. Accepts optional device_ids list.
+    """
+    impl = None
+    try:
+        m = importlib.import_module("services.f5_service_tasks")
+        impl = getattr(m, "refresh_device_facts_all_task", None) or getattr(m, "refresh_device_facts_all", None)
+    except ModuleNotFoundError:
+        pass
+    if impl is None:
+        try:
+            m = importlib.import_module("services.f5_facts")
+            impl = getattr(m, "refresh_all_device_facts", None) or getattr(m, "refresh_device_facts_all", None)
+        except ModuleNotFoundError:
+            pass
+    if impl is None:
+        raise RuntimeError("No implementation found for devices.refresh_facts_all")
+    # Some implementations accept no args; others accept device_ids
+    try:
+        return impl(device_ids=device_ids)  # type: ignore[misc]
+    except TypeError:
+        if device_ids is not None:
+            return impl(device_ids)  # type: ignore[misc]
+        return impl()  # type: ignore[misc]
 
 # --- Cache refresh task (explicit name expected by callers) ---
 @celery_app.task(name="f5_cache.refresh_profiles_cache_task")
@@ -125,7 +168,9 @@ def refresh_profiles_cache_task(device_ids: list[int] | None = None,
     """
     # Try the dedicated service first (if present)
     try:
-        from services.f5_cache_service import refresh_profiles_cache as _refresh
+        import importlib
+        _svc = importlib.import_module("services.f5_cache_service")
+        _refresh = getattr(_svc, "refresh_profiles_cache")
         return _refresh(device_ids=device_ids, full_resync=full_resync)
     except ModuleNotFoundError:
         # Fallback path: call cache_builder helpers directly (synchronous)

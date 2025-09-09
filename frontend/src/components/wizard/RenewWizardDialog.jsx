@@ -23,7 +23,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import apiClient from "../../services/api";
+import apiClient, { verifyInstalledCert } from "../../services/api";
 import UploadCertStep from "./UploadCertStep";
 import ConfirmDeploymentStep from "./ConfirmDeploymentStep";
 
@@ -496,14 +496,16 @@ export default function RenewWizardDialog({ open, onClose, device, certName, cer
         notify("Missing device or cert name", "warning");
         return;
       }
-      const res = await apiClient.get("/f5/verify", {
-        params: { device_id: device.id, cert_name: certName },
-      });
-      const ok = !!res?.data?.ok;
+      const res = await verifyInstalledCert(device.id, certName);
+      const ok = !!res?.ok || !!res?.data?.ok;
       if (ok) {
         notify("Verification OK: certificate is installed and readable", "success");
       } else {
-        const msg = res?.data?.error || "Verification failed";
+        const msg =
+          res?.error ||
+          res?.data?.error ||
+          res?.message ||
+          "Verification failed";
         notify(msg, "warning");
       }
     } catch (e) {
@@ -586,7 +588,11 @@ export default function RenewWizardDialog({ open, onClose, device, certName, cer
         <Button onClick={back} disabled={activeStep === 0}>
           Back
         </Button>
-        <Button onClick={next} variant="contained" disabled={!canNext()}>
+        <Button
+          onClick={activeStep < 2 ? next : handleClose}
+          variant="contained"
+          disabled={!canNext()}
+        >
           {activeStep < 2 ? "Next" : "Finish"}
         </Button>
       </DialogActions>
