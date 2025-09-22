@@ -24,6 +24,7 @@ def derive_object_name_from_pfx(pfx_data: bytes, pfx_password: Optional[str]) ->
 # backend/services/f5_service_logic.py
 
 import os
+import logging
 from datetime import datetime
 from base64 import b64encode
 from cryptography import x509
@@ -35,6 +36,9 @@ from sqlalchemy.orm import Session
 from db.models import Certificate, Device
 from cryptography.hazmat.primitives.serialization import pkcs12
 import time
+
+logger = logging.getLogger(__name__)
+
 # ----------------------------
 # Helper utilities (REST upload + tmsh + PEM sanitize)
 # ----------------------------
@@ -231,7 +235,7 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
             mgmt._meta_data['icr_session'].verify = False
         except Exception:
             pass
-        print(f"Successfully connected to {device.hostname} ({device.ip_address})")
+        logger.info(f"Successfully connected to {device.hostname} ({device.ip_address})")
 
         f5_certs_stubs = mgmt.tm.sys.file.ssl_certs.get_collection()
         
@@ -267,11 +271,9 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
                     try:
                         expiration_dt = datetime.strptime(expiration_date_str, '%b %d %H:%M:%S %Y %Z')
                     except ValueError:
-                        print(f"WARN: Could not parse date string for cert '{cert_name}': {expiration_date_str}")
-                else:
-                    print(f"WARN: Certificate '{cert_name}' is missing expirationString attribute.")
-
-                # --- LÓGICA DE BÚSQUEDA Y CREACIÓN CORREGIDA ---
+                        logger.warning(f"Could not parse date string for cert '{cert_name}': {expiration_date_str}")
+                    else:
+                        logger.warning(f"Certificate '{cert_name}' is missing expirationString attribute.")                # --- LÓGICA DE BÚSQUEDA Y CREACIÓN CORREGIDA ---
                 
                 # Buscamos el certificado en nuestra BBDD por su nombre Y el ID del dispositivo.
                 db_cert = db.query(Certificate).filter(

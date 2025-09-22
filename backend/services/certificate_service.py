@@ -5,9 +5,12 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from sqlalchemy.orm import Session
+import logging
 
 from db.models import RenewalRequest, RenewalStatus
 from . import encryption_service
+
+logger = logging.getLogger(__name__)
 
 def create_renewal_from_provided_key(
     db: Session, 
@@ -48,11 +51,11 @@ def create_renewal_from_provided_key(
     ).first()
     
     if renewal_request:
-        print(f"INFO: Updating existing renewal request ID {renewal_request.id}")
+        logger.info(f"Updating existing renewal request ID {renewal_request.id}")
         renewal_request.csr_content = csr_pem
         renewal_request.encrypted_private_key = encrypted_key
     else:
-        print(f"INFO: Creating new renewal request for certificate ID {original_cert_id}")
+        logger.info(f"Creating new renewal request for certificate ID {original_cert_id}")
         renewal_request = RenewalRequest(
             original_certificate_id=original_cert_id,
             status=RenewalStatus.CSR_GENERATED,

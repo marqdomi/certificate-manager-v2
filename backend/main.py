@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
 
 # Import all routers in one place
 from api.endpoints import (
@@ -14,7 +15,17 @@ from api.endpoints import (
     f5_vips,
 )
 
-app = FastAPI(title="Certificate Management Tool V2")
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Certificate Management Tool V2.5",
+    description="Enterprise SSL/TLS Certificate Lifecycle Management",
+    version="2.5.0",
+    docs_url="/api/docs" if os.getenv("ENV") != "production" else None,
+    redoc_url="/api/redoc" if os.getenv("ENV") != "production" else None
+)
 
 # Routers that don't need a special tag/prefix beyond here
 app.include_router(f5_cache.router, prefix="/api/v1", tags=["cache"])
@@ -46,13 +57,18 @@ try:
     from services.auth_service import pwd_context
     _probe = pwd_context.hash("probe")
     assert pwd_context.verify("probe", _probe)
+    logger.info("Password hashing self-test: PASSED")
 except Exception as _e:  # don't crash prod, but log visibly
-    print("[WARN] Password hashing self-test failed:", _e)
+    logger.error(f"Password hashing self-test failed: {_e}")
 
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "2.5.0"}
 
 @app.get("/")
 def read_root():
-    return {"message": "Certificate Management Tool V2 - Backend is running!"}
+    return {
+        "message": "Certificate Management Tool V2.5 - Enterprise Ready",
+        "version": "2.5.0",
+        "environment": os.getenv("ENV", "unknown")
+    }

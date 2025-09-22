@@ -1,5 +1,4 @@
 # backend/api/endpoints/certificates.py
-# backend/api/endpoints/certificates.py
 
 from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, status
 from sqlalchemy.orm import Session, joinedload, aliased
@@ -7,6 +6,7 @@ from sqlalchemy import select, func, or_
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
 
 # --- Imports para la lógica y la seguridad ---
 from db.base import get_db
@@ -16,6 +16,8 @@ from schemas.certificate import CertificateResponse
 from services import certificate_service, f5_service_logic, encryption_service, auth_service
 from services import pfx_service 
 from core.celery_worker import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -469,7 +471,7 @@ async def deploy_certificate_from_pfx(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         # Para cualquier otro error inesperado
-        print(f"UNEXPECTED ERROR during PFX deploy: {e}")
+        logger.error(f"Unexpected error during PFX deploy: {e}")
         raise HTTPException(status_code=500, detail="An unexpected internal server error occurred.")
 
 @router.post("/new-deployment/pfx", summary="Deploy a new certificate from PFX to multiple devices")
