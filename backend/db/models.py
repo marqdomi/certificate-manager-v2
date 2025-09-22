@@ -111,22 +111,142 @@ class RenewalRequest(Base):
         return f"<RenewalRequest(id={self.id}, status='{self.status.name}')>"
     
 class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    OPERATOR = "operator"
-    VIEWER = "viewer"
+    SUPER_ADMIN = "super_admin"          # Full system access
+    ADMIN = "admin"                      # User & system management
+    CERTIFICATE_MANAGER = "cert_manager" # Full certificate operations
+    F5_OPERATOR = "f5_operator"         # F5 device operations
+    AUDITOR = "auditor"                 # Read-only + audit access
+    OPERATOR = "operator"               # Limited operations
+    VIEWER = "viewer"                   # Read-only access
+
+class AuthType(str, enum.Enum):
+    LOCAL = "local"                     # Local database authentication
+    LDAP = "ldap"                      # LDAP/Active Directory
+    AZURE_AD = "azure_ad"              # Azure AD OAuth2/OpenID Connect
+    SAML = "saml"                      # SAML SSO (future)
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)   # <-- antes tenía un typo en "index"
+    id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    
+    # Authentication fields
+    hashed_password = Column(String, nullable=True)  # Nullable for AD users
+    auth_type = Column(Enum(AuthType), nullable=False, default=AuthType.LOCAL)
+    
+    # User profile information
+    email = Column(String, unique=True, index=True, nullable=True)
+    full_name = Column(String, nullable=True)
+    department = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    
+    # Authorization and permissions
     role = Column(Enum(UserRole), nullable=False, default=UserRole.VIEWER)
+    permissions = Column(Text, nullable=True)  # JSON string for granular permissions
+    
+    # AD/LDAP specific fields
+    domain = Column(String, nullable=True)  # AD domain (e.g., 'contoso.com')
+    distinguished_name = Column(String, nullable=True)  # LDAP DN
+    ad_groups = Column(Text, nullable=True)  # JSON array of AD group memberships
+    object_guid = Column(String, nullable=True)  # AD ObjectGUID for sync
+    
+    # Session and activity tracking
+    last_login = Column(DateTime, nullable=True)
+    last_login_ip = Column(String, nullable=True)
+    login_count = Column(Integer, default=0)
+    failed_login_attempts = Column(Integer, default=0)
+    last_failed_login = Column(DateTime, nullable=True)
+    
+    # Account management
     is_active = Column(Boolean, default=True)
+    is_locked = Column(Boolean, default=False)
+    password_expires_at = Column(DateTime, nullable=True)
+    must_change_password = Column(Boolean, default=False)
+    
+    # Audit trail
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_by = Column(String, nullable=True)  # Username who created this user
+    last_modified_by = Column(String, nullable=True)
+    
+    # Sync information (for AD users)
+    last_ad_sync = Column(DateTime, nullable=True)
+    ad_sync_status = Column(String, nullable=True)  # 'synced', 'error', 'pending'
+    
     def __repr__(self):
-        return f"<User(username='{self.username}', role='{self.role.value}')>"
+        return f"<User(username='{self.username}', role='{self.role.value}', auth_type='{self.auth_type.value}')>"
+    
+    @property
+    def is_ad_user(self):
+        """Check if user authenticates via AD/LDAP"""
+        return self.auth_type in [AuthType.LDAP, AuthType.AZURE_AD]
+    
+    @property
+    def display_name(self):
+        """Get display name (full_name or username)"""
+        return self.full_name or self.username
+    
+    @property
+    def is_emergency_admin(self):
+        """Check if this is an emergency admin account"""
+        return (self.auth_type == AuthType.LOCAL and 
+                self.role == UserRole.SUPER_ADMIN and 
+                self.username.startswith('admin'))
+
+# User session tracking table
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_token = Column(String, unique=True, index=True, nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_activity = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, default=True)
+    
+    # Relationship
+    user = relationship("User", backref="sessions")
+
+# User activity audit log
+class UserActivity(Base):
+    __tablename__ = "user_activities"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    username = Column(String, nullable=False)  # Store username even if user is deleted
+    action = Column(String, nullable=False)  # 'login', 'logout', 'create_cert', 'deploy', etc.
+    resource_type = Column(String, nullable=True)  # 'certificate', 'device', 'user', etc.
+    resource_id = Column(String, nullable=True)  # ID of the affected resource
+    description = Column(Text, nullable=True)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(Text, nullable=True)
+    result = Column(String, nullable=False)  # 'success', 'failure', 'error'
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationship
+    user = relationship("User", backref="activities")
+
+# System configuration table
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, nullable=False, index=True)  # 'ldap', 'azure_ad', 'email', etc.
+    key = Column(String, nullable=False)
+    value = Column(Text, nullable=True)
+    encrypted = Column(Boolean, default=False)  # Whether value is encrypted
+    description = Column(Text, nullable=True)
+    updated_by = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        UniqueConstraint("category", "key", name="uq_config_category_key"),
+    )
     
 # --- NUEVAS TABLAS DE CACHÉ (añadir al final de models.py) ---
 class SslProfilesCache(Base):
