@@ -133,7 +133,7 @@ class User(Base):
     
     # Authentication fields
     hashed_password = Column(String, nullable=True)  # Nullable for AD users
-    auth_type = Column(Enum(AuthType), nullable=False, default=AuthType.LOCAL)
+    auth_type = Column(String, nullable=False, default="local")
     
     # User profile information
     email = Column(String, unique=True, index=True, nullable=True)
@@ -142,7 +142,7 @@ class User(Base):
     phone = Column(String, nullable=True)
     
     # Authorization and permissions
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.VIEWER)
+    role = Column(String, nullable=False, default="VIEWER")
     permissions = Column(Text, nullable=True)  # JSON string for granular permissions
     
     # AD/LDAP specific fields

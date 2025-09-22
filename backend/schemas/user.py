@@ -2,7 +2,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from db.models import UserRole, AuthType
 
 # Base user schemas
 class UserBase(BaseModel):
@@ -11,8 +10,8 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     department: Optional[str] = None
     phone: Optional[str] = None
-    role: UserRole
-    auth_type: AuthType = AuthType.LOCAL
+    role: str  # Changed from UserRole enum to string
+    auth_type: str = "local"  # Changed from AuthType enum to string
     domain: Optional[str] = None
     is_active: bool = True
 
@@ -22,7 +21,7 @@ class UserCreate(UserBase):
     
     @validator('password')
     def validate_password(cls, v, values):
-        if values.get('auth_type') == AuthType.LOCAL and not v:
+        if values.get('auth_type') == 'local' and not v:
             raise ValueError('Password is required for local users')
         return v
 
@@ -31,7 +30,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     department: Optional[str] = None
     phone: Optional[str] = None
-    role: Optional[UserRole] = None
+    role: Optional[str] = None  # Changed from UserRole to str
     permissions: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
     is_locked: Optional[bool] = None
@@ -48,8 +47,8 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = None
     department: Optional[str] = None
     phone: Optional[str] = None
-    role: UserRole
-    auth_type: AuthType
+    role: str  # Changed from UserRole to str
+    auth_type: str  # Changed from AuthType to str
     domain: Optional[str] = None
     permissions: Optional[Dict[str, Any]] = None
     is_active: bool
@@ -80,7 +79,7 @@ class ADUserImport(BaseModel):
     domain: str
     distinguished_name: str
     ad_groups: List[str]
-    role: UserRole
+    role: str  # Changed from UserRole to str
     permissions: Optional[Dict[str, Any]] = None
 
 class ADSyncResult(BaseModel):

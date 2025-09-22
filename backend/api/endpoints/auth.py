@@ -47,8 +47,8 @@ def login_for_access_token(
     access_token = auth_service.create_access_token(
         data={
             "sub": user.username, 
-            "role": user.role.value,
-            "auth_type": user.auth_type.value,
+            "role": user.role,
+            "auth_type": user.auth_type,
             "user_id": user.id
         }
     )
@@ -59,8 +59,8 @@ def login_for_access_token(
         "user": {
             "id": user.id,
             "username": user.username,
-            "role": user.role.value,
-            "auth_type": user.auth_type.value,
+            "role": user.role,
+            "auth_type": user.auth_type,
             "display_name": user.display_name,
             "is_ad_user": user.is_ad_user
         }
@@ -211,8 +211,8 @@ async def azure_ad_callback(
         access_token = auth_service.create_access_token(
             data={
                 "sub": user.username,
-                "role": user.role.value,
-                "auth_type": user.auth_type.value,
+                "role": user.role,
+                "auth_type": user.auth_type,
                 "user_id": user.id
             }
         )
@@ -223,8 +223,8 @@ async def azure_ad_callback(
             "user": {
                 "id": user.id,
                 "username": user.username,
-                "role": user.role.value,
-                "auth_type": user.auth_type.value,
+                "role": user.role,
+                "auth_type": user.auth_type,
                 "display_name": user.display_name,
                 "is_ad_user": user.is_ad_user
             }

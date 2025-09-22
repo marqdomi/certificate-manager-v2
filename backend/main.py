@@ -6,6 +6,7 @@ import logging
 # Import all routers in one place
 from api.endpoints import (
     auth,
+    admin,
     f5_scans,
     certificates,
     devices,
@@ -46,6 +47,7 @@ app.add_middleware(
 
 # --- REGISTER ALL ROUTERS ---
 app.include_router(auth.router,         prefix="/api/v1/auth",         tags=["Authentication"])
+app.include_router(admin.router,        prefix="/api/v1/admin",        tags=["Administration"])
 app.include_router(f5_scans.router,     prefix="/api/v1",              tags=["F5 Scans"])
 app.include_router(certificates.router, prefix="/api/v1/certificates", tags=["Certificates"])
 app.include_router(devices.router,      prefix="/api/v1/devices",      tags=["Devices"])

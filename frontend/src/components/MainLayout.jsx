@@ -23,6 +23,9 @@ import LanIcon from '@mui/icons-material/Lan';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import PeopleIcon from '@mui/icons-material/People';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const drawerWidth = 240;
 
@@ -39,6 +42,7 @@ const MainLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [openVips, setOpenVips] = React.useState(location.pathname.startsWith('/vips'));
+  const [openAdmin, setOpenAdmin] = React.useState(location.pathname.startsWith('/admin'));
 
   const handleLogout = () => {
     authProvider.logout();
@@ -145,6 +149,61 @@ const MainLayout = ({ children }) => {
                 </ListItem>
               </List>
             </Collapse>
+
+            {/* Admin Section - Only show if user has admin role */}
+            {(localStorage.getItem('user_role') === 'super_admin' || localStorage.getItem('user_role') === 'admin') && (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={() => setOpenAdmin((v) => !v)}
+                    sx={{
+                      '&.active': {
+                        backgroundColor: 'action.selected',
+                        fontWeight: 'fontWeightBold',
+                      },
+                    }}
+                  >
+                    <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
+                    <ListItemText primary="Administration" />
+                    {openAdmin ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                </ListItem>
+
+                <Collapse in={openAdmin} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={NavLink}
+                        to="/admin/dashboard"
+                        sx={{ pl: 4, '&.active': { backgroundColor: 'action.selected', fontWeight: 'fontWeightBold' } }}
+                      >
+                        <ListItemIcon><DashboardIcon /></ListItemIcon>
+                        <ListItemText primary="Dashboard" />
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={NavLink}
+                        to="/admin/users"
+                        sx={{ pl: 4, '&.active': { backgroundColor: 'action.selected', fontWeight: 'fontWeightBold' } }}
+                      >
+                        <ListItemIcon><PeopleIcon /></ListItemIcon>
+                        <ListItemText primary="User Management" />
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        component={NavLink}
+                        to="/admin/config"
+                        sx={{ pl: 4, '&.active': { backgroundColor: 'action.selected', fontWeight: 'fontWeightBold' } }}
+                      >
+                        <ListItemIcon><SettingsIcon /></ListItemIcon>
+                        <ListItemText primary="System Config" />
+                      </ListItemButton>
+                    </ListItem>
+                  </List>
+                </Collapse>
+              </>
+            )}
           </List>
         </Box>
       </Drawer>

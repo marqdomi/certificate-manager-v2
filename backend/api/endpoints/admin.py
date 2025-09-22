@@ -13,7 +13,7 @@ from db.models import (
     SystemConfig, Device, Certificate
 )
 from services import auth_service
-from services.encryption_service import EncryptionService
+from services.encryption_service import encrypt_data, decrypt_data
 from schemas.user import (
     UserResponse, UserCreate, UserUpdate, UserPasswordUpdate,
     UserListResponse, UserActivityResponse, SystemConfigResponse,

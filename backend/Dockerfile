@@ -7,6 +7,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
+# Instalar dependencias del sistema para python-ldap y compilación
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libldap2-dev \
+    libsasl2-dev \
+    libssl-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Instala dependencias Python primero para aprovechar la capa de cache
