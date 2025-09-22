@@ -12,7 +12,7 @@ def scan_f5_impl(device_id: int):
     # 1. Obtenemos el objeto 'device' de la BBDD
     device = db.query(Device).filter(Device.id == device_id).first()
     if not device:
-        print(f"ERROR: [Task] Device with ID {device_id} not found in DB.")
+        logger.error(f"[Task] Device with ID {device_id} not found in DB.")
         db.close()
         return
     # 2. Extraemos TODA la información que necesitamos ANTES de entrar al bloque principal
@@ -35,14 +35,14 @@ def scan_f5_impl(device_id: int):
     except Exception as e:
         final_status = 'failed'
         final_message = str(e)
-        print(f"ERROR: [Task] Pre-scan check failed for {device_hostname}. Reason: {final_message}")
+        logger.error(f"[Task] Pre-scan check failed for {device_hostname}. Reason: {final_message}")
     # 6. Actualizamos la BBDD fuera del 'try...except' principal de la lógica de negocio
     #    pero ANTES de cerrar la sesión.
     device.last_scan_status = final_status
     device.last_scan_message = final_message
     device.last_scan_timestamp = datetime.utcnow()
     db.commit()
-    print(f"INFO: [Task] Finalized scan for {device_hostname} with status: {final_status}")
+    logger.info(f"[Task] Finalized scan for {device_hostname} with status: {final_status}")
     db.close()
     return {"device_id": device_id, "status": final_status, "message": final_message}
 
@@ -58,12 +58,12 @@ def trigger_scan_for_all_devices_impl():
     try:
         devices = db.query(Device).all()
         if not devices:
-            print("INFO: [Celery Beat] No devices to scan.")
+            logger.info(f"[Celery Beat] No devices to scan.")
             return "No devices registered."
         for device in devices:
             celery_app.send_task("scan_single_f5", args=[device.id])
         message = f"Successfully queued {len(devices)} scan tasks from scheduled job."
-        print(f"INFO: [Celery Beat] {message}")
+        logger.info(f"[Celery Beat] {message}")
         return message
     finally:
         db.close()
@@ -88,6 +88,9 @@ def normalize_object_names_task(device_id: int):
 
 def refresh_device_facts_task(device_id: int):
     from services.f5_facts import fetch_and_store_device_facts
+import logging
+
+logger = logging.getLogger(__name__)
     return fetch_and_store_device_facts(device_id)
 
 def refresh_device_facts_all_task():

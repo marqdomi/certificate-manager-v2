@@ -8,6 +8,9 @@ import io
 from services import pfx_service
 from db.models import User
 from services import auth_service
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -59,7 +62,7 @@ async def generate_pfx_file(
             detail=f"Invalid input for PFX generation: {e}"
         )
     except Exception as e:
-        print(f"UNEXPECTED ERROR in PFX generation: {e}")
+        logger.info(f"UNEXPECTED ERROR in PFX generation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected internal error occurred while generating the PFX file."

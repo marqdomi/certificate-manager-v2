@@ -2,6 +2,9 @@ from cryptography import x509
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives import serialization
 from datetime import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ✅ --- FUNCIÓN CREATE_PFX MEJORADA Y A PRUEBA DE ERRORES --- ✅
 def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, password: str | None):
@@ -30,7 +33,7 @@ def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, passwor
                         ca_certs.append(ca_cert)
                     except ValueError:
                         # Ignoramos si una parte de la cadena no es un certificado válido
-                        print(f"WARN: Could not parse a certificate from the provided chain file. Skipping part.")
+                        logger.warning(f"Could not parse a certificate from the provided chain file. Skipping part.")
                         pass
 
         # 4. Preparar los datos para la serialización (sin cambios, tu lógica era correcta)
@@ -58,7 +61,7 @@ def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, passwor
     except Exception as e:
         # Captura cualquier otro error inesperado (como problemas de la librería)
         # y lo relanza para que el endpoint lo convierta en un error 500.
-        print(f"CRITICAL ERROR in create_pfx: {e}")
+        logger.info(f"CRITICAL ERROR in create_pfx: {e}")
         # Es importante relanzar un error genérico aquí para no exponer detalles internos.
         raise Exception("An unexpected error occurred during PFX creation.")
 
