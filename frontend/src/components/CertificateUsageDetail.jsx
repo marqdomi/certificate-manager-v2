@@ -1,6 +1,4 @@
-// frontend/src/components/CertificateUsageDetail.jsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../services/api';
 import { 
     Box, 
@@ -12,43 +10,114 @@ import {
     Divider, 
     Chip,
     Paper,
-    Alert
+    Alert,
+    Button,
+    Stack
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // Solo necesitamos este icono ahora
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
+const MAX_ATTEMPTS = 3;
+const REQ_TIMEOUT_MS = 120000; // 120s por intento
+const RETRIABLE_HTTP = new Set([408, 429, 500, 502, 503, 504]);
+
+const classifyError = (e) => {
+  const http = e?.response?.status;
+  const code = e?.code;
+  const msg = e?.message || '';
+  let title = 'Connection error';
+  let hint = '';
+  let retriable = false;
+
+  if (code === 'ECONNABORTED') {
+    title = 'Request timed out (120s) contacting F5';
+    hint = 'The device took too long to respond. We will retry automatically.';
+    retriable = true;
+  } else if (http === 401) {
+    title = 'Unauthorized (401) on F5';
+    hint = 'Check device credentials/role.';
+    retriable = false;
+  } else if ([408, 429, 500, 502, 503, 504].includes(http)) {
+    title = `F5 responded ${http}`;
+    hint = 'The F5 may be busy or temporarily unstable. We will retry.';
+    retriable = true;
+  } else if (!http && msg && /Network|ECONNREFUSED|ENETUNREACH|EHOSTUNREACH|No route to host/i.test(msg)) {
+    title = 'Could not establish connection to host';
+    hint = 'Verify network connectivity and ports.';
+    retriable = true;
+  }
+
+  return { code: http || code || 'ERR', retriable, title, hint, raw: JSON.stringify({
+    http, code, message: msg, data: e?.response?.data
+  }, null, 2) };
+};
 
 const CertificateUsageDetail = ({ certId }) => {
   const [usage, setUsage] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [status, setStatus] = useState('idle'); // idle | loading | retrying | success | error
+  const [attempt, setAttempt] = useState(0);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchUsage = useCallback(async (n = 1) => {
     if (!certId) return;
-    
-    setLoading(true);
-    setError('');
+    setAttempt(n);
+    setStatus(n === 1 ? 'loading' : 'retrying');
+    setError(null);
 
-    apiClient.get(`/certificates/${certId}/usage`)
-      .then(response => {
-        setUsage(response.data);
-      })
-      .catch(error => {
-        console.error("Error fetching usage data:", error);
-        setError(`Failed to load usage details. Please try again.`);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const res = await apiClient.get(`/certificates/${certId}/usage?fast=1`, { timeout: REQ_TIMEOUT_MS });
+      setUsage(res.data || {});
+      setStatus('success');
+    } catch (e) {
+      const http = e?.response?.status;
+      const code = e?.code; // axios timeout => 'ECONNABORTED'
+      const retriable = code === 'ECONNABORTED' || RETRIABLE_HTTP.has(http);
+
+      if (retriable && n < MAX_ATTEMPTS) {
+        const backoff = Math.min(1500 * 2 ** (n - 1), 6000);
+        setTimeout(() => fetchUsage(n + 1), backoff);
+      } else {
+        setError(e);
+        setStatus('error');
+      }
+    }
   }, [certId]);
 
-  if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
-  }
-  if (error) {
-    return <Alert severity="error" sx={{ m: 1 }}>{error}</Alert>;
+  useEffect(() => {
+    fetchUsage(1);
+  }, [fetchUsage]);
+
+  if (status === 'loading' || status === 'retrying') {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <CircularProgress size={22} />
+          <Typography variant="body2">
+            {status === 'loading' ? 'Contacting backend…' : `Retrying… (attempt ${attempt}/${MAX_ATTEMPTS})`}
+          </Typography>
+        </Stack>
+      </Box>
+    );
   }
 
-  const profiles = Array.isArray(usage?.profiles) ? usage.profiles : [];
-  const virtualServers = Array.isArray(usage?.virtual_servers) ? usage.virtual_servers : [];
+  if (status === 'error') {
+    return (
+      <Alert severity="error" sx={{ m: 1 }}>
+        Failed to load usage details. Please try again.
+        <Box sx={{ mt: 1 }}>
+          <Button variant="outlined" size="small" onClick={() => fetchUsage(1)}>
+            Retry (live)
+          </Button>
+        </Box>
+      </Alert>
+    );
+  }
+
+  const profiles = Array.isArray(usage?.profiles)
+    ? usage.profiles
+    : (Array.isArray(usage?.profile_refs) ? usage.profile_refs : []);
+  const virtualServers = Array.isArray(usage?.virtual_servers)
+    ? usage.virtual_servers
+    : (Array.isArray(usage?.vips) ? usage.vips : []);
 
   if (profiles.length === 0 && virtualServers.length === 0) {
     return <Alert severity="info" sx={{ m: 1 }}>No usage data available for this certificate.</Alert>;
@@ -58,54 +127,62 @@ const CertificateUsageDetail = ({ certId }) => {
     <Box>
       {profiles.length > 0 && (
         <Box mb={2}>
-            <Typography variant="overline" color="text.secondary">SSL Profiles</Typography>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {`Used in ${profiles.length} Profile(s)`}
-            </Typography>
-            <List dense>
-                {profiles.map(p => (
-                    <ListItem key={p} sx={{ pl: 1 }}>
-                        <ListItemText primary={p} />
-                    </ListItem>
-                ))}
-            </List>
+          <Typography variant="overline" color="text.secondary">SSL Profiles</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            {`Used in ${profiles.length} Profile${profiles.length === 1 ? '' : 's'}`}
+          </Typography>
+          <List dense>
+            {profiles.map((p, idx) => (
+              <ListItem key={idx} sx={{ pl: 1 }}>
+                <ListItemText primary={typeof p === 'string' ? p : p?.name ?? ''} />
+              </ListItem>
+            ))}
+          </List>
         </Box>
       )}
 
       {virtualServers.length > 0 && (
         <>
-            {profiles.length > 0 && <Divider sx={{ my: 2 }} />}
+          {profiles.length > 0 && <Divider sx={{ my: 2 }} />}
 
-            <Box>
-                <Typography variant="overline" color="text.secondary">Virtual Servers</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    {`Applied to ${virtualServers.length} Server(s)`}
-                </Typography>
-                <List>
-                    {virtualServers.map(vs => (
-                        <Paper key={vs.name} variant="outlined" sx={{ mb: 1.5, p: 1, borderRadius: 2 }}>
-                            <ListItem>
-                                <ListItemText 
-                                    primary={vs.name} 
-                                    primaryTypographyProps={{ fontWeight: 'bold' }}
-                                    secondary={vs.destination}
-                                />
-                                {/* ✅ LA CORRECCIÓN ESTÁ AQUÍ ✅ */}
-                                {/* Ahora solo mostramos el icono si el estado es 'enabled' */}
-                                <Chip 
-                                    icon={vs.state === 'enabled' ? <CheckCircleIcon /> : null} 
-                                    label={vs.state} 
-                                    color={vs.state === 'enabled' ? 'success' : 'default'} 
-                                    size="small"
-                                    sx={{ textTransform: 'capitalize' }}
-                                />
-                            </ListItem>
-                        </Paper>
-                    ))}
-                </List>
-            </Box>
+          <Box>
+            <Typography variant="overline" color="text.secondary">Virtual Servers</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {`Applied to ${virtualServers.length} Server${virtualServers.length === 1 ? '' : 's'}`}
+            </Typography>
+            <List>
+              {virtualServers.map((vs, idx) => {
+                const name = typeof vs === 'string' ? vs : vs?.name;
+                const destination = typeof vs === 'string' ? '' : vs?.destination;
+                const state = typeof vs === 'string' ? '' : (vs?.state ?? '');
+                return (
+                  <Paper key={name ?? idx} variant="outlined" sx={{ mb: 1.5, p: 1, borderRadius: 2 }}>
+                    <ListItem>
+                      <ListItemText 
+                        primary={name} 
+                        primaryTypographyProps={{ fontWeight: 'bold' }}
+                        secondary={destination}
+                      />
+                      <Chip 
+                        icon={state === 'enabled' ? <CheckCircleIcon /> : null} 
+                        label={state || '—'} 
+                        color={state === 'enabled' ? 'success' : 'default'} 
+                        size="small"
+                        sx={{ textTransform: 'capitalize' }}
+                      />
+                    </ListItem>
+                  </Paper>
+                );
+              })}
+            </List>
+          </Box>
         </>
       )}
+
+      <Divider sx={{ my: 1.5 }} />
+      <Button variant="outlined" size="small" onClick={() => fetchUsage(1)}>
+        Retry live lookup
+      </Button>
     </Box>
   );
 };

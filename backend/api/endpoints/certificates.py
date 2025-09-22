@@ -7,8 +7,6 @@ from sqlalchemy import select, func, or_
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
-from icontrol.exceptions import iControlUnexpectedHTTPError
-from cryptography.fernet import Fernet
 
 # --- Imports para la lógica y la seguridad ---
 from db.base import get_db
@@ -17,7 +15,7 @@ from db.models import CertProfileLinksCache, SslProfileVipsCache
 from schemas.certificate import CertificateResponse
 from services import certificate_service, f5_service_logic, encryption_service, auth_service
 from services import pfx_service 
-from services.f5_service_tasks import scan_f5_task 
+from core.celery_worker import celery_app
 
 
 
@@ -30,10 +28,6 @@ class RenewalInitiateRequest(BaseModel):
 class DeployRequest(BaseModel):
     signed_cert_content: str
 
-class RenewalDetailsResponse(BaseModel):
-    renewal_id: int
-    csr: str
-    private_key: str
 
 # --- Endpoint GET / : Cualquiera puede ver, solo necesita estar logueado ---
 @router.get("/", response_model=List[CertificateResponse])
@@ -215,7 +209,9 @@ def get_certificates(
 
 @router.get("/{cert_id}/usage", summary="Get usage details for a specific certificate")
 def get_cert_usage_details(
-    cert_id: int, 
+    cert_id: int,
+    fast: bool = Query(default=False, description="Fast mode: only SSL profiles (no VIPs)"),
+    timeout_sec: int = Query(default=120, ge=1, le=600, description="Per-request timeout for device calls"),
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
@@ -235,13 +231,23 @@ def get_cert_usage_details(
     f5_password = encryption_service.decrypt_data(device.encrypted_password)
 
     try:
-        usage_data = f5_service_logic.get_certificate_usage(
-            hostname=f5_hostname,
-            username=f5_username,
-            password=f5_password,
-            cert_name=db_cert.name,
-            partition=db_cert.partition
-        )
+        if fast:
+            usage_data = f5_service_logic.get_certificate_profiles_live_fast_single_device(
+                hostname=f5_hostname,
+                username=f5_username,
+                password=f5_password,
+                cert_name=db_cert.name,
+                partition=db_cert.partition,
+                per_call_timeout=timeout_sec,
+            )
+        else:
+            usage_data = f5_service_logic.get_certificate_usage(
+                hostname=f5_hostname,
+                username=f5_username,
+                password=f5_password,
+                cert_name=db_cert.name,
+                partition=db_cert.partition
+            )
         return usage_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get usage data from F5: {str(e)}")
@@ -563,7 +569,7 @@ def update_ssl_profiles(
         
         # Después del éxito, lanzamos una tarea para re-escanear el inventario de ese F5
         # y mantener nuestra base de datos actualizada.
-        scan_f5_task.delay(device.id)
+        celery_app.send_task("scan_single_f5", args=[device.id])
 
         return {
             "status": "success",

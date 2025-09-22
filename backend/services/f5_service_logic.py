@@ -223,7 +223,14 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
     con la base de datos local, asegurando que el device_id se asigne.
     """
     try:
-        mgmt = ManagementRoot(device.ip_address, username, password, token=True)
+        # honor optional login provider and relax SSL verification (self-signed mgmt certs)
+        auth_provider = getattr(device, "login_provider", "tmos") or "tmos"
+        mgmt = ManagementRoot(device.ip_address, username, password, token=True, auth_provider=auth_provider)
+        try:
+            # Disable TLS verification to avoid SSLEOF/self-signed issues on mgmt interface
+            mgmt._meta_data['icr_session'].verify = False
+        except Exception:
+            pass
         print(f"Successfully connected to {device.hostname} ({device.ip_address})")
 
         f5_certs_stubs = mgmt.tm.sys.file.ssl_certs.get_collection()
@@ -334,6 +341,10 @@ def deploy_from_pem_and_update_profiles(
     y actualiza los perfiles SSL que usaban old_cert_name.
     """
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
 
     # 1) Sanitizar PEM de certificado y asegurar que es v3 con SAN (opcional validar aquí)
     cert_pem_clean = _sanitize_pem_cert(cert_pem)
@@ -410,6 +421,10 @@ def deploy_from_pfx_and_update_profiles(
     """Desempaqueta PFX, sanea PEM, sube por file-transfer, instala con tmsh y actualiza perfiles."""
     mgmt = ManagementRoot(hostname, username, password, token=True)
     try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
+    try:
         pfx_password_bytes = pfx_password.encode('utf-8') if pfx_password else None
         private_key_obj, main_cert_obj, additional_certs = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
     except Exception as e:
@@ -474,6 +489,10 @@ def deploy_and_update_f5(
 # Sube e instala cert+key (sin tocar perfiles)
 def upload_cert_and_key(hostname: str, username: str, password: str, cert_content: str, key_content: str) -> dict:
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
     # Sanitiza y crea nombre
     cert_clean = _sanitize_pem_cert(cert_content)
     cert_obj = x509.load_pem_x509_certificate(cert_clean.encode('utf-8'))
@@ -490,6 +509,81 @@ def upload_cert_and_key(hostname: str, username: str, password: str, cert_conten
     _install_cert_and_key_from_local(mgmt, cert_path, key_path, object_name)
     return {"object_name": object_name, "cert": f"{object_name}.crt", "key": f"{object_name}.key"}
 
+# ----------------------------
+# Helper to match cert reference in profiles
+# ----------------------------
+from typing import Optional
+
+def _is_cert_ref_match(cert_name: str, ref: Optional[str]) -> bool:
+    """
+    Returns True if the profile's cert reference (e.g., '/Partition/ObjectName')
+    matches cert_name, tolerating optional '.crt' / '.key' suffixes.
+    """
+    if not ref or not cert_name:
+        return False
+    tail = _safe_tail(ref)
+    if not tail:
+        return False
+    # Accept exact tail match OR with/without .crt/.key suffix
+    if cert_name.endswith('.crt') or cert_name.endswith('.key'):
+        base = cert_name.rsplit('.', 1)[0]
+        return tail == cert_name or tail == base
+    else:
+        return tail == cert_name or tail == f"{cert_name}.crt" or tail == f"{cert_name}.key"
+
+
+def get_certificate_profiles_live_fast_single_device(
+    hostname: str,
+    username: str,
+    password: str,
+    cert_name: str,
+    partition: Optional[str] = None,
+    per_call_timeout: int = 120,
+) -> dict:
+    """
+    Fast-path for Show Usage (live): only list client-ssl profiles that reference the given cert.
+    Performs a single REST GET to /mgmt/tm/ltm/profile/client-ssl with a request timeout.
+    """
+    t0 = time.time()
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data["icr_session"].verify = False
+    except Exception:
+        pass
+
+    session: requests.Session = mgmt._meta_data["icr_session"]
+    uri = f"https://{mgmt.hostname}/mgmt/tm/ltm/profile/client-ssl"
+
+    profiles: list[str] = []
+    try:
+        # Single low-level GET so we can enforce a request timeout
+        resp = session.get(uri, params={"expandSubcollections": "false"}, timeout=per_call_timeout)
+        if resp.status_code not in (200, 201, 202):
+            raise ValueError(f"F5 API error {resp.status_code}: {resp.text}")
+
+        payload = resp.json() or {}
+        items = payload.get("items", [])
+        for item in items:
+            if partition and item.get("partition") != partition:
+                continue
+            ckc = item.get("certKeyChain") or []
+            if any(_is_cert_ref_match(cert_name, (ck.get("cert") if isinstance(ck, dict) else None)) for ck in ckc):
+                fp = item.get("fullPath") or f"/{item.get('partition','Common')}/{item.get('name','')}"
+                profiles.append(fp)
+
+    except Exception as e:
+        raise ValueError(f"Failed to fetch client-ssl profiles from device {hostname}: {e}")
+
+    duration_ms = int((time.time() - t0) * 1000)
+    profiles = sorted(set(profiles))
+    return {
+        "profiles": profiles,
+        "virtual_servers": [],
+        "source": "live-fast-profiles",
+        "device": hostname,
+        "duration_ms": duration_ms,
+    }
+
 def get_certificate_usage(hostname: str, username: str, password: str, cert_name: str, partition: str):
     """
     Encuentra todos los perfiles SSL y Virtual Servers que usan un certificado específico.
@@ -500,13 +594,17 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
     }
     
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
     
     # 1. Encontrar los perfiles SSL que usan el certificado
     ssl_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(params={'partition': partition})
     for profile in ssl_profiles:
-        # Revisamos la cadena de cert/key del perfil
-        if any(cert_name in item.get('cert', '') for item in getattr(profile, 'certKeyChain', [])):
-            usage_data["profiles"].append(profile.fullPath)
+        # Check cert/key chain robustly (handles '/Common/foo' vs 'foo' vs 'foo.crt')
+        if any(_is_cert_ref_match(cert_name, item.get('cert')) for item in (getattr(profile, 'certKeyChain', []) or [])):
+            usage_data["profiles"].append(getattr(profile, 'fullPath', f"/{getattr(profile,'partition','Common')}/{getattr(profile,'name','')}"))
     
     if not usage_data["profiles"]:
         return usage_data # Si no se usa en ningún perfil, no puede estar en ningún VS
@@ -529,6 +627,10 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
 
 def delete_certificate_from_f5(hostname: str, username: str, password: str, cert_name: str, partition: str):
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
     
     # CAMBIO 3: Corregimos la lógica para obtener el nombre de la clave
     try:
@@ -576,6 +678,10 @@ def export_key_and_create_csr(hostname: str, username: str, password: str, db_ce
     usando los datos del certificado guardados en nuestra base de datos.
     """
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
     
     # Extraemos el nombre y la partición del certificado desde el objeto db_cert
     cert_name = db_cert.name
@@ -670,6 +776,10 @@ def get_realtime_certs_from_f5(hostname: str, username: str, password: str, devi
     compatible con nuestro schema CertificateResponse.
     """
     mgmt = ManagementRoot(hostname, username, password, token=True)
+    try:
+        mgmt._meta_data['icr_session'].verify = False
+    except Exception:
+        pass
     f5_certs = mgmt.tm.sys.file.ssl_certs.get_collection()
     
     cert_list = []

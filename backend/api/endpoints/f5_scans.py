@@ -187,6 +187,8 @@ def queue_scan_all(
         limit = payload.get("limit")
         batch_size = payload.get("batch_size", 0)
 
+    queue_name = os.getenv("CELERY_SCAN_QUEUE", os.getenv("CELERY_DEFAULT_QUEUE", "celery"))
+
     async_result = celery_app.send_task(
         "trigger_scan_for_all_devices_task",
         kwargs={
@@ -194,5 +196,6 @@ def queue_scan_all(
             "limit": limit,
             "batch_size": batch_size,
         },
+        queue=queue_name,
     )
     return {"queued": True, "task_id": async_result.id}

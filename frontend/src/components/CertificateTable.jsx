@@ -1,10 +1,7 @@
-// frontend/src/components/CertificateTable.jsx
-
 import React from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, Button, CircularProgress, Tooltip, IconButton, useTheme } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { authProvider } from '../pages/LoginPage';
 
@@ -14,7 +11,6 @@ const CertificateTable = ({
     onInitiateRenewal, 
     onOpenDeploy, 
     onShowUsage,
-    onShowRenewalDetails,
     onDelete,
     actionLoading, 
     activeActionCertId 
@@ -31,10 +27,15 @@ const CertificateTable = ({
     {
       field: 'expiration_date',
       headerName: 'Expiration Date',
-      width: 130,
+      width: 160,
       align: 'center',
       headerAlign: 'center',
-      valueGetter: (value) => (value ? new Date(value).toLocaleDateString() : 'N/A'),
+      valueFormatter: (params) => {
+        const v = params.value;
+        if (!v) return 'N/A';
+        const dt = new Date(v);
+        return Number.isNaN(dt.getTime()) ? String(v) : dt.toLocaleDateString();
+      },
     },
     {
       field: 'days_remaining',
@@ -77,18 +78,6 @@ const CertificateTable = ({
                     </IconButton>
                 </Tooltip>
 
-                <Tooltip title={hasActiveRenewal ? "Show Renewal Details (CSR/Key)" : "No active renewal process"}>
-                    <span>
-                        <IconButton 
-                            onClick={() => hasActiveRenewal && onShowRenewalDetails(params.row.renewal_id)} 
-                            size="small" 
-                            disabled={!hasActiveRenewal}
-                            aria-label="show renewal details"
-                        >
-                            <InfoIcon />
-                        </IconButton>
-                    </span>
-                </Tooltip>
                 
                 {userRole !== 'viewer' && (
                     hasActiveRenewal 

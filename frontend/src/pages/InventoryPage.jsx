@@ -321,7 +321,9 @@ function InventoryPage() {
           </IconButton>
         </DialogTitle>
         <DialogContent dividers>
-          {usageModalOpen && selectedCertId && <CertificateUsageDetail certId={selectedCertId} />}
+          {usageModalOpen && selectedCertId && (
+            <CertificateUsageDetail certId={selectedCertId} cert={activeCert} />
+          )}
         </DialogContent>
       </Dialog>
       <ConfirmDialog

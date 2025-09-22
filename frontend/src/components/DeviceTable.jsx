@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Chip, Button, IconButton, Tooltip, Stack } from '@mui/material';
+import { Box, Chip, IconButton, Tooltip, Button } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -18,20 +18,15 @@ const DeviceTable = ({
   searchTerm,
   refreshTrigger,
   userRole,
-  onSelectionChange,
-  clearSelectionKey,
 }) => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectionModel, setSelectionModel] = useState([]);
 
   const [sortModel, setSortModel] = useState([
     { field: 'ip_address', sort: 'asc' },
   ]);
 
-  const [busy, setBusy] = useState(false);
-
-  // --- (Lógica de fetching y selección no cambian) ---
+  // Fetch devices
   useEffect(() => {
     const handler = setTimeout(() => {
       setLoading(true);
@@ -49,11 +44,6 @@ const DeviceTable = ({
     return () => clearTimeout(handler);
   }, [searchTerm, refreshTrigger]);
 
-  useEffect(() => {
-    setSelectionModel([]);
-  }, [clearSelectionKey]);
-
-  // --- (Las columnas no cambian) ---
   const columns = [
     { field: 'hostname', headerName: 'Hostname', flex: 1, minWidth: 260 },
     {
@@ -113,7 +103,10 @@ const DeviceTable = ({
         const title = d.isValid() ? d.toISOString() : '';
         return (
           <Tooltip title={title} arrow>
-            <span>{absolute}{relative ? ` (${relative})` : ''}</span>
+            <span>
+              {absolute}
+              {relative ? ` (${relative})` : ''}
+            </span>
           </Tooltip>
         );
       },
@@ -130,7 +123,11 @@ const DeviceTable = ({
         return (
           <Tooltip title={message || rawStatus} arrow>
             <span>
-              <Chip label={rawStatus} size="small" sx={{ textTransform: 'uppercase', fontWeight: 600 }} />
+              <Chip
+                label={rawStatus}
+                size="small"
+                sx={{ textTransform: 'uppercase', fontWeight: 600 }}
+              />
             </span>
           </Tooltip>
         );
@@ -163,83 +160,19 @@ const DeviceTable = ({
     });
   }
 
-  const postDevice = async (id, path) => {
-    try {
-      await apiClient.post(`/devices/${id}/${path}`);
-    } catch (e) {
-      console.error(`POST /devices/${id}/${path} failed`, e);
-    }
-  };
-
-  const handleRefreshFactsSelected = async () => {
-    if (!selectionModel?.length) return;
-    setBusy(true);
-    for (const id of selectionModel) {
-      await postDevice(id, 'refresh-facts');
-    }
-    setBusy(false);
-  };
-
-  const handleRefreshCacheSelected = async () => {
-    if (!selectionModel?.length) return;
-    setBusy(true);
-    for (const id of selectionModel) {
-      await postDevice(id, 'refresh-cache');
-    }
-    setBusy(false);
-  };
-
   return (
     <Box sx={{ height: 'calc(100vh - 280px)', width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {/* Action bar */}
-      <Stack direction="row" spacing={1} sx={{ mb: 0.5 }}>
-        <Button
-          variant="contained"
-          size="small"
-          disabled={!selectionModel?.length || busy}
-          onClick={handleRefreshFactsSelected}
-        >
-          Refresh Facts (selected)
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          disabled={!selectionModel?.length || busy}
-          onClick={handleRefreshCacheSelected}
-        >
-          Refresh Cache (selected)
-        </Button>
-      </Stack>
-
       <DataGrid
         rows={Array.isArray(devices) ? devices : []}
         columns={columns}
-        loading={loading || busy}
+        loading={loading}
         getRowId={(row) => row.id}
-        disableSelectionOnClick
-
-        // Sorting (default by IP asc)
-        sortingOrder={[ 'asc', 'desc' ]}
+        sortingOrder={['asc', 'desc']}
         sortModel={sortModel}
         onSortModelChange={(m) => setSortModel(m && m.length ? m : [{ field: 'ip_address', sort: 'asc' }])}
-
-        // Pagination
         pagination
         pageSize={100}
         rowsPerPageOptions={[25, 50, 100]}
-
-        // Selection
-        checkboxSelection
-        
-        // En v6, el parámetro de onSelectionModelChange es el array de IDs.
-        // Mantenemos esta prop y quitamos disableSelectionOnClick para evitar conflictos.
-        onSelectionModelChange={(newSelection) => {
-          setSelectionModel(newSelection);
-          if (onSelectionChange) {
-            onSelectionChange(newSelection);
-          }
-        }}
-        selectionModel={selectionModel}
       />
     </Box>
   );

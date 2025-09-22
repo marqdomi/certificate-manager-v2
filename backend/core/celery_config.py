@@ -22,12 +22,14 @@ enable_utc = True
 # Queues (simple default; can be overridden via env/route map)
 task_default_queue = os.getenv("CELERY_DEFAULT_QUEUE", "celery")
 
-# Optional: basic routing so scan tasks can be isolated if desired
+# Ensure orchestrator and per-device scans land in the same queue the worker actually consumes
 task_routes = {
-    # Keep dotted path here; if the task is renamed, this can be updated without touching worker code
-    "services.f5_service_tasks.trigger_scan_for_all_devices_task": {
-        "queue": os.getenv("CELERY_SCAN_QUEUE", "scans")
-    }
+    "trigger_scan_for_all_devices_task": {
+        "queue": os.getenv("CELERY_SCAN_QUEUE", os.getenv("CELERY_DEFAULT_QUEUE", "celery"))
+    },
+    "scan_single_f5": {
+        "queue": os.getenv("CELERY_SCAN_QUEUE", os.getenv("CELERY_DEFAULT_QUEUE", "celery"))
+    },
 }
 
 # Worker tuning (safe, conservative defaults)

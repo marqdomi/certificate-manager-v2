@@ -253,9 +253,9 @@ def refresh_facts(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
-    from services.f5_service_tasks import refresh_device_facts_task
-    refresh_device_facts_task.delay(device_id)
-    return {"message": f"Facts refresh queued for device {device_id}"}
+    from core.celery_worker import celery_app
+    res = celery_app.send_task("devices.refresh_facts", args=[device_id])
+    return {"message": f"Facts refresh queued for device {device_id}", "task_id": res.id}
 
 @router.post("/{device_id}/refresh-cache")
 def refresh_cache(
@@ -264,15 +264,15 @@ def refresh_cache(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
-    from services.cache_builder import task_refresh_device_profiles
-    task_refresh_device_profiles.delay(device_id, limit_certs=limit_certs)
-    return {"message": f"Cache refresh queued for device {device_id}", "limit_certs": limit_certs}
+    from core.celery_worker import celery_app
+    res = celery_app.send_task("cache.refresh_device_profiles", kwargs={"device_id": int(device_id), "limit_certs": limit_certs})
+    return {"message": f"Cache refresh queued for device {device_id}", "limit_certs": limit_certs, "task_id": res.id}
 
 @router.post("/refresh-facts-all")
 def refresh_facts_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
-    from services.f5_service_tasks import refresh_device_facts_all_task
-    res = refresh_device_facts_all_task.delay()
-    return {"message":"Queued facts refresh for all devices"}
+    from core.celery_worker import celery_app
+    res = celery_app.send_task("devices.refresh_facts_all")
+    return {"message":"Queued facts refresh for all devices", "task_id": res.id}
