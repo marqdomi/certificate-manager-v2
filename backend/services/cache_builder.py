@@ -1,4 +1,8 @@
-# backend/services/cache_builder.py
+# ⚠️ DEPRECATED: backend/services/cache_builder.py
+# This service builds complex cache tables that are being replaced with direct F5 queries.
+# Use get_certificate_ssl_profiles_simple() for faster SSL profile lookups instead.
+# TODO: Phase out this service in favor of direct queries (Fase 3)
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -455,11 +459,13 @@ def refresh_device_profiles_cache(device_id: int, limit_certs: Optional[int] = N
         db.close()
 
 
+# ⚠️ DEPRECATED: Cache refresh tasks being phased out
 @celery_app.task(name="cache.refresh_device_profiles")
 def task_refresh_device_profiles(device_id: int, limit_certs: Optional[int] = None) -> dict:
     return refresh_device_profiles_cache(device_id, limit_certs)
 
 
+# ⚠️ DEPRECATED: Cache refresh tasks being phased out
 @celery_app.task(name="cache.refresh_all_profiles")
 def task_refresh_all_profiles(
     limit_certs: Optional[int] = None,

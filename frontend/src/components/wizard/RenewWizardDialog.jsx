@@ -187,7 +187,38 @@ function ImpactPreviewStep({
     setNotice(null);
     setError(null);
 
-    // 1) Prefer cache endpoint when we have device & cert
+    // 1) NEW: Try simplified endpoint first (fastest) if we have certificateId
+    if (certificateId) {
+      setLoadingCache(true);
+      try {
+        const r = await apiClient.get(`/certificates/${certificateId}/ssl-profiles`);
+        const data = r?.data || {};
+        
+        // Convert simplified format to expected format
+        const sslProfiles = data.ssl_profiles || [];
+        const rows = sslProfiles.map(profile => ({
+          name: profile.name,
+          partition: profile.partition,
+          context: profile.context,
+          vips: [], // No VIPs in simplified mode
+          profile_full_path: profile.full_path,
+        }));
+
+        setProfiles(rows);
+        setSource("simplified");
+        setLoadingCache(false);
+        setNotice(`Found ${rows.length} SSL profile${rows.length === 1 ? "" : "s"} using this certificate`);
+        onResolved?.({ profiles: rows, from: "simplified", error: null });
+        return; // done - successful simplified lookup
+      } catch (e) {
+        console.log("Simplified lookup failed, trying cache fallback:", e.message);
+        // Continue to fallback cache lookup
+      } finally {
+        setLoadingCache(false);
+      }
+    }
+
+    // 2) Fallback: Traditional cache endpoint when we have device & cert
     if (device?.id && certName) {
       setLoadingCache(true);
       try {
@@ -291,6 +322,7 @@ function ImpactPreviewStep({
     }
   };
 
+
   useEffect(() => {
     // Cache primero por defecto
     if (preferCache && certificateId) runCache();
@@ -322,14 +354,47 @@ function ImpactPreviewStep({
         </strong>
       </Typography>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, flexWrap: "wrap" }}>
         <Button size="small" variant="outlined" onClick={runLive} disabled={loadingLive}>
           {loadingLive ? "Running live…" : "Refresh from device"}
         </Button>
+        {device?.id && certName && source === "simplified" && (
+          <Button 
+            size="small" 
+            variant="outlined" 
+            color="info"
+            onClick={() => {
+              // Force full cache lookup 
+              setNotice(null);
+              setError(null);
+              setLoadingCache(true);
+              apiClient.get(`/f5/cache/impact-preview`, {
+                params: { device_id: device.id, cert_name: certName },
+              }).then(r => {
+                const rows = normalizeProfilesPayload(r.data);
+                setProfiles(rows);
+                setSource("cache");
+                setLoadingCache(false);
+                setNotice(`Full analysis: ${rows.length} profile${rows.length === 1 ? "" : "s"} with VIP details`);
+                loadCacheAge(device.id);
+                onResolved?.({ profiles: rows, from: "cache", error: null });
+              }).catch(e => {
+                setError(`Cache analysis failed: ${e?.response?.data?.detail || e.message}`);
+                setLoadingCache(false);
+              });
+            }}
+            disabled={loading || loadingLive}
+          >
+            Full Analysis (with VIPs)
+          </Button>
+        )}
+
         {loading && (
           <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
             <CircularProgress size={18} />
-            <Typography variant="body2">{loadingLive ? "Querying F5…" : "Reading cached usage…"}</Typography>
+            <Typography variant="body2">
+              {loadingLive ? "Querying F5 device…" : loadingCache ? "Getting SSL profiles…" : "Loading…"}
+            </Typography>
           </Box>
         )}
         {source === "cache" && !loadingLive && (
@@ -345,7 +410,31 @@ function ImpactPreviewStep({
           />
         )}
         {source === "live" && (
-          <Typography variant="body2" color="text.secondary">(live results)</Typography>
+          <Chip
+            size="small"
+            variant="filled"
+            color="warning"
+            label="🔄 Live Mode - Real-time F5 query"
+            sx={{ ml: 0.5 }}
+          />
+        )}
+        {source === "cache" && (
+          <Chip
+            size="small"
+            variant="filled"
+            color="primary"
+            label="📊 Cache Mode - Full impact analysis"
+            sx={{ ml: 0.5 }}
+          />
+        )}
+        {source === "simplified" && (
+          <Chip
+            size="small"
+            variant="filled"
+            color="success"
+            label="⚡ Fast Mode - SSL profiles only"
+            sx={{ ml: 0.5 }}
+          />
         )}
       </Box>
 

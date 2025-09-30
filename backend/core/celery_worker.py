@@ -100,6 +100,57 @@ except Exception:
 # --- Register device facts refresh tasks (wrappers, no import-time coupling) ---
 import importlib
 
+# --- Helper functions to resolve and call refresh_facts_all implementation safely ---
+def _resolve_refresh_facts_all_impl():
+    """
+    Locate the concrete implementation for 'refresh all facts' without
+    accidentally resolving to this Celery task (which would recurse).
+    """
+    import importlib as _il
+
+    search_paths = [
+        ("services.f5_service_tasks", ["refresh_device_facts_all_task", "refresh_device_facts_all"]),
+        ("services.f5_facts", ["refresh_all_device_facts", "refresh_device_facts_all"]),
+    ]
+
+    for mod_name, candidates in search_paths:
+        try:
+            m = _il.import_module(mod_name)
+        except ModuleNotFoundError:
+            continue
+        except Exception:
+            # If the module exists but fails to import for another reason, try next candidate
+            continue
+        for fn_name in candidates:
+            impl = getattr(m, fn_name, None)
+            if impl is None:
+                continue
+            # Guard: avoid resolving to the Celery task in this module (would recurse)
+            if getattr(impl, "__module__", "") == __name__ and getattr(impl, "__name__", "") == "devices_refresh_facts_all":
+                continue
+            return impl
+    return None
+
+
+def _call_refresh_facts_all_impl(device_ids):
+    """
+    Call the located implementation with best-effort signature support.
+    """
+    impl = _resolve_refresh_facts_all_impl()
+    if impl is None:
+        raise RuntimeError("No implementation found for devices.refresh_facts_all")
+
+    # Some implementations accept kwargs, others only positional or nothing
+    try:
+        return impl(device_ids=device_ids)  # type: ignore[misc]
+    except TypeError:
+        if device_ids is not None:
+            try:
+                return impl(device_ids)  # type: ignore[misc]
+            except TypeError:
+                pass
+        return impl()  # type: ignore[misc]
+
 @celery_app.task(name="devices.refresh_facts")
 def devices_refresh_facts(device_id: int):
     """
@@ -124,34 +175,17 @@ def devices_refresh_facts(device_id: int):
         raise RuntimeError("No implementation found for devices.refresh_facts")
     return impl(device_id)
 
+
+# --- Recursion-safe wrapper for refresh_facts_all ---
 @celery_app.task(name="devices.refresh_facts_all")
 def devices_refresh_facts_all(device_ids: list[int] | None = None):
     """
-    Wrapper task; see devices_refresh_facts. Accepts optional device_ids list.
+    Wrapper task that delegates to a concrete implementation, avoiding recursion
+    if an import accidentally resolves back to this task.
     """
-    impl = None
-    try:
-        m = importlib.import_module("services.f5_service_tasks")
-        impl = getattr(m, "refresh_device_facts_all_task", None) or getattr(m, "refresh_device_facts_all", None)
-    except ModuleNotFoundError:
-        pass
-    if impl is None:
-        try:
-            m = importlib.import_module("services.f5_facts")
-            impl = getattr(m, "refresh_all_device_facts", None) or getattr(m, "refresh_device_facts_all", None)
-        except ModuleNotFoundError:
-            pass
-    if impl is None:
-        raise RuntimeError("No implementation found for devices.refresh_facts_all")
-    # Some implementations accept no args; others accept device_ids
-    try:
-        return impl(device_ids=device_ids)  # type: ignore[misc]
-    except TypeError:
-        if device_ids is not None:
-            return impl(device_ids)  # type: ignore[misc]
-        return impl()  # type: ignore[misc]
+    return _call_refresh_facts_all_impl(device_ids)
 
-# --- Cache refresh task (explicit name expected by callers) ---
+# --- ⚠️ DEPRECATED: Cache refresh task (explicit name expected by callers) ---
 @celery_app.task(name="f5_cache.refresh_profiles_cache_task")
 def refresh_profiles_cache_task(device_ids: list[int] | None = None,
                                 full_resync: bool = False,

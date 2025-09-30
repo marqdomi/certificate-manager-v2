@@ -1,4 +1,7 @@
-"""Add profiles cache tables
+"""⚠️ DEPRECATED: Add profiles cache tables (Fase 3 - Scheduled for removal)
+
+This migration adds cache tables that are being phased out in favor of direct F5 queries.
+Use get_certificate_ssl_profiles_simple() for SSL profile lookups instead.
 
 Revision ID: f3d27fa723f1
 Revises: 0c8945215fc4

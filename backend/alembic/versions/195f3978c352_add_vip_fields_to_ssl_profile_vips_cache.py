@@ -1,4 +1,7 @@
-"""add vip fields to ssl_profile_vips_cache
+"""⚠️ DEPRECATED: add vip fields to ssl_profile_vips_cache (Fase 3 - Scheduled for removal)
+
+This migration extends VIP cache tables that are being phased out.
+Direct SSL profile queries now replace this complex caching system.
 
 Revision ID: 195f3978c352
 Revises: f3d27fa723f1

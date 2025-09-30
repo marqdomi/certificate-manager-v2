@@ -128,7 +128,11 @@ class User(Base):
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role.value}')>"
     
-# --- NUEVAS TABLAS DE CACHÉ (añadir al final de models.py) ---
+# --- ⚠️ DEPRECATED CACHE TABLES (Fase 3 - Scheduled for removal) ---
+# These tables were used for complex cache system that is being replaced
+# with direct F5 queries via get_certificate_ssl_profiles_simple()
+# TODO: Remove in future version after migration validation
+
 class SslProfilesCache(Base):
     __tablename__ = "ssl_profiles_cache"
 
@@ -143,6 +147,7 @@ class SslProfilesCache(Base):
         UniqueConstraint("device_id", "partition", "profile_name", name="uq_profiles_device_partition_name"),
     )
 
+# ⚠️ DEPRECATED: VIP cache not needed with direct SSL profile queries
 class SslProfileVipsCache(Base):
     __tablename__ = "ssl_profile_vips_cache"
 
@@ -162,6 +167,7 @@ class SslProfileVipsCache(Base):
         UniqueConstraint("device_id", "profile_full_path", "vip_name", name="uq_profile_vip_per_device"),
     )
 
+# ⚠️ DEPRECATED: Certificate-profile links now obtained directly from F5
 class CertProfileLinksCache(Base):
     __tablename__ = "cert_profile_links_cache"
 

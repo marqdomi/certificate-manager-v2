@@ -977,3 +977,75 @@ def normalize_object_names(hostname: str, username: str, password: str) -> dict:
 def verify_installed_certificate(hostname: str, username: str, password: str, object_name: str) -> dict:
     mgmt = ManagementRoot(hostname, username, password, token=True)
     return verify_cert_object(mgmt, object_name)
+
+
+def get_certificate_ssl_profiles_simple(hostname: str, username: str, password: str, cert_name: str, partition: str = "Common") -> list:
+    """
+    Función simplificada que obtiene únicamente los SSL profiles que usan un certificado específico.
+    Optimizada para velocidad - solo consulta SSL profiles, sin VIPs ni virtual servers.
+    
+    Args:
+        hostname: IP/hostname del F5
+        username: Usuario F5
+        password: Password F5  
+        cert_name: Nombre del certificado (ej: "example.crt")
+        partition: Partición F5 (default: "Common")
+    
+    Returns:
+        Lista de diccionarios con SSL profiles:
+        [
+            {
+                "name": "clientssl_profile",
+                "partition": "Common", 
+                "full_path": "/Common/clientssl_profile",
+                "context": "clientside"
+            }
+        ]
+    """
+    try:
+        mgmt = ManagementRoot(hostname, username, password, token=True)
+        ssl_profiles = []
+        
+        # Buscar en client-side SSL profiles
+        try:
+            client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(params={'partition': partition})
+            for profile in client_profiles:
+                # Revisar cert-key chain para este certificado
+                cert_key_chain = getattr(profile, 'certKeyChain', [])
+                for chain_item in cert_key_chain:
+                    cert_value = chain_item.get('cert', '')
+                    if cert_name in cert_value:
+                        ssl_profiles.append({
+                            "name": profile.name,
+                            "partition": getattr(profile, 'partition', partition),
+                            "full_path": profile.fullPath,
+                            "context": "clientside"
+                        })
+                        break  # No necesitamos revisar más items de la chain
+        except Exception as e:
+            print(f"Warning: Error fetching client SSL profiles: {e}")
+        
+        # Buscar en server-side SSL profiles  
+        try:
+            server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection(params={'partition': partition})
+            for profile in server_profiles:
+                # Revisar cert-key chain para este certificado
+                cert_key_chain = getattr(profile, 'certKeyChain', [])
+                for chain_item in cert_key_chain:
+                    cert_value = chain_item.get('cert', '')
+                    if cert_name in cert_value:
+                        ssl_profiles.append({
+                            "name": profile.name,
+                            "partition": getattr(profile, 'partition', partition), 
+                            "full_path": profile.fullPath,
+                            "context": "serverside"
+                        })
+                        break
+        except Exception as e:
+            print(f"Warning: Error fetching server SSL profiles: {e}")
+        
+        return ssl_profiles
+        
+    except Exception as e:
+        print(f"ERROR: Failed to get SSL profiles for cert '{cert_name}' on {hostname}: {e}")
+        return []

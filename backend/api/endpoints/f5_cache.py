@@ -24,7 +24,9 @@ def get_db():
         db.close()
 
 
-@router.get("/impact-preview")
+@router.get("/impact-preview", deprecated=True, 
+           summary="Get certificate impact from cache (DEPRECATED)",
+           description="⚠️ **DEPRECATED**: Use `/certificates/{cert_id}/ssl-profiles` for faster, simplified SSL profile lookup.")
 def cached_impact_preview(
     device_id: int = Query(...),
     cert_name: str | None = Query(None),
@@ -156,12 +158,16 @@ def cached_impact_preview(
 
 
 # Alternative RESTful path for impact-preview
-@router.get("/impact-preview/device/{device_id}/cert/{cert_name}")
+@router.get("/impact-preview/device/{device_id}/cert/{cert_name}", deprecated=True,
+           summary="Get certificate impact from cache - Alternative path (DEPRECATED)", 
+           description="⚠️ **DEPRECATED**: Use `/certificates/{cert_id}/ssl-profiles` for faster, simplified SSL profile lookup.")
 def cached_impact_preview_alt(device_id: int, cert_name: str, db: Session = Depends(get_db)):
     return cached_impact_preview(device_id=device_id, cert_name=cert_name, db=db)
 
 
-@router.post("/refresh", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/refresh", status_code=status.HTTP_202_ACCEPTED, deprecated=True,
+            summary="Queue cache refresh (DEPRECATED)",
+            description="⚠️ **DEPRECATED**: Cache system being phased out. Direct SSL profile lookup is now preferred.")
 def queue_cache_refresh(
     payload: dict | None = Body(None, description='{"device_ids":[...], "include_standby": false} opcional'),
 ):

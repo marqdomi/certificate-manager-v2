@@ -629,3 +629,90 @@ def verify_installed_cert(device_id: int, object_name: str,
         return details
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---- Schema for SSL Profiles Response ----
+class SSLProfileResponse(BaseModel):
+    name: str
+    partition: str
+    full_path: str
+    context: str  # "clientside" | "serverside"
+
+class SSLProfilesImpactResponse(BaseModel):
+    device: dict
+    ssl_profiles: List[SSLProfileResponse]
+    profiles_count: int
+    message: str
+
+
+@router.get("/{cert_id}/ssl-profiles", response_model=SSLProfilesImpactResponse,
+           summary="Get SSL profiles using this certificate (SIMPLIFIED - no cache)")
+def get_certificate_ssl_profiles(
+    cert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR, UserRole.VIEWER]))
+):
+    """
+    Endpoint simplificado que obtiene los SSL profiles que usan un certificado específico.
+    
+    - **Consulta directa al F5** (sin cache)
+    - **Solo SSL profiles** (sin VIPs para mejor rendimiento) 
+    - **Respuesta rápida** (~2-3 segundos vs 30+ del cache completo)
+    - **Ideal para renovación** de certificados
+    
+    Este endpoint reemplaza `/f5/cache/impact-preview` con una versión más simple y rápida.
+    """
+    # Get certificate from database
+    certificate = db.get(Certificate, cert_id)
+    if not certificate:
+        raise HTTPException(status_code=404, detail="Certificate not found")
+    
+    # Get device information  
+    device = db.get(Device, certificate.device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found for this certificate")
+    
+    if not device.encrypted_password:
+        raise HTTPException(status_code=400, detail="Device credentials not configured")
+    
+    try:
+        # Decrypt device password
+        f5_password = encryption_service.decrypt_data(device.encrypted_password)
+        
+        # Get SSL profiles directly from F5
+        ssl_profiles_data = f5_service_logic.get_certificate_ssl_profiles_simple(
+            hostname=device.ip_address,
+            username=device.username,
+            password=f5_password,
+            cert_name=certificate.name,
+            partition=certificate.partition or "Common"
+        )
+        
+        # Convert to response format
+        ssl_profiles = [
+            SSLProfileResponse(
+                name=profile["name"],
+                partition=profile["partition"],  
+                full_path=profile["full_path"],
+                context=profile["context"]
+            )
+            for profile in ssl_profiles_data
+        ]
+        
+        return SSLProfilesImpactResponse(
+            device={
+                "id": device.id,
+                "hostname": device.hostname,
+                "ip_address": device.ip_address,
+                "site": device.site
+            },
+            ssl_profiles=ssl_profiles,
+            profiles_count=len(ssl_profiles),
+            message=f"Found {len(ssl_profiles)} SSL profile(s) using certificate '{certificate.name}'"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to get SSL profiles from F5 device {device.hostname}: {str(e)}"
+        )
