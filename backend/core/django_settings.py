@@ -1,26 +1,35 @@
 # backend/core/django_settings.py
-
-# Este archivo es un "stub" para que django-celery-beat funcione sin instalar todo Django.
+# "Stub" mínimo para que django-celery-beat funcione sin instalar todo Django completo.
 
 import os
 
 # Reutilizamos la clave de encriptación como clave secreta, ya que está en el .env
 SECRET_KEY = os.getenv("ENCRYPTION_KEY", "a-default-secret-key-if-not-found")
 
-# Esta es la parte importante: le decimos a Django cómo encontrar nuestra base de datos.
-# Los valores deben coincidir con los de tu docker-compose.yml
+# Zona horaria coherente con Celery
+TIME_ZONE = os.getenv("DJANGO_TIME_ZONE", "UTC")
+USE_TZ = True
+
+# Base de datos: coincide con docker-compose por defecto pero permite override via env
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cmt_db',
-        'USER': 'user',
-        'PASSWORD': 'password',
-        'HOST': 'db',       # El nombre del servicio de la BBDD en Docker
-        'PORT': '5432',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB", "cmt_db"),
+        "USER": os.getenv("POSTGRES_USER", "user"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "password"),
+        "HOST": os.getenv("POSTGRES_HOST", "db"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
 
-# Le decimos a Django que la única "app" que debe conocer es la de celery beat.
 INSTALLED_APPS = (
-    'django_celery_beat',
+    "django_celery_beat",
+    # Agrega 'django_celery_results' si decides persistir resultados de tareas con Django
+    # "django_celery_results",
+)
+
+# Para usar el scheduler de base de datos si en algún momento ejecutas:
+# celery -A backend.core.celery_worker:celery_app beat
+CELERY_BEAT_SCHEDULER = os.getenv(
+    "CELERY_BEAT_SCHEDULER", "django_celery_beat.schedulers:DatabaseScheduler"
 )

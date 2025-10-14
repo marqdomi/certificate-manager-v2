@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
     Box, Typography, Paper, Alert, TextField, Button, 
-    CircularProgress, Snackbar 
+    CircularProgress 
 } from '@mui/material';
 import apiClient from '../services/api';
 

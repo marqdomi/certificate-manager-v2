@@ -1,9 +1,8 @@
-// frontend/src/pages/DeployCenterPage.jsx
-
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Typography, Paper, Alert, Tabs, Tab, Button, Snackbar } from '@mui/material';
-import apiClient from '../services/api';
+import { Box, Typography, Paper, Alert, Tabs, Tab, Button, Snackbar, Collapse, List, ListItem, ListItemText } from '@mui/material';
+import { CheckCircleOutline, ErrorOutline } from '@mui/icons-material';
+import apiClient, { verifyInstalledCert } from '../services/api';
 import DeviceSelector from '../components/DeviceSelector'; 
 // Importamos los componentes de cada pestaña
 import DeployFromPfx from '../components/DeployFromPfx';
@@ -35,6 +34,10 @@ function DeployCenterPage() {
     const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
     const [targetDevices, setTargetDevices] = useState([]);
 
+    const [verification, setVerification] = useState(null);
+    const [showVerification, setShowVerification] = useState(false);
+    const [verifyLoading, setVerifyLoading] = useState(false);
+
     // --- LÓGICA DE ACCIONES (VERSIÓN FINAL Y COMPLETA) ---
 
     const handleTabChange = (event, newValue) => {
@@ -42,7 +45,7 @@ function DeployCenterPage() {
     };
 
     const handleDeployPfx = (deployData) => {
-        const { pfxFile, pfxPassword } = deployData;
+        const { pfxFile, pfxPassword, installChainFromPfx } = deployData;
 
         if (!pfxFile) {
             setNotification({ open: true, message: 'Please upload a PFX file to continue.', severity: 'warning' });
@@ -54,6 +57,10 @@ function DeployCenterPage() {
         formData.append('pfx_file', pfxFile);
         if (pfxPassword) {
             formData.append('pfx_password', pfxPassword);
+        }
+        // Optional: let the backend know whether to install the chain extracted from the PFX
+        if (typeof installChainFromPfx === 'boolean') {
+          formData.append('install_chain_from_pfx', installChainFromPfx);
         }
 
         let apiUrl = '';
@@ -104,11 +111,25 @@ function DeployCenterPage() {
                     message = res.data.message;
                 }
 
+                // Capture verification when available (renewal flow returns single object)
+                if (res.data && res.data.details && res.data.details.verification) {
+                  setVerification(res.data.details.verification);
+                  setShowVerification(true);
+                }
+                // For new deployments to multiple devices, try to surface the first verification returned per device if present
+                if (res.data && res.data.deployment_results) {
+                  const firstWithVerification = res.data.deployment_results.find(r => r.details && r.details.verification);
+                  if (firstWithVerification) {
+                    setVerification(firstWithVerification.details.verification);
+                    setShowVerification(true);
+                  }
+                }
+
                 setNotification({ open: true, message, severity });
-                // Redirigimos al inventario para ver los resultados
-                setTimeout(() => navigate('/certificates'), 4000); // Damos un poco más de tiempo para leer
             })
             .catch(err => {
+                setVerification(null);
+                setShowVerification(false);
                 setNotification({ open: true, message: `Deployment failed: ${err.response?.data?.detail || 'An unexpected error occurred.'}`, severity: 'error' });
             })
             .finally(() => {
@@ -123,6 +144,34 @@ function DeployCenterPage() {
             setNotification({ open: true, message: 'Deployment from files is not yet implemented.', severity: 'warning' });
             setIsLoading(false);
         }, 1000);
+    };
+
+    const handleVerifyNow = async () => {
+      const objectName = verification?.object_name;
+      let deviceId = null;
+
+      if (isRenewalMode) {
+        deviceId = certificateToRenew?.device_id || certificateToRenew?.f5_device_id || null;
+      } else if (targetDevices && targetDevices.length === 1) {
+        deviceId = targetDevices[0].id;
+      }
+
+      if (!objectName || !deviceId) {
+        setNotification({ open: true, message: 'Cannot verify: missing device or object name. If this was a multi-device deploy, select a single device to verify.', severity: 'warning' });
+        return;
+      }
+
+      try {
+        setVerifyLoading(true);
+        const data = await verifyInstalledCert(deviceId, objectName);
+        setVerification(data);
+        setShowVerification(true);
+        setNotification({ open: true, message: 'Verification refreshed from device.', severity: 'success' });
+      } catch (e) {
+        setNotification({ open: true, message: e?.response?.data?.detail || 'Verification failed.', severity: 'error' });
+      } finally {
+        setVerifyLoading(false);
+      }
     };
 
     // --- RENDERIZADO ---
@@ -144,8 +193,43 @@ function DeployCenterPage() {
                 </Alert>
             ) : (
                 <Alert severity="info" sx={{ mb: 4 }}>
-                    You are in **New Deployment** mode. Upload a certificate and select the target devices below.
+                    You are in <strong>New Deployment</strong> mode. Upload a certificate and select the target devices below.
                 </Alert>
+            )}
+
+            {showVerification && verification && (
+              <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
+                  {String(verification.version) === '3' && (verification.san?.length || 0) > 0 ? (
+                    <CheckCircleOutline color="success" />
+                  ) : (
+                    <ErrorOutline color="error" />
+                  )}
+                  <Typography variant="h6" sx={{ m: 0 }}>Post‑install verification</Typography>
+                </Box>
+                <Alert severity={(String(verification.version) === '3' && (verification.san?.length || 0) > 0) ? 'success' : 'error'} sx={{ mb: 2 }}>
+                  Version detected: <strong>{verification.version || 'N/A'}</strong> · SAN entries: <strong>{verification.san ? verification.san.length : 0}</strong>
+                </Alert>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Note: some F5 GUIs display "Version 1" or "Version 2" while the certificate is actually X.509 v3 (ASN.1 index 0x2). This post‑install check reads the object via tmsh and is the source of truth.
+                  </Typography>
+                  <Button variant="outlined" size="small" onClick={handleVerifyNow} disabled={verifyLoading}>
+                    {verifyLoading ? 'Verifying…' : 'Verify now'}
+                  </Button>
+                </Box>
+                <Collapse in={true}>
+                  <List dense>
+                    <ListItem><ListItemText primary="Subject" secondary={verification.subject || '—'} /></ListItem>
+                    <ListItem><ListItemText primary="Issuer" secondary={verification.issuer || '—'} /></ListItem>
+                    <ListItem><ListItemText primary="Serial" secondary={verification.serial || '—'} /></ListItem>
+                    <ListItem><ListItemText primary="Not After" secondary={verification.not_after || '—'} /></ListItem>
+                    <ListItem>
+                      <ListItemText primary={`SAN (${verification.san ? verification.san.length : 0})`} secondary={verification.san && verification.san.length ? verification.san.join(', ') : '—'} />
+                    </ListItem>
+                  </List>
+                </Collapse>
+              </Paper>
             )}
 
             <Paper elevation={3}>
@@ -184,6 +268,11 @@ function DeployCenterPage() {
                     {notification.message}
                 </Alert>
             </Snackbar>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 1 }}>
+              <Button variant="text" onClick={() => navigate(-1)}>Back</Button>
+              <Button variant="contained" onClick={() => navigate('/certificates')}>Go to Inventory</Button>
+            </Box>
         </Box>
     );
 }

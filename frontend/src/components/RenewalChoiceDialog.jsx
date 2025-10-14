@@ -4,7 +4,7 @@
 import React from 'react';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions, Button, 
-    Typography, Box, Paper, IconButton, Grid
+    Typography, Box, Paper, IconButton, Grid, Tooltip
 } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
@@ -33,14 +33,19 @@ const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy }) =
               <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
                 Choose this if you are starting the renewal process and need a CSR to submit to your Certificate Authority.
               </Typography>
-              <Button
-                variant="contained"
-                onClick={onGenerateCsr}
-                endIcon={<ArrowForwardIcon />}
-                sx={{ mt: 2 }}
-              >
-                Go to CSR Generator
-              </Button>
+              <Tooltip title="Start the renewal by generating a Certificate Signing Request">
+                <span>
+                  <Button
+                    variant="contained"
+                    onClick={onGenerateCsr}
+                    endIcon={<ArrowForwardIcon />}
+                    sx={{ mt: 2 }}
+                    aria-label="Go to CSR Generator"
+                  >
+                    Go to CSR Generator
+                  </Button>
+                </span>
+              </Tooltip>
             </Paper>
           </Grid>
 
@@ -51,14 +56,19 @@ const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy }) =
               <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
                 Choose this if you already have the signed certificate file (.pfx or .crt) and are ready to install it on the F5.
               </Typography>
-              <Button
-                variant="contained"
-                onClick={onDeploy}
-                endIcon={<ArrowForwardIcon />}
-                sx={{ mt: 2 }}
-              >
-                Go to Deploy Center
-              </Button>
+              <Tooltip title="Proceed to deploy your signed certificate on the F5">
+                <span>
+                  <Button
+                    variant="contained"
+                    onClick={onDeploy}
+                    endIcon={<ArrowForwardIcon />}
+                    sx={{ mt: 2 }}
+                    aria-label="Go to Deploy Center"
+                  >
+                    Go to Deploy Center
+                  </Button>
+                </span>
+              </Tooltip>
             </Paper>
           </Grid>
         </Grid>

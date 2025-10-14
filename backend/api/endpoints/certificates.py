@@ -1,4 +1,5 @@
 # backend/api/endpoints/certificates.py
+# backend/api/endpoints/certificates.py
 
 from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, status
 from sqlalchemy.orm import Session, joinedload, aliased
@@ -12,18 +13,19 @@ from cryptography.fernet import Fernet
 # --- Imports para la lógica y la seguridad ---
 from db.base import get_db
 from db.models import Certificate, RenewalRequest, RenewalStatus, User, UserRole, Device
+from db.models import CertProfileLinksCache, SslProfileVipsCache
 from schemas.certificate import CertificateResponse
 from services import certificate_service, f5_service_logic, encryption_service, auth_service
 from services import pfx_service 
 from services.f5_service_tasks import scan_f5_task 
-from sqlalchemy.orm import joinedload
+
 
 
 router = APIRouter()
 
-# --- Schemas para Peticiones/Respuestas ---
+# ---- Unified Schemas (single source of truth) ----
 class RenewalInitiateRequest(BaseModel):
-    private_key_content: str # La clave ahora es obligatoria para este flujo
+    private_key_content: Optional[str] = None
 
 class DeployRequest(BaseModel):
     signed_cert_content: str
@@ -39,6 +41,8 @@ def get_certificates(
     db: Session = Depends(get_db),
     expires_in_days: int | None = Query(default=None, description="Filter certificates expiring within this many days"),
     search: str | None = Query(default=None, description="Search term for CN or cert name"),
+    primaries_only: bool = Query(default=False, description="If true, return only Standalone devices and cluster primaries"),
+    dedupe: bool = Query(default=False, description="If true, de-duplicate by (cluster_key, cert_name) keeping cluster primary"),
     current_user: User = Depends(auth_service.get_current_active_user) # Requiere login
 ):
     # (La lógica de esta función se queda igual, ya era correcta)
@@ -48,6 +52,16 @@ def get_certificates(
     ).where(
         RenewalRequest.status == RenewalStatus.CSR_GENERATED
     ).group_by(RenewalRequest.original_certificate_id).subquery()
+
+    # --- DEVICE LOOKUP HELPER ---
+    def _is_standalone(dev: Device) -> bool:
+        if not dev:
+            return False
+        ha = (dev.ha_state or "").lower()
+        if ha == "standalone":
+            return True
+        # treat devices without cluster_key as standalone
+        return not (dev.cluster_key and dev.cluster_key.strip())
 
     RenewalAlias = aliased(RenewalRequest)
 
@@ -78,21 +92,123 @@ def get_certificates(
 
     query = query.order_by(Certificate.expiration_date.asc())
     results = db.execute(query).all()
-    
+
+    # ---- Preload devices to allow filtering and dedupe without changing existing query ----
+    device_ids_all: set[int] = set()
+    for cert, _, _ in results:
+        if cert and cert.device_id:
+            device_ids_all.add(cert.device_id)
+
+    devices_by_id: dict[int, Device] = {}
+    if device_ids_all:
+        for d in db.query(Device).filter(Device.id.in_(device_ids_all)).all():
+            devices_by_id[d.id] = d
+
+    # Optionally filter to primaries_only (Standalone OR cluster primary)
+    filtered_rows = []
+    if primaries_only:
+        for cert, rid, rstatus in results:
+            dev = devices_by_id.get(cert.device_id) if cert else None
+            if not dev:
+                continue
+            if _is_standalone(dev) or bool(dev.is_primary_preferred):
+                filtered_rows.append((cert, rid, rstatus))
+    else:
+        filtered_rows = results
+
+    # Optionally de-duplicate within cluster by cert name
+    if dedupe:
+        # key: (cluster_key_or_empty, cert_name) -> pick best
+        best_by_key = {}
+        for cert, rid, rstatus in filtered_rows:
+            dev = devices_by_id.get(cert.device_id) if cert else None
+            if not dev:
+                continue
+            key = ((dev.cluster_key or "").strip(), cert.name)
+            # choose preferred: primary first, then newest last_scan_timestamp, then smallest device_id
+            score = (
+                0 if dev.is_primary_preferred else 1,
+                (dev.last_scan_timestamp or datetime.min),
+                -dev.id,  # larger id loses; we invert to keep deterministic
+            )
+            prev = best_by_key.get(key)
+            if not prev:
+                best_by_key[key] = (score, (cert, rid, rstatus))
+            else:
+                if score < prev[0]:
+                    best_by_key[key] = (score, (cert, rid, rstatus))
+        rows = [tpl for _, tpl in (v[1] for v in best_by_key.items())]
+    else:
+        rows = filtered_rows
+
+    # --- USAGE STATE BATCH LOGIC ---
+    # Build keys for all certs: (device_id, cert.name)
+    keys = []
+    device_ids = set()
+    cert_names = set()
+    for cert, _, _ in rows:
+        if cert and cert.device_id is not None and cert.name is not None:
+            keys.append((cert.device_id, cert.name))
+            device_ids.add(cert.device_id)
+            cert_names.add(cert.name)
+
+    # Query CertProfileLinksCache in batch
+    links_by_key = {}
+    profiles_fp_by_device = set()
+    if device_ids and cert_names:
+        links = db.query(CertProfileLinksCache).filter(
+            CertProfileLinksCache.device_id.in_(device_ids),
+            CertProfileLinksCache.cert_name.in_(cert_names)
+        ).all()
+        for l in links:
+            k = (l.device_id, l.cert_name)
+            links_by_key.setdefault(k, set()).add(l.profile_full_path)
+            profiles_fp_by_device.add((l.device_id, l.profile_full_path))
+
+    # Query SslProfileVipsCache in batch
+    vips_by_profile = {}
+    all_profile_full_paths = set(fp for (_, fp) in profiles_fp_by_device)
+    if device_ids and all_profile_full_paths:
+        vips = db.query(SslProfileVipsCache).filter(
+            SslProfileVipsCache.device_id.in_(device_ids),
+            SslProfileVipsCache.profile_full_path.in_(all_profile_full_paths)
+        ).all()
+        for v in vips:
+            k = (v.device_id, v.profile_full_path)
+            vips_by_profile.setdefault(k, 0)
+            vips_by_profile[k] += 1
+
+    # Compute usage_state_by_key
+    usage_state_by_key = {}
+    for k in keys:
+        profiles = links_by_key.get(k, set())
+        if not profiles:
+            usage_state_by_key[k] = 'no-profiles'
+        else:
+            total_vips = 0
+            for pf in profiles:
+                total_vips += vips_by_profile.get((k[0], pf), 0)
+            if total_vips == 0:
+                usage_state_by_key[k] = 'profiles-no-vips'
+            else:
+                usage_state_by_key[k] = 'in-use'
+
+    # Build response certs
     response_certs = []
-    for cert, renewal_id, renewal_status in results:
+    for cert, renewal_id, renewal_status in rows:
         days_remaining = (cert.expiration_date - datetime.utcnow()).days if cert.expiration_date else None
-        
-        # cert.__dict__ ya contiene 'device_id' porque es una columna del modelo.
-        # Pero para ser explícitos y seguros, lo añadimos.
         cert_data = cert.__dict__
         cert_data['days_remaining'] = days_remaining
         cert_data['renewal_id'] = renewal_id
         cert_data['renewal_status'] = renewal_status.name if renewal_status else None
-        
-        # Aseguramos que el device_id esté presente.
-        cert_data['device_id'] = cert.device_id 
-
+        cert_data['device_id'] = cert.device_id
+        dev_obj = devices_by_id.get(cert.device_id)
+        if dev_obj:
+            cert_data['device_hostname'] = dev_obj.hostname
+            cert_data['cluster_key'] = dev_obj.cluster_key
+            cert_data['is_primary_preferred'] = bool(dev_obj.is_primary_preferred)
+        # Set usage_state
+        cert_data['usage_state'] = usage_state_by_key.get((cert.device_id, cert.name))
         response_certs.append(cert_data)
 
     return response_certs
@@ -130,10 +246,6 @@ def get_cert_usage_details(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get usage data from F5: {str(e)}")
 
-# 1. Definimos el schema para el cuerpo de la petición.
-#    El campo para la clave es opcional.
-class RenewalInitiateRequest(BaseModel):
-    private_key_content: Optional[str] = None
 
 # 2. El endpoint corregido
 @router.post("/{cert_id}/initiate-renewal", summary="Initiate a certificate renewal")
@@ -143,14 +255,6 @@ def initiate_certificate_renewal(
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
-    # --- ¡AÑADIMOS EL PRINT DE DEPURACIÓN! ---
-    print("="*20, "DEBUGGING RENEWAL REQUEST", "="*20)
-    print(f"Received request for cert_id: {cert_id}")
-    print(f"Request Body Content (raw): {request}")
-    print(f"Extracted Private Key: '{request.private_key_content[:30]}...'") # Imprimimos solo los primeros 30 caracteres
-    print("="*60)
-    # --- FIN DEL BLOQUE DE DEPURACIÓN ---
-    
     db_cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
     if not db_cert or not db_cert.common_name:
         raise HTTPException(status_code=404, detail="Certificate with a valid Common Name not found")
@@ -167,39 +271,10 @@ def initiate_certificate_renewal(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Asegúrate de que la clase RenewalInitiateRequest está definida antes de esta función,
-# tal como la definimos en los pasos anteriores.
-class RenewalInitiateRequest(BaseModel):
-    private_key_content: Optional[str] = None
-
-# Definimos el schema de la respuesta para ser explícitos
-class RenewalDetailsResponse(BaseModel):
-    renewal_id: int
-    csr: str
-    private_key: str
-
-@router.get("/renewals/{renewal_id}/details", response_model=RenewalDetailsResponse)
-def get_renewal_details(
-    renewal_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
-):
-    renewal = db.query(RenewalRequest).filter(RenewalRequest.id == renewal_id).first()
-    if not renewal:
-        raise HTTPException(status_code=404, detail="Renewal request not found.")
-    
-    private_key = encryption_service.decrypt_data(renewal.encrypted_private_key)
-    return RenewalDetailsResponse(
-        renewal_id=renewal.id, 
-        csr=renewal.csr_content, 
-        private_key=private_key
-    )
 
 
 
-# --- Endpoint POST /deploy : Protegido para Admin y Operator ---
-class DeployRequest(BaseModel):
-    signed_cert_content: str
+
 
 @router.post("/{renewal_id}/deploy", summary="Deploy signed certificate to F5")
 def deploy_signed_certificate(
@@ -221,28 +296,22 @@ def deploy_signed_certificate(
 
     try:
         f5_hostname = db_cert.f5_device_hostname
-        
-        # Obtenemos las credenciales del dispositivo asociado al certificado original
         device = db_cert.device
         if not device or not device.encrypted_password:
             raise ValueError(f"No credentials configured for device {f5_hostname}")
-        
         f5_username = device.username
         f5_password = encryption_service.decrypt_data(device.encrypted_password)
-        
-        result = f5_service_logic.deploy_and_update_f5(
-            hostname=f5_hostname, 
-            username=f5_username, 
+        result = f5_service_logic.deploy_from_pem_and_update_profiles(
+            hostname=f5_hostname,
+            username=f5_username,
             password=f5_password,
             old_cert_name=db_cert.name,
-            new_cert_content=request.signed_cert_content,
-            new_key_content=private_key
+            cert_pem=request.signed_cert_content,
+            key_pem=private_key
         )
-
         renewal.status = RenewalStatus.COMPLETED
         renewal.encrypted_private_key = "[REDACTED]"
         db.commit()
-
         return {"status": "success", "message": "Certificate deployed successfully!", "details": result}
     except ValueError as e:
         renewal.status = RenewalStatus.FAILED
@@ -280,9 +349,9 @@ def delete_certificate(
     # 2. Llamamos a la función de servicio con los parámetros correctos
     try:
         f5_service_logic.delete_certificate_from_f5(
-            hostname=device.hostname,
+            hostname=device.ip_address,
             username=device.username,
-            password=decrypted_password, # <-- Le pasamos la contraseña ya desencriptada
+            password=decrypted_password,
             cert_name=db_cert.name,
             partition=db_cert.partition
         )
@@ -448,47 +517,6 @@ async def new_deployment_from_pfx(
     
     return {"deployment_results": results}
 
-class ProfileUpdateRequest(BaseModel):
-    device_id: int
-    old_cert_name: str
-    new_cert_name: str
-    # La cadena es opcional, usaremos la por defecto
-    chain_name: Optional[str] = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
-
-@router.post("/update-profiles", summary="Update SSL profiles to use a new certificate")
-def update_ssl_profiles(
-    request: ProfileUpdateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
-):
-    device = db.query(Device).filter(Device.id == request.device_id).first()
-    if not device or not device.encrypted_password:
-        raise HTTPException(status_code=404, detail="Device not found or credentials not set.")
-
-    f5_username = device.username
-    f5_password = encryption_service.decrypt_data(device.encrypted_password)
-
-    try:
-        # ¡Necesitamos una nueva función de servicio para esto!
-        updated_profiles = f5_service_logic.update_profiles_with_new_cert(
-            hostname=device.ip_address,
-            username=f5_username,
-            password=f5_password,
-            old_cert_name=request.old_cert_name,
-            new_cert_name=request.new_cert_name,
-            chain_name=request.chain_name
-        )
-        # Actualizamos nuestro inventario después de cambiar el F5
-        # (Lanzamos una tarea de re-escaneo para ese dispositivo)
-        scan_f5_task.delay(device.id)
-
-        return {
-            "status": "success",
-            "message": f"Successfully updated {len(updated_profiles)} SSL profile(s).",
-            "updated_profiles": updated_profiles
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     
 # --- SCHEMA PARA LA PETICIÓN DE ACTUALIZACIÓN ---
 class ProfileUpdateRequest(BaseModel):
@@ -545,3 +573,146 @@ def update_ssl_profiles(
     except Exception as e:
         # Si algo falla en el F5, devolvemos el error
         raise HTTPException(status_code=500, detail=f"Failed to update profiles on F5: {str(e)}")
+# --- Verify installed certificate endpoint ---
+class VerifyCertResponse(BaseModel):
+    version: Optional[str]
+    san: List[str] = []
+    serial: Optional[str]
+    not_after: Optional[str]
+    subject: Optional[str]
+    issuer: Optional[str]
+    fingerprint_sha256: Optional[str] = None
+    object_name: Optional[str] = None
+    source: Optional[str] = None
+class NormalizeResponse(BaseModel):
+    renamed_certs: list
+    renamed_keys: list
+    updated_profiles: list
+
+@router.post("/devices/{device_id}/normalize-object-names", response_model=NormalizeResponse,
+             summary="Normalize F5 cert/key object names (remove .crt/.key suffix and update profiles)")
+def normalize_object_names_endpoint(device_id: int,
+                                    db: Session = Depends(get_db),
+                                    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))):
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device or not device.encrypted_password:
+        raise HTTPException(status_code=404, detail="Device not found or credentials not set.")
+    f5_username = device.username
+    f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    try:
+        report = f5_service_logic.normalize_object_names(
+            hostname=device.ip_address,
+            username=f5_username,
+            password=f5_password,
+        )
+        return report
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/devices/{device_id}/verify/{object_name}", response_model=VerifyCertResponse,
+            summary="Verify installed certificate (version & SAN) on F5")
+def verify_installed_cert(device_id: int, object_name: str,
+                          db: Session = Depends(get_db),
+                          current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))):
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device or not device.encrypted_password:
+        raise HTTPException(status_code=404, detail="Device not found or credentials not set.")
+    f5_username = device.username
+    f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    try:
+        details = f5_service_logic.verify_installed_certificate(
+            hostname=device.ip_address,
+            username=f5_username,
+            password=f5_password,
+            object_name=object_name
+        )
+        return details
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---- Schema for SSL Profiles Response ----
+class SSLProfileResponse(BaseModel):
+    name: str
+    partition: str
+    full_path: str
+    context: str  # "clientside" | "serverside"
+
+class SSLProfilesImpactResponse(BaseModel):
+    device: dict
+    ssl_profiles: List[SSLProfileResponse]
+    profiles_count: int
+    message: str
+
+
+@router.get("/{cert_id}/ssl-profiles", response_model=SSLProfilesImpactResponse,
+           summary="Get SSL profiles using this certificate (SIMPLIFIED - no cache)")
+def get_certificate_ssl_profiles(
+    cert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR, UserRole.VIEWER]))
+):
+    """
+    Endpoint simplificado que obtiene los SSL profiles que usan un certificado específico.
+    
+    - **Consulta directa al F5** (sin cache)
+    - **Solo SSL profiles** (sin VIPs para mejor rendimiento) 
+    - **Respuesta rápida** (~2-3 segundos vs 30+ del cache completo)
+    - **Ideal para renovación** de certificados
+    
+    Este endpoint reemplaza `/f5/cache/impact-preview` con una versión más simple y rápida.
+    """
+    # Get certificate from database
+    certificate = db.get(Certificate, cert_id)
+    if not certificate:
+        raise HTTPException(status_code=404, detail="Certificate not found")
+    
+    # Get device information  
+    device = db.get(Device, certificate.device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found for this certificate")
+    
+    if not device.encrypted_password:
+        raise HTTPException(status_code=400, detail="Device credentials not configured")
+    
+    try:
+        # Decrypt device password
+        f5_password = encryption_service.decrypt_data(device.encrypted_password)
+        
+        # Get SSL profiles directly from F5
+        ssl_profiles_data = f5_service_logic.get_certificate_ssl_profiles_simple(
+            hostname=device.ip_address,
+            username=device.username,
+            password=f5_password,
+            cert_name=certificate.name,
+            partition=certificate.partition or "Common"
+        )
+        
+        # Convert to response format
+        ssl_profiles = [
+            SSLProfileResponse(
+                name=profile["name"],
+                partition=profile["partition"],  
+                full_path=profile["full_path"],
+                context=profile["context"]
+            )
+            for profile in ssl_profiles_data
+        ]
+        
+        return SSLProfilesImpactResponse(
+            device={
+                "id": device.id,
+                "hostname": device.hostname,
+                "ip_address": device.ip_address,
+                "site": device.site
+            },
+            ssl_profiles=ssl_profiles,
+            profiles_count=len(ssl_profiles),
+            message=f"Found {len(ssl_profiles)} SSL profile(s) using certificate '{certificate.name}'"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to get SSL profiles from F5 device {device.hostname}: {str(e)}"
+        )

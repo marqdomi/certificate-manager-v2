@@ -4,10 +4,7 @@ from datetime import datetime
 from core.celery_worker import celery_app
 from db.base import SessionLocal
 from db.models import Device
-from services.f5_service_logic import _perform_scan
-# 1. IMPORTAMOS NUESTRO SERVICIO DE ENCRIPTACIÓN
-from services import encryption_service
-from .f5_service_logic import _perform_scan
+from services import f5_service_logic, encryption_service
 
 @celery_app.task(name="scan_single_f5")
 def scan_f5_task(device_id: int):
@@ -38,7 +35,7 @@ def scan_f5_task(device_id: int):
         password = encryption_service.decrypt_data(encrypted_pass)
 
         # 4. Llamamos a la lógica de escaneo
-        result = _perform_scan(db, device, username, password) # Le pasamos el objeto 'device'
+        result = f5_service_logic._perform_scan(db, device, username, password) # Le pasamos el objeto 'device'
         
         # 5. Guardamos el resultado en nuestras variables locales
         final_status = result.get('status', 'failed')
@@ -81,5 +78,37 @@ def trigger_scan_for_all_devices_task():
         message = f"Successfully queued {len(devices)} scan tasks from scheduled job."
         print(f"INFO: [Celery Beat] {message}")
         return message
+    finally:
+        db.close()
+
+@celery_app.task(name="normalize_object_names_task")
+def normalize_object_names_task(device_id: int):
+    db = SessionLocal()
+    try:
+        device = db.query(Device).filter(Device.id == device_id).first()
+        if not device or not device.encrypted_password:
+            return {"status": "error", "message": "Device not found or credentials not set."}
+        report = f5_service_logic.normalize_object_names(
+            hostname=device.ip_address,
+            username=device.username,
+            password=encryption_service.decrypt_data(device.encrypted_password),
+        )
+        return {"status": "success", "report": report}
+    finally:
+        db.close()
+
+@celery_app.task(name="devices.refresh_facts")
+def refresh_device_facts_task(device_id: int):
+    from services.f5_facts import fetch_and_store_device_facts
+    return fetch_and_store_device_facts(device_id)
+
+@celery_app.task(name="devices.refresh_facts_all")
+def refresh_device_facts_all_task():
+    db = SessionLocal()
+    try:
+        ids = [d.id for d in db.query(Device.id).all()]
+        for did in ids:
+            refresh_device_facts_task.delay(did)
+        return {"status":"queued","count":len(ids)}
     finally:
         db.close()

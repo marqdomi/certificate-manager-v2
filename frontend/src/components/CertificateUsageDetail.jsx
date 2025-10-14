@@ -46,20 +46,24 @@ const CertificateUsageDetail = ({ certId }) => {
   if (error) {
     return <Alert severity="error" sx={{ m: 1 }}>{error}</Alert>;
   }
-  if (!usage || (usage.profiles.length === 0 && usage.virtual_servers.length === 0)) {
+
+  const profiles = Array.isArray(usage?.profiles) ? usage.profiles : [];
+  const virtualServers = Array.isArray(usage?.virtual_servers) ? usage.virtual_servers : [];
+
+  if (profiles.length === 0 && virtualServers.length === 0) {
     return <Alert severity="info" sx={{ m: 1 }}>No usage data available for this certificate.</Alert>;
   }
 
   return (
     <Box>
-      {usage.profiles.length > 0 && (
+      {profiles.length > 0 && (
         <Box mb={2}>
             <Typography variant="overline" color="text.secondary">SSL Profiles</Typography>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {`Used in ${usage.profiles.length} Profile(s)`}
+                {`Used in ${profiles.length} Profile(s)`}
             </Typography>
             <List dense>
-                {usage.profiles.map(p => (
+                {profiles.map(p => (
                     <ListItem key={p} sx={{ pl: 1 }}>
                         <ListItemText primary={p} />
                     </ListItem>
@@ -68,17 +72,17 @@ const CertificateUsageDetail = ({ certId }) => {
         </Box>
       )}
 
-      {usage.virtual_servers.length > 0 && (
+      {virtualServers.length > 0 && (
         <>
-            {usage.profiles.length > 0 && <Divider sx={{ my: 2 }} />}
+            {profiles.length > 0 && <Divider sx={{ my: 2 }} />}
 
             <Box>
                 <Typography variant="overline" color="text.secondary">Virtual Servers</Typography>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    {`Applied to ${usage.virtual_servers.length} Server(s)`}
+                    {`Applied to ${virtualServers.length} Server(s)`}
                 </Typography>
                 <List>
-                    {usage.virtual_servers.map(vs => (
+                    {virtualServers.map(vs => (
                         <Paper key={vs.name} variant="outlined" sx={{ mb: 1.5, p: 1, borderRadius: 2 }}>
                             <ListItem>
                                 <ListItemText 

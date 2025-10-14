@@ -1,5 +1,5 @@
 # backend/schemas/user.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from db.models import UserRole
 
 class UserResponse(BaseModel):
@@ -8,5 +8,4 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)

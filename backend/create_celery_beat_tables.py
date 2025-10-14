@@ -1,45 +1,36 @@
 # backend/create_celery_beat_tables.py
-
 import os
 import sys
 
-# --- INICIO DEL "MAZO" ---
-# Forzamos la adición del directorio actual al path de Python.
-# Esto asegura que imports como 'from core...' funcionen sin ambigüedad.
-# El directorio actual dentro del contenedor es /app.
+# Ensure project is importable
 sys.path.append(os.getcwd())
-# --- FIN DEL "MAZO" ---
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.django_settings")
 
-# Establecemos la variable de entorno que Django necesita
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.django_settings')
+def main() -> int:
+    try:
+        import django
+        from django.core.management import call_command
 
-try:
-    print("Attempting to import Django...")
-    from django.core.management import call_command
-    from django.apps import apps
-    print("Django imported successfully.")
-    
-    # Le decimos a Django que "conozca" la app de celery_beat
-    if not apps.ready:
-        apps.populate(['django_celery_beat'])
+        # Initialize Django
+        django.setup()
 
-    print("Creating Celery Beat database tables...")
-    # Este es el comando mágico que crea las tablas
-    call_command('migrate', 'django_celery_beat')
-    
-    print("Celery Beat tables created successfully.")
+        print("Creating Celery Beat database tables (django_celery_beat)...")
+        call_command("migrate", "django_celery_beat", verbosity=1, interactive=False)
+        print("Celery Beat tables created successfully.")
+        return 0
+    except ModuleNotFoundError as e:
+        print(f"\nERROR: {e}. Is Django installed in this environment?")
+        print("Check your virtualenv inside the container and PYTHONPATH.")
+        print("\n--- sys.path ---")
+        import pprint
+        pprint.pprint(sys.path)
+        print("----------------")
+        return 1
+    except Exception as e:
+        print(f"\nAn unexpected error occurred: {e}")
+        print("Please ensure your database is reachable and migrations can run.")
+        return 2
 
-except ImportError:
-    print("\nERROR: Could not import Django.")
-    print("This is strange, as it seems to be installed.")
-    print("Please check the Python path inside the container.")
-    # Imprimimos el sys.path desde dentro del script para comparar
-    print("\n--- sys.path from within the script ---")
-    import pprint
-    pprint.pprint(sys.path)
-    print("---------------------------------------")
-
-except Exception as e:
-    print(f"\nAn unexpected error occurred: {e}")
-    print("Please ensure your database container is running and accessible.")
+if __name__ == "__main__":
+    raise SystemExit(main())

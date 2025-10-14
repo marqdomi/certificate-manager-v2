@@ -22,24 +22,52 @@ const CertificateTable = ({
   const userRole = authProvider.getRole();
   const theme = useTheme(); // Usamos el hook para acceder a la paleta de colores
 
-  // ✅ CAMBIO 1: Las columnas se mantienen, pero ajustamos el renderizado de 'days_remaining' y 'actions'
+  // Columnas con redimensionamiento y ajuste automático habilitados
   const columns = [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { field: 'common_name', headerName: 'Common Name', flex: 1, minWidth: 200 },
-    { field: 'name', headerName: 'Certificate Name', flex: 1, minWidth: 200 },
-    { field: 'f5_device_hostname', headerName: 'F5 Device', flex: 0.8, minWidth: 220 },
+    { 
+      field: 'id', 
+      headerName: 'ID', 
+      flex: 0.3,
+      minWidth: 60,
+      resizable: true,
+    },
+    { 
+      field: 'common_name', 
+      headerName: 'Common Name', 
+      flex: 1.2, 
+      minWidth: 180,
+      resizable: true,
+    },
+    { 
+      field: 'name', 
+      headerName: 'Certificate Name', 
+      flex: 1.2, 
+      minWidth: 180,
+      resizable: true,
+    },
+    { 
+      field: 'f5_device_hostname', 
+      headerName: 'F5 Device', 
+      flex: 1, 
+      minWidth: 180,
+      resizable: true,
+    },
     {
       field: 'expiration_date',
       headerName: 'Expiration Date',
-      width: 130,
+      flex: 0.6,
+      minWidth: 120,
+      resizable: true,
       align: 'center',
       headerAlign: 'center',
-      valueGetter: (value) => (value ? new Date(value).toLocaleDateString() : 'N/A'),
+      valueGetter: (params) => (params.value ? new Date(params.value).toLocaleDateString() : 'N/A'),
     },
     {
       field: 'days_remaining',
       headerName: 'Days Left',
-      width: 120,
+      flex: 0.5,
+      minWidth: 100,
+      resizable: true,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -57,7 +85,9 @@ const CertificateTable = ({
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 250,
+      flex: 1,
+      minWidth: 230,
+      resizable: true,
       sortable: false,
       align: 'center',
       headerAlign: 'center',
@@ -96,10 +126,19 @@ const CertificateTable = ({
                         <Button variant="contained" color="secondary" size="small" onClick={() => onOpenDeploy(params.row)}>
                             DEPLOY
                         </Button>
-                    ) : ( // Botón primario para la acción principal
-                        <Button variant="contained" size="small" onClick={() => onInitiateRenewal(params.row)} disabled={!canRenew}>
-                            {actionLoading && activeActionCertId === params.row.id ? <CircularProgress size={20} color="inherit" /> : 'RENEW...'}
-                        </Button>
+                    ) : (
+                        // Botón primario para la acción principal, con tooltip aclaratorio
+                        <Tooltip title="Open renewal wizard">
+                          <span>
+                            <Button variant="contained" size="small" onClick={() => onInitiateRenewal(params.row)} disabled={!canRenew}>
+                              {actionLoading && activeActionCertId === params.row.id ? (
+                                <CircularProgress size={20} color="inherit" />
+                              ) : (
+                                'RENEW'
+                              )}
+                            </Button>
+                          </span>
+                        </Tooltip>
                     )
                 )}
 
@@ -121,7 +160,7 @@ const CertificateTable = ({
   return (
     // La altura se ajusta para ser más flexible
     <Box sx={{ height: 'calc(100vh - 220px)', width: '100%' }}>
-      {/* ✅ CAMBIO 2: Aplicamos estilos profundos al DataGrid con el prop 'sx' */}
+      {/* DataGrid con columnas redimensionables y responsive */}
       <DataGrid
         rows={certificates}
         columns={columns}
@@ -133,7 +172,11 @@ const CertificateTable = ({
         pageSizeOptions={[15, 25, 50, 100]}
         getRowId={(row) => row.id}
         disableRowSelectionOnClick
-        // --- AQUÍ EMPIEZA LA MAGIA DEL DISEÑO ---
+        
+        // Habilitar redimensionamiento de columnas
+        disableColumnResize={false}
+        
+        // Estilos mejorados con separadores de columna visibles
         sx={{
           border: 'none', // Quitamos el borde principal del DataGrid
           backgroundColor: 'transparent', // Hacemos el fondo transparente para que se vea el "vidrio"
@@ -164,6 +207,16 @@ const CertificateTable = ({
           // Quitamos los bordes raros al hacer clic en una celda
           '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
              outline: 'none',
+          },
+          // Hacer visible el separador de columnas para redimensionar
+          '& .MuiDataGrid-columnSeparator': {
+            visibility: 'visible',
+            color: 'rgba(224, 224, 224, 0.5)',
+          },
+          '& .MuiDataGrid-columnHeader': {
+            '&:hover .MuiDataGrid-columnSeparator': {
+              color: 'primary.main',
+            },
           },
         }}
       />

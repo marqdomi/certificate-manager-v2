@@ -11,19 +11,19 @@ from services.auth_service import hash_password
 INITIAL_USERS = [
     {
         "username": "admin",
-        "password": "password123",
+        "password": "R0undt0w3r!",
         "role": UserRole.ADMIN,
         "is_active": True
     },
     {
         "username": "operator",
-        "password": "password123",
+        "password": "R0undt0w3r!",
         "role": UserRole.OPERATOR,
         "is_active": True
     },
     {
         "username": "viewer",
-        "password": "password123",
+        "password": "R0undt0w3r!",
         "role": UserRole.VIEWER,
         "is_active": True
     }

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
-const ConfirmDialog = ({ open, onClose, onConfirm, title, message }) => {
+const ConfirmDialog = ({ open, onClose, onConfirm, title, message, confirmLabel = 'Confirm' }) => {
   return (
     <Dialog
       open={open}
@@ -34,7 +34,7 @@ const ConfirmDialog = ({ open, onClose, onConfirm, title, message }) => {
         </Button>
         {/* Usamos color="error" para el botón de confirmación destructiva */}
         <Button onClick={onConfirm} variant="contained" color="error" autoFocus>
-          Confirm Delete
+          {confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>

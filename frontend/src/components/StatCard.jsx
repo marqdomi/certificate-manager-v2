@@ -19,17 +19,19 @@ const glassmorphicStyle = {
   },
 };
 
-function StatCard({ title, value, color, onClick }) {
+function StatCard({ title, value, color, onClick, icon, disabled }) {
   return (
     <Paper 
       elevation={0} // Quitamos la sombra base porque ya tenemos un borde y un hover
       sx={{ 
         ...glassmorphicStyle,
-        cursor: 'pointer', // Indica que es clickeable
+        cursor: disabled ? 'default' : 'pointer', // Indica si es clickeable o no
+        '&:hover': disabled ? {} : glassmorphicStyle['&:hover'], // Quitar efecto hover si está deshabilitado
       }} 
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
     >
       <Box>
+        {icon && <Box mb={1}>{icon}</Box>}
         <Typography variant="body1" color="text.secondary" gutterBottom>
           {title}
         </Typography>

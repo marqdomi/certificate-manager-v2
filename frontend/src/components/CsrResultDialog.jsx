@@ -1,10 +1,17 @@
-// frontend/src/components/CsrResultDialog.jsx
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography, Snackbar, Alert } from '@mui/material';
 
 const CsrResultDialog = ({ open, onClose, data }) => {
+  const [copied, setCopied] = React.useState(false);
   if (!data) return null;
-  const handleCopy = (text) => navigator.clipboard.writeText(text);
+  const handleCopy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch (e) {
+      // no-op: best effort; browsers without permissions will silently fail
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -21,6 +28,16 @@ const CsrResultDialog = ({ open, onClose, data }) => {
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+      <Snackbar
+        open={copied}
+        autoHideDuration={2000}
+        onClose={() => setCopied(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setCopied(false)} severity="success" sx={{ width: '100%' }}>
+          CSR copied to clipboard
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };
