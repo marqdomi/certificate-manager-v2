@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Chip, Button, IconButton, Tooltip, Stack } from '@mui/material';
+import { Box, Chip, Button, IconButton, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -29,7 +29,7 @@ const DeviceTable = ({
     { field: 'ip_address', sort: 'asc' },
   ]);
 
-  const [busy, setBusy] = useState(false);
+
 
   // --- (Lógica de fetching y selección no cambian) ---
   useEffect(() => {
@@ -53,13 +53,21 @@ const DeviceTable = ({
     setSelectionModel([]);
   }, [clearSelectionKey]);
 
-  // --- (Las columnas no cambian) ---
+  // --- Columnas con redimensionamiento habilitado ---
   const columns = [
-    { field: 'hostname', headerName: 'Hostname', flex: 1, minWidth: 260 },
+    { 
+      field: 'hostname', 
+      headerName: 'Hostname', 
+      flex: 1, 
+      minWidth: 200,
+      resizable: true,
+    },
     {
       field: 'ip_address',
       headerName: 'IP Address',
-      width: 150,
+      flex: 0.6,
+      minWidth: 130,
+      resizable: true,
       sortComparator: (a, b) => {
         const toParts = (ip) => (typeof ip === 'string' ? ip.split('.') : []);
         const pa = toParts(a).map((n) => parseInt(n, 10));
@@ -72,12 +80,26 @@ const DeviceTable = ({
         return 0;
       },
     },
-    { field: 'site', headerName: 'Site', width: 110 },
-    { field: 'version', headerName: 'Version', width: 120 },
+    { 
+      field: 'site', 
+      headerName: 'Site', 
+      flex: 0.4,
+      minWidth: 100,
+      resizable: true,
+    },
+    { 
+      field: 'version', 
+      headerName: 'Version', 
+      flex: 0.5,
+      minWidth: 100,
+      resizable: true,
+    },
     {
       field: 'ha_state',
       headerName: 'HA',
-      width: 110,
+      flex: 0.4,
+      minWidth: 100,
+      resizable: true,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -90,7 +112,9 @@ const DeviceTable = ({
     {
       field: 'sync_status',
       headerName: 'Sync',
-      width: 130,
+      flex: 0.5,
+      minWidth: 110,
+      resizable: true,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -103,7 +127,9 @@ const DeviceTable = ({
     {
       field: 'last_facts_refresh',
       headerName: 'Last Facts',
-      width: 210,
+      flex: 0.8,
+      minWidth: 180,
+      resizable: true,
       renderCell: (params) => {
         const raw = params?.value;
         if (!raw) return <span>—</span>;
@@ -121,7 +147,9 @@ const DeviceTable = ({
     {
       field: 'last_scan_status',
       headerName: 'Last Scan',
-      width: 140,
+      flex: 0.5,
+      minWidth: 120,
+      resizable: true,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -143,7 +171,9 @@ const DeviceTable = ({
       field: 'actions',
       headerName: 'Actions',
       sortable: false,
-      width: 220,
+      flex: 0.8,
+      minWidth: 200,
+      resizable: true,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => (
@@ -163,58 +193,14 @@ const DeviceTable = ({
     });
   }
 
-  const postDevice = async (id, path) => {
-    try {
-      await apiClient.post(`/devices/${id}/${path}`);
-    } catch (e) {
-      console.error(`POST /devices/${id}/${path} failed`, e);
-    }
-  };
 
-  const handleRefreshFactsSelected = async () => {
-    if (!selectionModel?.length) return;
-    setBusy(true);
-    for (const id of selectionModel) {
-      await postDevice(id, 'refresh-facts');
-    }
-    setBusy(false);
-  };
-
-  const handleRefreshCacheSelected = async () => {
-    if (!selectionModel?.length) return;
-    setBusy(true);
-    for (const id of selectionModel) {
-      await postDevice(id, 'refresh-cache');
-    }
-    setBusy(false);
-  };
 
   return (
     <Box sx={{ height: 'calc(100vh - 280px)', width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {/* Action bar */}
-      <Stack direction="row" spacing={1} sx={{ mb: 0.5 }}>
-        <Button
-          variant="contained"
-          size="small"
-          disabled={!selectionModel?.length || busy}
-          onClick={handleRefreshFactsSelected}
-        >
-          Refresh Facts (selected)
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          disabled={!selectionModel?.length || busy}
-          onClick={handleRefreshCacheSelected}
-        >
-          Refresh Cache (selected)
-        </Button>
-      </Stack>
-
       <DataGrid
         rows={Array.isArray(devices) ? devices : []}
         columns={columns}
-        loading={loading || busy}
+        loading={loading}
         getRowId={(row) => row.id}
         disableSelectionOnClick
 
@@ -240,6 +226,22 @@ const DeviceTable = ({
           }
         }}
         selectionModel={selectionModel}
+
+        // Habilitar redimensionamiento de columnas
+        disableColumnResize={false}
+        
+        // Ajuste automático de columnas al contenedor
+        sx={{
+          '& .MuiDataGrid-columnSeparator': {
+            visibility: 'visible',
+            color: 'rgba(224, 224, 224, 0.5)',
+          },
+          '& .MuiDataGrid-columnHeader': {
+            '&:hover .MuiDataGrid-columnSeparator': {
+              color: 'primary.main',
+            },
+          },
+        }}
       />
     </Box>
   );
