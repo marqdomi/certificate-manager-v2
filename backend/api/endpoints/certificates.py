@@ -1,5 +1,4 @@
 # backend/api/endpoints/certificates.py
-# backend/api/endpoints/certificates.py
 
 from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, status
 from sqlalchemy.orm import Session, joinedload, aliased
@@ -7,8 +6,6 @@ from sqlalchemy import select, func, or_
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
-from icontrol.exceptions import iControlUnexpectedHTTPError
-from cryptography.fernet import Fernet
 
 # --- Imports para la lógica y la seguridad ---
 from db.base import get_db
