@@ -16,6 +16,7 @@ import CsrGeneratorPage from './pages/CsrGeneratorPage';
 import DeployCenterPage from './pages/DeployCenterPage';
 import VipsOverviewPage from './pages/vips/VipsOverviewPage';
 import VipsSearchPage from './pages/vips/VipsSearchPage';
+import DiscoveryPage from './pages/DiscoveryPage';
 
 function App() {
   const basename = import.meta.env.VITE_ROUTER_BASENAME || '/';
@@ -37,6 +38,7 @@ function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/certificates" element={<InventoryPage />} />
                   <Route path="/devices" element={<DevicesPage />} />
+                  <Route path="/discovery" element={<DiscoveryPage />} />
                   <Route path="/vips" element={<Navigate to="/vips/overview" replace />} />
                   <Route path="/vips/overview" element={<VipsOverviewPage />} />
                   <Route path="/vips/search" element={<VipsSearchPage />} />

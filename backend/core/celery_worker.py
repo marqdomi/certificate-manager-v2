@@ -97,6 +97,20 @@ except Exception:
     # Cache builder not present; skip without failing startup
     pass
 
+# --- Register discovery tasks ---
+try:
+    from services.discovery_tasks import (
+        task_run_discovery_job as _discovery_run_job,
+        task_import_discovered_devices as _discovery_import,
+    )
+    if "discovery.run_discovery_job" not in celery_app.tasks:
+        celery_app.task(name="discovery.run_discovery_job")(_discovery_run_job)
+    if "discovery.import_discovered_devices" not in celery_app.tasks:
+        celery_app.task(name="discovery.import_discovered_devices")(_discovery_import)
+except Exception as e:
+    # Discovery tasks not present; skip without failing startup
+    print(f"Warning: Could not load discovery tasks: {e}")
+
 # --- Register device facts refresh tasks (wrappers, no import-time coupling) ---
 import importlib
 

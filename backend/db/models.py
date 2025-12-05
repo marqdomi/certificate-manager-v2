@@ -187,3 +187,98 @@ class CertProfileLinksCache(Base):
     __table_args__ = (
         UniqueConstraint("device_id", "cert_name", "profile_full_path", name="uq_cert_profile_per_device"),
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NETWORK DISCOVERY MODELS - v2.5 (December 2025)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class DiscoveryJobStatus(str, enum.Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class DiscoveryJob(Base):
+    """Represents a network discovery scan job."""
+    __tablename__ = "discovery_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=True)  # Optional friendly name
+    status = Column(Enum(DiscoveryJobStatus), nullable=False, default=DiscoveryJobStatus.PENDING)
+    
+    # Scan configuration
+    subnets = Column(Text, nullable=False)  # JSON array of subnets/ranges
+    credential_set = Column(String, nullable=True)  # Which credential set to use
+    
+    # Progress tracking
+    total_ips = Column(Integer, default=0)
+    scanned_ips = Column(Integer, default=0)
+    found_devices = Column(Integer, default=0)
+    
+    # Results
+    error_message = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_by = Column(String, nullable=True)  # Username who started the job
+
+    # Relationship with discovered devices
+    discovered_devices = relationship(
+        "DiscoveredDevice", 
+        back_populates="job", 
+        cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<DiscoveryJob(id={self.id}, status='{self.status.value}')>"
+
+
+class DiscoveredDeviceStatus(str, enum.Enum):
+    PENDING = "pending"       # Not yet processed
+    IMPORTED = "imported"     # Added to inventory
+    SKIPPED = "skipped"       # Manually skipped by user
+    DUPLICATE = "duplicate"   # Already exists in inventory
+    FAILED = "failed"         # Failed to validate/probe
+
+
+class DiscoveredDevice(Base):
+    """Represents a device found during network discovery (staging table)."""
+    __tablename__ = "discovered_devices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(Integer, ForeignKey("discovery_jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Device info discovered
+    ip_address = Column(String, nullable=False)
+    hostname = Column(String, nullable=True)  # May be null if probe failed
+    version = Column(String, nullable=True)
+    platform = Column(String, nullable=True)
+    serial_number = Column(String, nullable=True)
+    ha_state = Column(String, nullable=True)
+    
+    # Discovery metadata
+    status = Column(Enum(DiscoveredDeviceStatus), nullable=False, default=DiscoveredDeviceStatus.PENDING)
+    probe_success = Column(Boolean, default=False)
+    probe_message = Column(Text, nullable=True)  # Error or info message
+    credential_source = Column(String, nullable=True)  # Which credential worked
+    
+    # Derived info
+    suggested_site = Column(String, nullable=True)  # Derived from IP range
+    suggested_cluster_key = Column(String, nullable=True)  # Derived from hostname pattern
+    
+    # If imported, link to the device
+    imported_device_id = Column(Integer, ForeignKey("devices.id", ondelete="SET NULL"), nullable=True)
+    
+    # Timestamps
+    discovered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    job = relationship("DiscoveryJob", back_populates="discovered_devices")
+
+    def __repr__(self):
+        return f"<DiscoveredDevice(ip='{self.ip_address}', hostname='{self.hostname}')>"

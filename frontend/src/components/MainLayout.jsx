@@ -23,6 +23,7 @@ import LanIcon from '@mui/icons-material/Lan';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import RadarIcon from '@mui/icons-material/Radar';
 
 const drawerWidth = 240;
 
@@ -30,6 +31,7 @@ const navItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Certificates', icon: <VpnKeyIcon />, path: '/certificates' },
   { text: 'Devices', icon: <DnsIcon />, path: '/devices' },
+  { text: 'Discovery', icon: <RadarIcon />, path: '/discovery' },
   { text: 'PFX Generator', icon: <BuildIcon />, path: '/pfx-generator' },
   { text: 'Deploy Center', icon: <PublishIcon />, path: '/deploy' },
 ];

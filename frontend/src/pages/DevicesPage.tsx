@@ -1,8 +1,10 @@
 // frontend/src/pages/DevicesPage.tsx
-import React, { useState } from 'react';
-import { Box, Typography, Button, Alert, TextField, InputAdornment, Paper, Theme, SxProps } from '@mui/material';
+import React, { useState, useCallback } from 'react';
+import { Box, Typography, Button, Alert, TextField, InputAdornment, Paper, Theme, SxProps, Chip } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
+import WifiIcon from '@mui/icons-material/Wifi';
+import WifiOffIcon from '@mui/icons-material/WifiOff';
 import { authProvider } from './LoginPage';
 import {
   createDevice,
@@ -20,6 +22,7 @@ import AddDeviceDialog from '../components/AddDeviceDialog';
 import FilterChipsBar from '../components/FilterChipsBar';
 import BulkActionsBar from '../components/BulkActionsBar';
 import BulkCredentialsDialog from '../components/BulkCredentialsDialog';
+import { useDeviceWebSocket } from '../hooks/useDeviceWebSocket';
 import type { Device, DeviceCredentials, DeviceCreate } from '../types/device';
 
 // Types
@@ -71,7 +74,37 @@ const DevicesPage: React.FC = () => {
   const [allDevices, setAllDevices] = useState<Device[]>([]);
   const [bulkCredentialsOpen, setBulkCredentialsOpen] = useState<boolean>(false);
 
-  const forceTableRefresh = (): void => setRefreshKey((k) => k + 1);
+  const forceTableRefresh = useCallback((): void => setRefreshKey((k) => k + 1), []);
+
+  // WebSocket for real-time updates
+  const { isConnected: wsConnected } = useDeviceWebSocket({
+    onDeviceAdded: useCallback((deviceId: number, data: Record<string, unknown>) => {
+      console.log('[WS] Device added:', deviceId, data);
+      setNotification({ 
+        open: true, 
+        message: `New device added: ${data.hostname || deviceId}`, 
+        severity: 'info' 
+      });
+      forceTableRefresh();
+    }, [forceTableRefresh]),
+    onDeviceUpdated: useCallback((deviceId: number, _data: Record<string, unknown>) => {
+      console.log('[WS] Device updated:', deviceId, _data);
+      forceTableRefresh();
+    }, [forceTableRefresh]),
+    onDeviceDeleted: useCallback((deviceId: number) => {
+      console.log('[WS] Device deleted:', deviceId);
+      setSelectedIds((prev) => prev.filter((x) => x !== deviceId));
+      forceTableRefresh();
+    }, [forceTableRefresh]),
+    onScanCompleted: useCallback((deviceId: number, data: Record<string, unknown>) => {
+      console.log('[WS] Scan completed:', deviceId, data);
+      forceTableRefresh();
+    }, [forceTableRefresh]),
+    onBulkUpdate: useCallback((deviceIds: number[], eventType: string) => {
+      console.log('[WS] Bulk update:', eventType, deviceIds);
+      forceTableRefresh();
+    }, [forceTableRefresh]),
+  });
 
   // Export devices to CSV
   const handleExportCSV = (): void => {
@@ -233,7 +266,17 @@ const DevicesPage: React.FC = () => {
     <Box>
       <Paper elevation={0} sx={glassmorphicStyle}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2, flexWrap: 'wrap' }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Device Inventory</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Device Inventory</Typography>
+            <Chip 
+              icon={wsConnected ? <WifiIcon /> : <WifiOffIcon />}
+              label={wsConnected ? 'Live' : 'Offline'}
+              color={wsConnected ? 'success' : 'default'}
+              size="small"
+              variant="outlined"
+              title={wsConnected ? 'Real-time updates active' : 'Reconnecting...'}
+            />
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
             <TextField
               size="small"

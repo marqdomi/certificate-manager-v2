@@ -6,6 +6,7 @@ from core.logger import get_celery_logger
 from db.base import SessionLocal
 from db.models import Device
 from services import f5_service_logic, encryption_service
+from services.credential_resolver import resolve_credentials
 
 logger = get_celery_logger()
 
@@ -24,18 +25,26 @@ def scan_f5_task(device_id: int):
     # 2. Extraemos TODA la información que necesitamos ANTES de entrar al bloque principal
     device_hostname = device.hostname
     device_ip = device.ip_address
-    encrypted_pass = device.encrypted_password
-    username = device.username
     
     # 3. Inicializamos las variables de resultado
     final_status = 'failed'
     final_message = 'Task did not run to completion.'
 
     try:
-        if not encrypted_pass:
-            raise ValueError("No credentials configured for this device.")
+        # Resolve credentials using priority chain:
+        # 1. Device-specific credentials
+        # 2. Pattern-matched fallback credentials (from .env)
+        # 3. Default fallback credentials (from .env)
+        credentials = resolve_credentials(device)
         
-        password = encryption_service.decrypt_data(encrypted_pass)
+        if not credentials:
+            raise ValueError("No credentials available (device has none, and no fallback configured)")
+        
+        username = credentials.username
+        password = credentials.password
+        cred_source = credentials.source
+        
+        logger.info(f"[Task] Scanning {device_hostname} with credentials from: {cred_source}")
 
         # 4. Llamamos a la lógica de escaneo
         result = f5_service_logic._perform_scan(db, device, username, password) # Le pasamos el objeto 'device'
@@ -43,6 +52,10 @@ def scan_f5_task(device_id: int):
         # 5. Guardamos el resultado en nuestras variables locales
         final_status = result.get('status', 'failed')
         final_message = result.get('message', 'Scan finished with no details.')
+        
+        # Include credential source in message for debugging
+        if cred_source != "device":
+            final_message = f"{final_message} [creds: {cred_source}]"
 
     except Exception as e:
         # Si algo falla (no hay pass, la desencripción falla, etc.), guardamos el error

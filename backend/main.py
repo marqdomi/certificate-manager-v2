@@ -24,6 +24,8 @@ from api.endpoints import (
     deployments,
     f5_cache,
     f5_vips,
+    websocket,
+    discovery,
 )
 
 app = FastAPI(
@@ -73,6 +75,8 @@ app.include_router(certificates.router, prefix="/api/v1/certificates", tags=["Ce
 app.include_router(devices.router,      prefix="/api/v1/devices",      tags=["Devices"])
 app.include_router(pfx.router,          prefix="/api/v1/pfx",          tags=["PFX"])
 app.include_router(deployments.router,  prefix="/api/v1/deployments",  tags=["Deployments"])
+app.include_router(websocket.router,    prefix="/api/v1",              tags=["WebSocket"])
+app.include_router(discovery.router,    prefix="/api/v1",              tags=["Discovery"])
 
 # Optional: hashing self-test at startup to catch env/package drift early
 try:

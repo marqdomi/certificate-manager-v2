@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from db.base import SessionLocal
 from db.models import Device
 from services.encryption_service import decrypt_data
+from services.credential_resolver import resolve_credentials, get_credential_summary
 from services import f5_service_logic
 from typing import Optional, List
 
@@ -18,6 +19,16 @@ def get_db():
     finally:
         db.close()
 
+
+@router.get("/credential-config")
+def get_credential_config():
+    """
+    Returns the current fallback credential configuration (without passwords).
+    Useful for diagnostics and verifying setup.
+    """
+    return get_credential_summary()
+
+
 @router.get("/impact-preview")
 def impact_preview(
     device_id: Optional[int] = Query(None, description="ID del device a consultar (opcional)"),
@@ -28,35 +39,30 @@ def impact_preview(
 ):
     """
     Impact Preview (live): devuelve los SSL Profiles que referencian el certificado en el device indicado.
-    Respuesta:
-    {
-      "device": {...} | null,
-      "profiles": [ { "name": "...", "partition": "Common", "context": "clientside", ... } ],
-      "error": null | "mensaje"
-    }
+    Uses credential resolver with fallback support.
     """
     # --- 1) Resolver el device por ID o por hostname ---
     device: Optional[Device] = None
     try:
         if device_id is not None:
-            # SQLAlchemy 2.x: Session.get(Model, pk)
             device = db.get(Device, device_id)
     except Exception:
-        # No nos detenemos; probaremos con hostname
         device = None
 
     if device is None and device_hostname:
         device = db.query(Device).filter(Device.hostname == device_hostname).first()
 
     if device is None:
-        # No devolvemos 404 para que el wizard muestre el banner de error sin romper el paso
         return {
             "device": None,
             "profiles": [],
             "error": f"Device not found (id={device_id}, hostname={device_hostname})"
         }
 
-    if not device.username or not device.encrypted_password:
+    # --- 2) Resolve credentials using fallback chain ---
+    credentials = resolve_credentials(device)
+    
+    if not credentials:
         return {
             "device": {
                 "id": device.id,
@@ -65,24 +71,14 @@ def impact_preview(
                 "site": device.site,
             },
             "profiles": [],
-            "error": "Device without credentials"
+            "error": "No credentials available (device has none, and no fallback configured)"
         }
+    
+    username = credentials.username
+    password = credentials.password
+    cred_source = credentials.source
 
-    try:
-        password = decrypt_data(device.encrypted_password)
-    except Exception as e:
-        return {
-            "device": {
-                "id": device.id,
-                "hostname": device.hostname,
-                "ip_address": device.ip_address,
-                "site": device.site,
-            },
-            "profiles": [],
-            "error": f"Cannot decrypt password: {e}"
-        }
-
-    # --- 2) Llamada live al F5 (con fallback IP/hostname controlado por env) ---
+    # --- 3) Llamada live al F5 (con fallback IP/hostname controlado por env) ---
     # Fallback control:
     #   F5_CONNECT_FALLBACK=1    -> probar host alterno si falla conexión
     #   F5_CONNECT_ORDER=hostname_first -> intenta hostname y luego IP
@@ -106,7 +102,7 @@ def impact_preview(
         try:
             usage = f5_service_logic.get_certificate_usage(
                 hostname=host_candidate,
-                username=device.username,
+                username=username,
                 password=password,
                 cert_name=cert_name,
                 partition="Common"

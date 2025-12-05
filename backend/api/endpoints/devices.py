@@ -1,6 +1,6 @@
 # backend/api/endpoints/devices.py
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from typing import List
@@ -14,6 +14,23 @@ from services import f5_service_logic
 from schemas.certificate import CertificateResponse
 
 router = APIRouter()
+
+# --- WebSocket notification helper ---
+async def _notify_ws(event_type: str, device_id: int = None, data: dict = None):
+    """Helper to send WebSocket notifications."""
+    try:
+        from api.endpoints.websocket import notify_device_change
+        await notify_device_change(event_type, device_id, data)
+    except Exception as e:
+        # Don't fail the main operation if WS notification fails
+        pass
+
+def notify_device_event(background_tasks: BackgroundTasks, event_type: str, device_id: int = None, data: dict = None):
+    """Schedule a WebSocket notification in the background."""
+    import asyncio
+    async def _send():
+        await _notify_ws(event_type, device_id, data)
+    background_tasks.add_task(asyncio.run, _send())
 
 # --- Schemas para la data de entrada ---
 class DeviceCreate(BaseModel):
@@ -129,6 +146,7 @@ def auto_assign_clusters(
 @router.post("/", response_model=DeviceResponse, status_code=201)
 def create_device(
     device_data: DeviceCreate, 
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     # Requiere rol de Admin para crear dispositivos
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN]))
@@ -144,12 +162,20 @@ def create_device(
     db.add(new_device)
     db.commit()
     db.refresh(new_device)
+    
+    # Notify WebSocket clients
+    notify_device_event(background_tasks, "device_added", new_device.id, {
+        "hostname": new_device.hostname,
+        "ip_address": new_device.ip_address
+    })
+    
     return new_device
 
 @router.put("/{device_id}", response_model=DeviceResponse)
 def update_device(
     device_id: int,
     device_data: DeviceUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN]))
 ):
@@ -166,6 +192,13 @@ def update_device(
     
     db.commit()
     db.refresh(device)
+    
+    # Notify WebSocket clients
+    notify_device_event(background_tasks, "device_updated", device.id, {
+        "hostname": device.hostname,
+        "ip_address": device.ip_address
+    })
+    
     return device
 
 @router.put("/{device_id}/credentials", response_model=DeviceResponse)
@@ -190,6 +223,7 @@ def update_device_credentials(
 @router.delete("/{device_id}", status_code=204)
 def delete_device(
     device_id: int, 
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     # Requiere rol de Admin para eliminar dispositivos
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN]))
@@ -199,9 +233,15 @@ def delete_device(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
     
+    hostname = device.hostname  # Save before delete
+    
     # SQLAlchemy se encargará del borrado en cascada gracias a la configuración del modelo
     db.delete(device)
     db.commit()
+    
+    # Notify WebSocket clients
+    notify_device_event(background_tasks, "device_deleted", device_id, {"hostname": hostname})
+    
     return
 
 # backend/api/endpoints/devices.py
