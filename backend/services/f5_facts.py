@@ -115,6 +115,76 @@ def _get_serial(mgmt: ManagementRoot) -> Optional[str]:
     return None
 
 
+def update_device_facts_from_mgmt(device: Device, mgmt: ManagementRoot) -> dict:
+    """
+    Update device facts using an existing ManagementRoot connection.
+    
+    This function is designed to be called from within a scan operation
+    that already has an open connection, avoiding duplicate authentication.
+    
+    Args:
+        device: Device ORM object (will be modified in place)
+        mgmt: Already-connected ManagementRoot instance
+        
+    Returns:
+        dict with updated facts for logging purposes
+    """
+    facts_updated = {}
+    
+    try:
+        # Version
+        version = _get_version(mgmt, device.version)
+        if version and version != device.version:
+            facts_updated['version'] = {'old': device.version, 'new': version}
+            device.version = version
+        
+        # HA State
+        ha_state = _get_ha_state(mgmt)
+        if ha_state is not None:
+            if ha_state != device.ha_state:
+                facts_updated['ha_state'] = {'old': device.ha_state, 'new': ha_state}
+            device.ha_state = ha_state
+        
+        # Sync Status
+        sync_status, color = _get_sync_status(mgmt)
+        if sync_status is not None:
+            if sync_status != device.sync_status:
+                facts_updated['sync_status'] = {'old': device.sync_status, 'new': sync_status}
+            device.sync_status = sync_status
+        if color is not None:
+            device.last_sync_color = color
+        
+        # DNS Servers
+        dns_servers = _get_dns_servers(mgmt)
+        if dns_servers is not None:
+            if dns_servers != device.dns_servers:
+                facts_updated['dns_servers'] = {'old': device.dns_servers, 'new': dns_servers}
+            device.dns_servers = dns_servers
+        
+        # Serial Number
+        serial = _get_serial(mgmt)
+        if serial is not None:
+            if serial != device.serial_number:
+                facts_updated['serial_number'] = {'old': device.serial_number, 'new': serial}
+            device.serial_number = serial
+        
+        # Update timestamp
+        device.last_facts_refresh = datetime.utcnow()
+        
+        return {
+            "status": "success",
+            "facts_updated": facts_updated,
+            "fields_checked": ['version', 'ha_state', 'sync_status', 'dns_servers', 'serial_number']
+        }
+        
+    except Exception as e:
+        return {
+            "status": "partial",
+            "error": str(e),
+            "facts_updated": facts_updated
+        }
+
+
 def fetch_and_store_device_facts(device_id: int) -> dict:
     """Connects to BIG-IP and stores lightweight facts into `devices` row.
 

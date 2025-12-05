@@ -41,6 +41,7 @@ from core.config import DEFAULT_CHAIN_NAME
 from core.logger import get_f5_logger
 from core.retry import retry_with_backoff
 from db.models import Certificate, Device
+from services.f5_facts import update_device_facts_from_mgmt
 
 # Setup logger for F5 operations
 logger = get_f5_logger()
@@ -344,10 +345,21 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
     """
     Se conecta a un F5, escanea sus certificados y los sincroniza
     con la base de datos local, asegurando que el device_id se asigne.
+    
+    Also updates device facts (version, HA state, sync status, etc.)
+    in the same connection to avoid duplicate authentication overhead.
     """
     try:
         mgmt = _connect_to_f5(device.ip_address, username, password)
         logger.info(f"Scanning certificates on F5 device {device.hostname} ({device.ip_address})")
+
+        # ─────────────────────────────────────────────────────────────
+        # UNIFIED SCAN: Update device facts first (reuses same connection)
+        # ─────────────────────────────────────────────────────────────
+        facts_result = update_device_facts_from_mgmt(device, mgmt)
+        if facts_result.get("facts_updated"):
+            logger.info(f"Facts updated for {device.hostname}: {list(facts_result['facts_updated'].keys())}")
+        # ─────────────────────────────────────────────────────────────
 
         f5_certs_stubs = mgmt.tm.sys.file.ssl_certs.get_collection()
         
@@ -420,9 +432,11 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
             except Exception as e_inner:
                 logger.error(f"Failed to process cert '{getattr(cert_stub, 'name', 'UNKNOWN')}': {e_inner}")
         
-        result_message = f"Scan complete for {device.hostname}. New: {new_certs_count}, Updated: {updated_certs_count}."
+        # Build result message including facts update info
+        facts_count = len(facts_result.get('facts_updated', {}))
+        result_message = f"Scan complete for {device.hostname}. Certs - New: {new_certs_count}, Updated: {updated_certs_count}. Facts refreshed: {facts_count} field(s)."
         logger.info(result_message)
-        return {"status": "success", "message": result_message}
+        return {"status": "success", "message": result_message, "facts": facts_result}
 
     except Exception as e_outer:
         import traceback
