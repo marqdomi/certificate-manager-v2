@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Chip, Button, IconButton, Tooltip } from '@mui/material';
+import { Box, Chip, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import StarIcon from '@mui/icons-material/Star';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import utc from 'dayjs/plugin/utc';
@@ -25,7 +26,9 @@ const DeviceTable = ({
   const [loading, setLoading] = useState(true);
   const [selectionModel, setSelectionModel] = useState([]);
 
+  // Default sort: cluster first, then IP within cluster (groups HA pairs together)
   const [sortModel, setSortModel] = useState([
+    { field: 'cluster_key', sort: 'asc' },
     { field: 'ip_address', sort: 'asc' },
   ]);
 
@@ -59,8 +62,23 @@ const DeviceTable = ({
       field: 'hostname', 
       headerName: 'Hostname', 
       flex: 1, 
-      minWidth: 200,
+      minWidth: 220,
       resizable: true,
+      renderCell: (params) => {
+        const isPrimary = params.row?.is_primary_preferred === true;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {isPrimary && (
+              <Tooltip title="Primary device for cluster operations" arrow>
+                <StarIcon sx={{ color: 'warning.main', fontSize: 18 }} />
+              </Tooltip>
+            )}
+            <Typography variant="body2" sx={{ fontWeight: isPrimary ? 600 : 400 }}>
+              {params.value}
+            </Typography>
+          </Box>
+        );
+      },
     },
     {
       field: 'ip_address',
@@ -86,6 +104,31 @@ const DeviceTable = ({
       flex: 0.4,
       minWidth: 100,
       resizable: true,
+    },
+    {
+      field: 'cluster_key',
+      headerName: 'Cluster',
+      flex: 0.5,
+      minWidth: 120,
+      resizable: true,
+      renderCell: (params) => {
+        const cluster = params.value;
+        if (!cluster) return <span style={{ color: '#999' }}>—</span>;
+        return (
+          <Tooltip title={`Cluster: ${cluster}`} arrow>
+            <Chip 
+              label={cluster} 
+              size="small" 
+              variant="outlined"
+              sx={{ 
+                fontWeight: 500,
+                borderColor: 'primary.light',
+                color: 'primary.main',
+              }} 
+            />
+          </Tooltip>
+        );
+      },
     },
     { 
       field: 'version', 
