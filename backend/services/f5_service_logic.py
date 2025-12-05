@@ -32,6 +32,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from f5.bigip import ManagementRoot
 from core.config import DEFAULT_CHAIN_NAME
 from core.logger import get_f5_logger
+from core.retry import retry_with_backoff
 from f5.sdk_exception import F5SDKError
 from sqlalchemy.orm import Session
 from db.models import Certificate, Device
@@ -218,6 +219,40 @@ def verify_cert_object(mgmt: ManagementRoot, object_name: str) -> dict:
         fb = {"object_name": object_name, "source": "not-found"}
         fb.update({k: None for k in ("version","san","serial","not_after","subject","issuer","fingerprint_sha256")})
         return fb
+
+
+# -------------------------------------------------------------------
+# F5 CONNECTION WITH RETRY
+# -------------------------------------------------------------------
+@retry_with_backoff(
+    max_retries=2,
+    base_delay=2.0,
+    max_delay=10.0,
+    exceptions=(ConnectionError, TimeoutError, OSError, F5SDKError),
+)
+def _connect_to_f5(hostname: str, username: str, password: str) -> ManagementRoot:
+    """
+    Establishes a connection to an F5 device with automatic retry on failure.
+    
+    Uses token-based authentication and implements exponential backoff
+    for resilient connections in production environments.
+    
+    Args:
+        hostname: F5 device hostname or IP address
+        username: Authentication username
+        password: Authentication password
+    
+    Returns:
+        ManagementRoot instance for F5 API operations
+        
+    Raises:
+        F5SDKError: If connection fails after all retry attempts
+    """
+    logger.debug(f"Attempting connection to F5: {hostname}")
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+    logger.info(f"Successfully connected to F5: {hostname}")
+    return mgmt
+
     
 # -------------------------------------------------------------------
 # FUNCIÓN DE LÓGICA DE ESCANEO
@@ -229,8 +264,8 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
     con la base de datos local, asegurando que el device_id se asigne.
     """
     try:
-        mgmt = ManagementRoot(device.ip_address, username, password, token=True)
-        logger.info(f"Connected to F5 device {device.hostname} ({device.ip_address})")
+        mgmt = _connect_to_f5(device.ip_address, username, password)
+        logger.info(f"Scanning certificates on F5 device {device.hostname} ({device.ip_address})")
 
         f5_certs_stubs = mgmt.tm.sys.file.ssl_certs.get_collection()
         
@@ -339,7 +374,7 @@ def deploy_from_pem_and_update_profiles(
     Sube cert/key por file-transfer + instala con tmsh (como la GUI),
     y actualiza los perfiles SSL que usaban old_cert_name.
     """
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
 
     # 1) Sanitizar PEM de certificado y asegurar que es v3 con SAN (opcional validar aquí)
     cert_pem_clean = _sanitize_pem_cert(cert_pem)
@@ -414,7 +449,7 @@ def deploy_from_pfx_and_update_profiles(
     timeout: int = 60,
 ):
     """Desempaqueta PFX, sanea PEM, sube por file-transfer, instala con tmsh y actualiza perfiles."""
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     try:
         pfx_password_bytes = pfx_password.encode('utf-8') if pfx_password else None
         private_key_obj, main_cert_obj, additional_certs = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
@@ -479,7 +514,7 @@ def deploy_and_update_f5(
 
 # Sube e instala cert+key (sin tocar perfiles)
 def upload_cert_and_key(hostname: str, username: str, password: str, cert_content: str, key_content: str) -> dict:
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     # Sanitiza y crea nombre
     cert_clean = _sanitize_pem_cert(cert_content)
     cert_obj = x509.load_pem_x509_certificate(cert_clean.encode('utf-8'))
@@ -505,7 +540,7 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
         "virtual_servers": []
     }
     
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     
     # 1. Encontrar los perfiles SSL que usan el certificado
     ssl_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection(params={'partition': partition})
@@ -534,7 +569,7 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
     return usage_data
 
 def delete_certificate_from_f5(hostname: str, username: str, password: str, cert_name: str, partition: str):
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     
     # CAMBIO 3: Corregimos la lógica para obtener el nombre de la clave
     try:
@@ -581,7 +616,7 @@ def export_key_and_create_csr(hostname: str, username: str, password: str, db_ce
     Exporta la clave privada de un certificado existente y genera un nuevo CSR
     usando los datos del certificado guardados en nuestra base de datos.
     """
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     
     # Extraemos el nombre y la partición del certificado desde el objeto db_cert
     cert_name = db_cert.name
@@ -675,7 +710,7 @@ def get_realtime_certs_from_f5(hostname: str, username: str, password: str, devi
     Se conecta a un F5 y devuelve una lista de sus certificados con un formato
     compatible con nuestro schema CertificateResponse.
     """
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     f5_certs = mgmt.tm.sys.file.ssl_certs.get_collection()
     
     cert_list = []
@@ -723,7 +758,7 @@ def update_profiles_with_new_cert(
     """
     # Note: "timeout" is accepted for compatibility with callers; current F5 SDK modify calls do not expose a timeout,
     # but we keep the parameter to avoid unexpected-keyword errors and for future use.
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
 
     new_object_name = new_cert_name
     chain_ref = f"/Common/{chain_name}"
@@ -775,7 +810,7 @@ def get_realtime_chains_from_f5(hostname: str, username: str, password: str):
     certificados que pueden ser usados como cadenas (chains).
     Técnicamente, son los mismos objetos que los certificados normales.
     """
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     # La API no distingue entre "certs" y "chains", son el mismo tipo de objeto.
     # La GUI los separa lógicamente, pero nosotros obtenemos todos.
     f5_certs = mgmt.tm.sys.file.ssl_certs.get_collection()
@@ -807,7 +842,7 @@ def list_client_ssl_profiles_bulk(hostname: str, username: str, password: str):
       - cert_full (p.ej. /Common/foo), cert_name (tail sin partición)
       - key_full, chain_full (si existen)
     """
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     out = []
     for prof in mgmt.tm.ltm.profile.client_ssls.get_collection():
         ckc = getattr(prof, 'certKeyChain', []) or []
@@ -847,7 +882,7 @@ def list_virtuals_min(hostname: str, username: str, password: str):
     Retorna lista de dicts:
       { fullPath, partition, name, destination, servicePort, enabled, profiles: [fullPath_de_profile, ...] }
     """
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     out = []
     for vs in mgmt.tm.ltm.virtuals.get_collection():
         try:
@@ -943,7 +978,7 @@ def _update_profiles_reference(mgmt: ManagementRoot, old_name: str, new_name: st
     return updated
 
 def normalize_object_names(hostname: str, username: str, password: str) -> dict:
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     certs = mgmt.tm.sys.file.ssl_certs.get_collection()
     keys  = mgmt.tm.sys.file.ssl_keys.get_collection()
 
@@ -981,7 +1016,7 @@ def normalize_object_names(hostname: str, username: str, password: str) -> dict:
 
 # Public function to verify installed certificate by object name (for API endpoint)
 def verify_installed_certificate(hostname: str, username: str, password: str, object_name: str) -> dict:
-    mgmt = ManagementRoot(hostname, username, password, token=True)
+    mgmt = _connect_to_f5(hostname, username, password)
     return verify_cert_object(mgmt, object_name)
 
 
@@ -1009,7 +1044,7 @@ def get_certificate_ssl_profiles_simple(hostname: str, username: str, password: 
         ]
     """
     try:
-        mgmt = ManagementRoot(hostname, username, password, token=True)
+        mgmt = _connect_to_f5(hostname, username, password)
         ssl_profiles = []
         
         # Buscar en client-side SSL profiles

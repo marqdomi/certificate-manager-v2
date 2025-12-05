@@ -24,6 +24,7 @@ import RenewalChoiceDialog from '../components/RenewalChoiceDialog';
 import CertificateUsageDetail from '../components/CertificateUsageDetail';
 import RenewalWizardDialog from '../components/wizard/RenewWizardDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
+import ExportButton from '../components/ExportButton';
 
 
 const glassmorphicStyle = {
@@ -270,6 +271,11 @@ function InventoryPage() {
                 color={dedupe ? 'info' : 'default'}
                 label="De-duplicate"
                 onClick={() => setDedupe(!dedupe)}
+              />
+              <ExportButton 
+                certificates={displayCerts} 
+                disabled={loading}
+                filenamePrefix="cmt_certificates"
               />
             </Box>
           </Box>
