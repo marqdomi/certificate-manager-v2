@@ -48,7 +48,7 @@ async def cmt_exception_handler(request: Request, exc: CMTException):
     )
 
 # Routers that don't need a special tag/prefix beyond here
-app.include_router(f5_cache.router, prefix="/api/v1", tags=["cache"])
+app.include_router(f5_cache.router, prefix="/api/v1", tags=["cache (deprecated)"])
 app.include_router(f5_vips.router, prefix="/api/v1/vips", tags=["vips"])
 
 # Read CORS allowlist from env (comma-separated), support either var name

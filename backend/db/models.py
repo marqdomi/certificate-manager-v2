@@ -128,10 +128,17 @@ class User(Base):
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role.value}')>"
     
-# --- ⚠️ DEPRECATED CACHE TABLES (Fase 3 - Scheduled for removal) ---
-# These tables were used for complex cache system that is being replaced
-# with direct F5 queries via get_certificate_ssl_profiles_simple()
-# TODO: Remove in future version after migration validation
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚠️ DEPRECATED CACHE TABLES - v2.5 (December 2025)
+# ═══════════════════════════════════════════════════════════════════════════════
+# These tables were used for the cache-based usage detection system.
+# As of v2.5, real-time F5 queries replace this system:
+# - POST /certificates/batch-usage
+# - services/f5_service_logic.get_batch_usage_state()
+#
+# Tables are kept for backwards compatibility with existing endpoints
+# (e.g., /f5/cache/impact-preview). Scheduled for removal in v3.0.
+# ═══════════════════════════════════════════════════════════════════════════════
 
 class SslProfilesCache(Base):
     __tablename__ = "ssl_profiles_cache"

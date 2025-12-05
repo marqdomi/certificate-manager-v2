@@ -87,7 +87,7 @@ def auto_assign_clusters(
 ):
     """
     Recorre los devices, deriva cluster_key heurística y marca is_primary_preferred por cluster.
-    cluster_key: hostname normalizado quitando -LB0\d-(PRI|SEC)
+    cluster_key: hostname normalizado quitando sufijos tipo -LB0x-PRI/SEC
     """
     devices = db.query(Device).all()
     # 1. Derivar cluster_key

@@ -1,3 +1,19 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ⚠️ DEPRECATED: backend/api/endpoints/f5_cache.py
+# ═══════════════════════════════════════════════════════════════════════════════
+# 
+# This endpoint module is DEPRECATED as of v2.5 (December 2025).
+# 
+# The cache-based usage detection has been replaced with real-time F5 queries:
+# - POST /certificates/batch-usage - Real-time usage state for multiple certs
+# - services/f5_service_logic.get_batch_usage_state() - Efficient batch queries
+#
+# These endpoints are kept for backwards compatibility with existing frontend
+# components. They will be removed in v3.0.
+#
+# DO NOT add new endpoints here. Use certificates.py or f5_scans.py instead.
+# ═══════════════════════════════════════════════════════════════════════════════
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -14,7 +30,7 @@ from db.models import (
     CertProfileLinksCache,
 )
 
-router = APIRouter(prefix="/f5/cache", tags=["f5-cache"])
+router = APIRouter(prefix="/f5/cache", tags=["f5-cache (deprecated)"])
 
 def get_db():
     db = SessionLocal()

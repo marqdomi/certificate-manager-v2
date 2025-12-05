@@ -1,7 +1,18 @@
+# ═══════════════════════════════════════════════════════════════════════════════
 # ⚠️ DEPRECATED: backend/services/cache_builder.py
-# This service builds complex cache tables that are being replaced with direct F5 queries.
-# Use get_certificate_ssl_profiles_simple() for faster SSL profile lookups instead.
-# TODO: Phase out this service in favor of direct queries (Fase 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+# 
+# This service is DEPRECATED as of v2.5 (December 2025).
+# 
+# The cache-based usage detection has been replaced with real-time F5 queries:
+# - POST /certificates/batch-usage - Real-time usage state for multiple certs
+# - services/f5_service_logic.get_batch_usage_state() - Efficient batch queries
+#
+# This file is kept for backwards compatibility with existing Celery tasks and
+# the /f5/cache/impact-preview endpoint. It will be removed in v3.0.
+#
+# DO NOT add new code here. Use f5_service_logic.py instead.
+# ═══════════════════════════════════════════════════════════════════════════════
 
 from __future__ import annotations
 
