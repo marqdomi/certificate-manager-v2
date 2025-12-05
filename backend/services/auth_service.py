@@ -1,5 +1,6 @@
 # backend/services/auth_service.py
 
+import re
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -25,6 +26,46 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Esquema OAuth2 que le dice a FastAPI cómo esperar el token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+
+# --- PASSWORD VALIDATION ---
+
+# Password complexity requirements
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_PATTERN = re.compile(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-#])[A-Za-z\d@$!%*?&_\-#]{8,}$'
+)
+
+def validate_password_complexity(password: str) -> tuple[bool, str]:
+    """
+    Validate password meets complexity requirements.
+    
+    Requirements:
+    - At least 8 characters
+    - At least one lowercase letter
+    - At least one uppercase letter  
+    - At least one digit
+    - At least one special character (@$!%*?&_-#)
+    
+    Returns:
+        tuple: (is_valid: bool, error_message: str)
+    """
+    if len(password) < PASSWORD_MIN_LENGTH:
+        return False, f"Password must be at least {PASSWORD_MIN_LENGTH} characters long"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one digit"
+    
+    if not re.search(r'[@$!%*?&_\-#]', password):
+        return False, "Password must contain at least one special character (@$!%*?&_-#)"
+    
+    return True, ""
 
 
 # --- FUNCIONES DE UTILIDAD ---

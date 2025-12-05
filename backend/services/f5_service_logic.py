@@ -17,57 +17,93 @@ file as a backwards-compatible proxy.
 """
 
 from __future__ import annotations
-from typing import Optional
 
-
-def derive_object_name_from_pem(cert_pem: str) -> str:
-    """
-    Given a PEM certificate, sanitize and derive a safe F5 object name: <safe_cn>_<not_after>
-    """
-    cert_pem_clean = _sanitize_pem_cert(cert_pem)
-    cert_obj = x509.load_pem_x509_certificate(cert_pem_clean.encode("utf-8"))
-    cn = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
-    not_after = _get_not_after_dt(cert_obj).date().isoformat()
-    safe_cn = cn.replace("*.", "star_").replace(".", "_")
-    return f"{safe_cn}_{not_after}"
-
-def derive_object_name_from_pfx(pfx_data: bytes, pfx_password: Optional[str]) -> str:
-    """
-    Given a PFX (PKCS12) file and password, derive a safe F5 object name: <safe_cn>_<not_after>
-    """
-    pfx_password_bytes = pfx_password.encode("utf-8") if pfx_password else None
-    _key_obj, cert_obj, _extra = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
-    cn = cert_obj.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
-    not_after = _get_not_after_dt(cert_obj).date().isoformat()
-    safe_cn = cn.replace("*.", "star_").replace(".", "_")
-    return f"{safe_cn}_{not_after}"
 # backend/services/f5_service_logic.py
 
 import os
+import re
+import math
+import time
+import requests
 from datetime import datetime
 from base64 import b64encode
+from typing import Tuple, Optional, List, Dict, Any
+
 from cryptography import x509
-from cryptography.x509.oid import NameOID  # <-- CAMBIO 1: Importar NameOID aquí
+from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.serialization import pkcs12
 from f5.bigip import ManagementRoot
+from f5.sdk_exception import F5SDKError
+from sqlalchemy.orm import Session
+
 from core.config import DEFAULT_CHAIN_NAME
 from core.logger import get_f5_logger
 from core.retry import retry_with_backoff
-from f5.sdk_exception import F5SDKError
-from sqlalchemy.orm import Session
 from db.models import Certificate, Device
-from cryptography.hazmat.primitives.serialization import pkcs12
-import time
 
 # Setup logger for F5 operations
 logger = get_f5_logger()
 
 # ----------------------------
+# Security: Input sanitization for F5 commands
+# ----------------------------
+
+# Pattern for valid F5 object names: alphanumeric, underscore, hyphen, dot
+# Max length 255 chars (F5 limitation)
+_VALID_F5_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9_\-\.]+$')
+_F5_NAME_MAX_LENGTH = 255
+
+
+def sanitize_f5_object_name(name: str) -> str:
+    """
+    Sanitize a string to be safe for F5 object names and tmsh commands.
+    
+    This prevents command injection by:
+    1. Removing any shell metacharacters
+    2. Replacing unsafe chars with underscores
+    3. Enforcing max length
+    
+    Args:
+        name: Raw object name (e.g., from certificate CN)
+        
+    Returns:
+        Sanitized name safe for tmsh commands
+    """
+    if not name:
+        return "unnamed"
+    
+    # Replace common unsafe patterns
+    sanitized = name.replace("*.", "star_")  # Wildcard certs
+    sanitized = sanitized.replace(".", "_")   # Dots to underscores
+    sanitized = sanitized.replace(" ", "_")   # Spaces
+    sanitized = sanitized.replace("/", "_")   # Path separators
+    sanitized = sanitized.replace("\\", "_")  # Windows paths
+    
+    # Remove any remaining shell-dangerous characters
+    # Only allow: a-z A-Z 0-9 _ - .
+    sanitized = re.sub(r'[^a-zA-Z0-9_\-\.]', '', sanitized)
+    
+    # Collapse multiple underscores
+    sanitized = re.sub(r'_+', '_', sanitized)
+    
+    # Strip leading/trailing underscores
+    sanitized = sanitized.strip('_')
+    
+    # Enforce max length
+    if len(sanitized) > _F5_NAME_MAX_LENGTH:
+        sanitized = sanitized[:_F5_NAME_MAX_LENGTH]
+    
+    # Ensure non-empty
+    if not sanitized:
+        sanitized = "unnamed"
+    
+    return sanitized
+
+
+# ----------------------------
 # Helper utilities (REST upload + tmsh + PEM sanitize)
 # ----------------------------
-from typing import Tuple, Optional, List, Dict, Any
-import math
-import requests
 
 def _sanitize_pem_cert(cert_pem: str) -> str:
     """Re-serializa el certificado a un PEM canónico (limpio)."""
@@ -80,6 +116,33 @@ def _get_not_after_dt(cert_obj) -> datetime:
         return cert_obj.not_valid_after_utc  # cryptography >= 42
     except AttributeError:
         return cert_obj.not_valid_after      # versiones anteriores
+
+
+def derive_object_name_from_pem(cert_pem: str) -> str:
+    """
+    Given a PEM certificate, sanitize and derive a safe F5 object name: <safe_cn>_<not_after>
+    Uses sanitize_f5_object_name() for command injection prevention.
+    """
+    cert_pem_clean = _sanitize_pem_cert(cert_pem)
+    cert_obj = x509.load_pem_x509_certificate(cert_pem_clean.encode("utf-8"))
+    cn = cert_obj.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(cert_obj).date().isoformat()
+    safe_cn = sanitize_f5_object_name(cn)
+    return f"{safe_cn}_{not_after}"
+
+
+def derive_object_name_from_pfx(pfx_data: bytes, pfx_password: Optional[str]) -> str:
+    """
+    Given a PFX (PKCS12) file and password, derive a safe F5 object name: <safe_cn>_<not_after>
+    Uses sanitize_f5_object_name() for command injection prevention.
+    """
+    pfx_password_bytes = pfx_password.encode("utf-8") if pfx_password else None
+    _key_obj, cert_obj, _extra = pkcs12.load_key_and_certificates(pfx_data, pfx_password_bytes)
+    cn = cert_obj.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    not_after = _get_not_after_dt(cert_obj).date().isoformat()
+    safe_cn = sanitize_f5_object_name(cn)
+    return f"{safe_cn}_{not_after}"
+
 
 def _rest_upload_bytes(mgmt: ManagementRoot, data: bytes, remote_filename: str, timeout: int = 120) -> str:
     """Sube bytes a /var/config/rest/downloads/<remote_filename> usando uploads (chunked)."""
@@ -112,7 +175,6 @@ def _tmsh_run(mgmt: ManagementRoot, cmd: str, timeout: int = 120) -> str:
         raise ValueError(f"tmsh run failed: {resp.status_code} {resp.text}")
     return resp.json().get('commandResult', '')
 
-import re
 
 def _parse_openssl_text(openssl_text: str) -> dict:
     """Extrae campos clave del texto de `openssl x509 -text`."""

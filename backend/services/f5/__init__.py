@@ -22,6 +22,8 @@ Future versions will have individual submodules:
 
 # Import everything from the original module for backwards compatibility
 from services.f5_service_logic import (
+    # Security
+    sanitize_f5_object_name,
     # Utils
     derive_object_name_from_pem,
     derive_object_name_from_pfx,
@@ -86,6 +88,8 @@ rename_cert_object = _rename_cert_object
 rename_key_object = _rename_key_object
 
 __all__ = [
+    # Security
+    'sanitize_f5_object_name',
     # Connection
     'connect_to_f5', '_connect_to_f5',
     # Utils

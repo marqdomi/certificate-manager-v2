@@ -55,13 +55,15 @@ app.include_router(f5_vips.router, prefix="/api/v1/vips", tags=["vips"])
 _cors_env = os.getenv("BACKEND_CORS_ORIGINS", os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173"))
 _cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
-# --- CORS ---
+# --- CORS (Restricted for security) ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # Restrict to only methods we actually use (no TRACE, OPTIONS abuse)
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    # Restrict headers to what we need
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 
 # --- REGISTER ALL ROUTERS ---
