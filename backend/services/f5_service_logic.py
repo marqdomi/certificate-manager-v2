@@ -1,5 +1,25 @@
+"""
+F5 Service Logic - Core F5 LTM operations for certificate management.
+
+This module contains all F5 device operations for CMT v2.5.
+Functions can also be imported from the new `services.f5` package:
+
+    from services.f5 import connect_to_f5, get_batch_usage_state
+
+The `services.f5` package provides:
+- Clean function names (without underscore prefix)
+- Better organization hints for future refactoring
+- Same functionality, just re-exports from here
+
+NOTE: This module is being incrementally refactored. Future versions (v3.0+)
+may move implementations to `services/f5/` submodules while keeping this
+file as a backwards-compatible proxy.
+"""
+
 from __future__ import annotations
 from typing import Optional
+
+
 def derive_object_name_from_pem(cert_pem: str) -> str:
     """
     Given a PEM certificate, sanitize and derive a safe F5 object name: <safe_cn>_<not_after>
