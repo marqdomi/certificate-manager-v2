@@ -103,6 +103,8 @@ const DeviceDetailDrawer = ({
         sx: {
           width: { xs: '100%', sm: 420 },
           p: 0,
+          top: 64, // Height of the AppBar
+          height: 'calc(100% - 64px)',
         },
       }}
     >

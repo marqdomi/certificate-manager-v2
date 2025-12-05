@@ -1,5 +1,5 @@
 # backend/schemas/device.py
-from pydantic import BaseModel, ConfigDict, IPvAnyAddress, computed_field
+from pydantic import BaseModel, ConfigDict, IPvAnyAddress, computed_field, Field
 from datetime import datetime
 from typing import Optional
 
@@ -28,6 +28,9 @@ class DeviceResponse(BaseModel):
     active: bool = True
     cluster_key: Optional[str] = None
     is_primary_preferred: bool = False
+    
+    # --- Credentials indicator (not exposing actual username for security) ---
+    username: Optional[str] = Field(default=None, description="Username if credentials are configured")
 
     # Campo computado para compatibilidad con la GUI (si espera last_sync)
     @computed_field
@@ -36,6 +39,12 @@ class DeviceResponse(BaseModel):
         if self.last_scan_timestamp is None:
             return None
         return self.last_scan_timestamp.isoformat()
+    
+    # Campo computado para indicar si tiene credenciales
+    @computed_field
+    @property
+    def has_credentials(self) -> bool:
+        return bool(self.username)
 
     model_config = ConfigDict(
         from_attributes=True,
