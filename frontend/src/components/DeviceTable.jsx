@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import apiClient from '../services/api';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, Button, IconButton, Tooltip, Typography } from '@mui/material';
@@ -22,6 +22,8 @@ const DeviceTable = ({
   userRole,
   onSelectionChange,
   clearSelectionKey,
+  filters = {},
+  onDevicesLoaded,
 }) => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,11 @@ const DeviceTable = ({
       if (searchTerm) apiUrl += `?search=${encodeURIComponent(searchTerm)}`;
       apiClient
         .get(apiUrl)
-        .then((response) => setDevices(response.data))
+        .then((response) => {
+          setDevices(response.data);
+          // Notify parent about loaded devices (for filters)
+          if (onDevicesLoaded) onDevicesLoaded(response.data);
+        })
         .catch((error) => {
           console.error('Error fetching devices:', error);
           setDevices([]);
@@ -52,6 +58,34 @@ const DeviceTable = ({
     }, 300);
     return () => clearTimeout(handler);
   }, [searchTerm, refreshTrigger]);
+
+  // Apply client-side filters
+  const filteredDevices = useMemo(() => {
+    let result = devices;
+    if (filters.ha_state) {
+      result = result.filter((d) => d.ha_state === filters.ha_state);
+    }
+    if (filters.sync_status) {
+      result = result.filter((d) => d.sync_status === filters.sync_status);
+    }
+    if (filters.site) {
+      result = result.filter((d) => d.site === filters.site);
+    }
+    if (filters.is_primary_preferred) {
+      result = result.filter((d) => d.is_primary_preferred === true);
+    }
+    if (filters.no_credentials) {
+      result = result.filter((d) => !d.encrypted_password);
+    }
+    if (filters.health_status) {
+      if (filters.health_status === 'success') {
+        result = result.filter((d) => d.last_scan_status === 'success');
+      } else if (filters.health_status === 'failed') {
+        result = result.filter((d) => ['failed', 'error'].includes(d.last_scan_status));
+      }
+    }
+    return result;
+  }, [devices, filters]);
 
   useEffect(() => {
     setSelectionModel([]);
@@ -190,7 +224,7 @@ const DeviceTable = ({
     },
     {
       field: 'last_scan_status',
-      headerName: 'Last Scan',
+      headerName: 'Health',
       flex: 0.5,
       minWidth: 120,
       resizable: true,
@@ -199,10 +233,30 @@ const DeviceTable = ({
       renderCell: (params) => {
         const rawStatus = params.value || 'pending';
         const message = params.row.last_scan_message || '';
+        const statusLower = rawStatus.toLowerCase();
+        
+        // Define color based on status
+        let color = 'default';
+        let icon = null;
+        if (statusLower === 'success') {
+          color = 'success';
+        } else if (statusLower === 'failed' || statusLower === 'error') {
+          color = 'error';
+        } else if (statusLower === 'running') {
+          color = 'info';
+        } else if (statusLower === 'pending') {
+          color = 'warning';
+        }
+        
         return (
-          <Tooltip title={message || rawStatus} arrow>
+          <Tooltip title={message || `Status: ${rawStatus}`} arrow>
             <span>
-              <Chip label={rawStatus} size="small" sx={{ textTransform: 'uppercase', fontWeight: 600 }} />
+              <Chip 
+                label={rawStatus} 
+                color={color}
+                size="small" 
+                sx={{ textTransform: 'capitalize', fontWeight: 600 }} 
+              />
             </span>
           </Tooltip>
         );
@@ -242,7 +296,7 @@ const DeviceTable = ({
   return (
     <Box sx={{ height: 'calc(100vh - 280px)', width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
       <DataGrid
-        rows={Array.isArray(devices) ? devices : []}
+        rows={Array.isArray(filteredDevices) ? filteredDevices : []}
         columns={columns}
         loading={loading}
         getRowId={(row) => row.id}

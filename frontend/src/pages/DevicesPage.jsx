@@ -2,13 +2,17 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Alert, TextField, InputAdornment, Paper } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import DownloadIcon from '@mui/icons-material/Download';
 import { authProvider } from './LoginPage';
 import apiClient from '../services/api';
 import DeviceTable from '../components/DeviceTable';
 import DeviceDetailDrawer from '../components/DeviceDetailDrawer';
+import EditDeviceDialog from '../components/EditDeviceDialog';
 import CredentialDialog from '../components/CredentialDialog';
 import AddDeviceDialog from '../components/AddDeviceDialog';
+import FilterChipsBar from '../components/FilterChipsBar';
 import BulkActionsBar from '../components/BulkActionsBar';
+import BulkCredentialsDialog from '../components/BulkCredentialsDialog';
 
 const DevicesPage = () => {
   const userRole = authProvider.getRole();
@@ -29,12 +33,68 @@ const DevicesPage = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [drawerDevice, setDrawerDevice] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editDevice, setEditDevice] = useState(null);
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [limitCertsInput, setLimitCertsInput] = useState('');
   const [clearSelectionKey, setClearSelectionKey] = useState(0);
+  const [filters, setFilters] = useState({});
+  const [allDevices, setAllDevices] = useState([]);
+  const [bulkCredentialsOpen, setBulkCredentialsOpen] = useState(false);
 
   const forceTableRefresh = () => setRefreshKey((k) => k + 1);
+
+  // Export devices to CSV
+  const handleExportCSV = () => {
+    if (!allDevices || allDevices.length === 0) {
+      setNotification({ open: true, message: 'No devices to export.', severity: 'warning' });
+      return;
+    }
+
+    // Define CSV columns
+    const columns = [
+      'id', 'hostname', 'ip_address', 'site', 'cluster_key', 'is_primary_preferred',
+      'version', 'ha_state', 'sync_status', 'last_sync_color',
+      'last_scan_status', 'last_scan_message', 'last_facts_refresh',
+      'active', 'username', 'created_at', 'updated_at'
+    ];
+
+    // Create CSV header
+    const header = columns.join(',');
+
+    // Create CSV rows
+    const rows = allDevices.map(device => {
+      return columns.map(col => {
+        let value = device[col];
+        if (value === null || value === undefined) value = '';
+        if (typeof value === 'boolean') value = value ? 'Yes' : 'No';
+        // Escape quotes and wrap in quotes if contains comma or newline
+        value = String(value).replace(/"/g, '""');
+        if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+          value = `"${value}"`;
+        }
+        return value;
+      }).join(',');
+    });
+
+    // Combine header and rows
+    const csv = [header, ...rows].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.download = `device_inventory_${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setNotification({ open: true, message: `Exported ${allDevices.length} devices to CSV.`, severity: 'success' });
+  };
 
   const handleScanAll = () => {
     apiClient.post('/f5/scan-all')
@@ -89,6 +149,11 @@ const DevicesPage = () => {
     setClearSelectionKey((k) => k + 1);
   };
 
+  const handleBulkCredentialsComplete = () => {
+    setBulkCredentialsOpen(false);
+    forceTableRefresh();
+  };
+
   // Device detail drawer handlers
   const handleRowClick = (device) => {
     setDrawerDevice(device);
@@ -109,8 +174,18 @@ const DevicesPage = () => {
   };
 
   const handleEditDevice = (device) => {
-    // TODO: Implement edit modal in Task 2.2
-    setNotification({ open: true, message: 'Edit functionality coming soon!', severity: 'info' });
+    setEditDevice(device);
+    setEditModalOpen(true);
+    setDetailDrawerOpen(false); // Cerrar drawer al abrir edit
+  };
+
+  const handleSaveDevice = (updatedDevice) => {
+    setNotification({ open: true, message: `Device ${updatedDevice.hostname} updated successfully.`, severity: 'success' });
+    forceTableRefresh();
+    // Actualizar drawer si está abierto
+    if (drawerDevice && drawerDevice.id === updatedDevice.id) {
+      setDrawerDevice(updatedDevice);
+    }
   };
 
   return (
@@ -130,12 +205,27 @@ const DevicesPage = () => {
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {userRole === 'admin' && <Button variant="contained" onClick={() => setAddModalOpen(true)}>Add Device</Button>}
                 <Button variant="contained" color="secondary" onClick={handleScanAll}>Scan All Devices</Button>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<DownloadIcon />} 
+                  onClick={handleExportCSV}
+                  disabled={allDevices.length === 0}
+                >
+                  Export CSV
+                </Button>
               </Box>
             )}
           </Box>
         </Box>
 
         {notification.open && <Alert severity={notification.severity}>{notification.message}</Alert>}
+
+        {/* Filter Chips */}
+        <FilterChipsBar
+          devices={allDevices}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
 
         {selectedIds.length > 0 && (
           <BulkActionsBar
@@ -144,8 +234,10 @@ const DevicesPage = () => {
             onRefreshCache={bulkRefreshCache}
             onScanAll={handleScanAll}
             onClearSelection={clearSelection}
+            onBulkSetCredentials={() => setBulkCredentialsOpen(true)}
             limitCertsInput={limitCertsInput}
             setLimitCertsInput={setLimitCertsInput}
+            userRole={userRole}
           />
         )}
 
@@ -158,6 +250,8 @@ const DevicesPage = () => {
           userRole={userRole}
           onSelectionChange={setSelectedIds}
           clearSelectionKey={clearSelectionKey}
+          filters={filters}
+          onDevicesLoaded={setAllDevices}
         />
       </Paper>
 
@@ -176,6 +270,19 @@ const DevicesPage = () => {
       />
 
       <CredentialDialog open={credentialModalOpen} onClose={() => setCredentialModalOpen(false)} onSave={handleSaveCredentials} device={selectedDevice} />
+      <EditDeviceDialog 
+        open={editModalOpen} 
+        onClose={() => setEditModalOpen(false)} 
+        device={editDevice} 
+        onSave={handleSaveDevice} 
+      />
+      <BulkCredentialsDialog
+        open={bulkCredentialsOpen}
+        onClose={() => setBulkCredentialsOpen(false)}
+        selectedIds={selectedIds}
+        devices={allDevices}
+        onComplete={handleBulkCredentialsComplete}
+      />
       {userRole === 'admin' && <AddDeviceDialog open={addModalOpen} onClose={() => setAddModalOpen(false)} onAdd={handleAddDevice} />}
     </Box>
   );

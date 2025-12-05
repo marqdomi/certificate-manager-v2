@@ -10,6 +10,7 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CachedIcon from '@mui/icons-material/Cached';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
 const BulkActionsBar = ({
   selectionCount,
@@ -17,8 +18,10 @@ const BulkActionsBar = ({
   onRefreshCache,
   onScanAll,
   onClearSelection,
+  onBulkSetCredentials,
   limitCertsInput,
   setLimitCertsInput,
+  userRole,
 }) => {
   return (
     <Paper
@@ -50,6 +53,18 @@ const BulkActionsBar = ({
       </Stack>
 
       <Stack direction="row" spacing={1}>
+        {userRole !== 'viewer' && onBulkSetCredentials && (
+          <Button
+            size="small"
+            variant="contained"
+            color="warning"
+            startIcon={<VpnKeyIcon />}
+            onClick={onBulkSetCredentials}
+            disabled={selectionCount === 0}
+          >
+            Set Credentials
+          </Button>
+        )}
         <Button
           size="small"
           variant="contained"

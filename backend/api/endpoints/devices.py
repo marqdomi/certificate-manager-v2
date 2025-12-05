@@ -28,6 +28,14 @@ class DeviceCredentialsUpdate(BaseModel):
     username: str
     password: str
 
+class DeviceUpdate(BaseModel):
+    hostname: str | None = None
+    ip_address: str | None = None
+    site: str | None = None
+    cluster_key: str | None = None
+    is_primary_preferred: bool | None = None
+    active: bool | None = None
+
 # --- Endpoints Protegidos ---
 
 @router.get("/", response_model=List[DeviceResponse])
@@ -137,6 +145,28 @@ def create_device(
     db.commit()
     db.refresh(new_device)
     return new_device
+
+@router.put("/{device_id}", response_model=DeviceResponse)
+def update_device(
+    device_id: int,
+    device_data: DeviceUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN]))
+):
+    """Updates a device's information (hostname, IP, site, cluster, etc)."""
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    
+    # Solo actualizar campos que fueron enviados (no None)
+    update_data = device_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        if value is not None:
+            setattr(device, field, value)
+    
+    db.commit()
+    db.refresh(device)
+    return device
 
 @router.put("/{device_id}/credentials", response_model=DeviceResponse)
 def update_device_credentials(
