@@ -1,11 +1,18 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import os
 
 # Import rate limiter
 from core.rate_limiter import limiter
+
+# Import custom exceptions and logger
+from core.exceptions import CMTException
+from core.logger import setup_logger
+
+logger = setup_logger("cmt.main")
 
 # Import all routers in one place
 from api.endpoints import (
@@ -19,11 +26,26 @@ from api.endpoints import (
     f5_vips,
 )
 
-app = FastAPI(title="Certificate Management Tool V2")
+app = FastAPI(
+    title="Certificate Management Tool V2",
+    description="Enterprise certificate lifecycle management for F5 devices",
+    version="2.5.0",
+)
 
 # Add rate limiter to app state
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Custom exception handler for CMT exceptions
+@app.exception_handler(CMTException)
+async def cmt_exception_handler(request: Request, exc: CMTException):
+    """Handle all CMT custom exceptions with structured JSON response."""
+    logger.warning(f"CMT Exception: {exc.code} - {exc.message}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=exc.to_dict(),
+    )
 
 # Routers that don't need a special tag/prefix beyond here
 app.include_router(f5_cache.router, prefix="/api/v1", tags=["cache"])
@@ -55,8 +77,9 @@ try:
     from services.auth_service import pwd_context
     _probe = pwd_context.hash("probe")
     assert pwd_context.verify("probe", _probe)
+    logger.info("Password hashing self-test passed")
 except Exception as _e:  # don't crash prod, but log visibly
-    print("[WARN] Password hashing self-test failed:", _e)
+    logger.warning(f"Password hashing self-test failed: {_e}")
 
 @app.get("/healthz")
 def healthz():

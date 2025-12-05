@@ -2,12 +2,35 @@ from cryptography import x509
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives import serialization
 from datetime import timezone
+from typing import Optional, Tuple
+
+from core.logger import get_service_logger
+
+logger = get_service_logger()
+
 
 # ✅ --- FUNCIÓN CREATE_PFX MEJORADA Y A PRUEBA DE ERRORES --- ✅
-def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, password: str | None):
+def create_pfx(
+    cert_pem: bytes, 
+    key_pem: bytes, 
+    chain_pem: Optional[bytes], 
+    password: Optional[str]
+) -> bytes:
     """
-    Genera un archivo PFX de forma robusta, con manejo de errores granular y
-    un parsing de la cadena de certificados a prueba de fallos.
+    Generate a PFX file from certificate, key, and optional chain.
+    
+    Args:
+        cert_pem: PEM-encoded certificate
+        key_pem: PEM-encoded private key
+        chain_pem: Optional PEM-encoded chain certificates
+        password: Optional password for the PFX
+    
+    Returns:
+        PFX file as bytes
+    
+    Raises:
+        ValueError: If inputs are invalid
+        Exception: On unexpected errors
     """
     try:
         # 1. Cargar la clave privada. Si falla, es un error de formato.
@@ -19,25 +42,21 @@ def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, passwor
         # 3. Lógica de parsing de la cadena de certificados (a prueba de balas)
         ca_certs = []
         if chain_pem:
-            # Separamos el archivo de cadena por el delimitador estándar.
-            # Esto maneja correctamente archivos con 1 o N certificados.
             cert_strings = chain_pem.decode().split("-----END CERTIFICATE-----")
             for cert_str in cert_strings:
-                if cert_str.strip(): # Ignoramos partes vacías
+                if cert_str.strip():
                     full_cert_str = cert_str + "-----END CERTIFICATE-----"
                     try:
                         ca_cert = x509.load_pem_x509_certificate(full_cert_str.encode())
                         ca_certs.append(ca_cert)
                     except ValueError:
-                        # Ignoramos si una parte de la cadena no es un certificado válido
-                        print(f"WARN: Could not parse a certificate from the provided chain file. Skipping part.")
+                        logger.warning("Could not parse a certificate from chain file, skipping")
                         pass
 
-        # 4. Preparar los datos para la serialización (sin cambios, tu lógica era correcta)
+        # 4. Preparar los datos para la serialización
         friendly_name = main_cert.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value.encode('utf-8')
         pfx_password_bytes = password.encode('utf-8') if password else None
         
-        # Seleccionamos el algoritmo de encriptación
         encryption_algo = serialization.BestAvailableEncryption(pfx_password_bytes) if pfx_password_bytes else serialization.NoEncryption()
 
         # 5. Serializar el PFX
@@ -45,21 +64,16 @@ def create_pfx(cert_pem: bytes, key_pem: bytes, chain_pem: bytes | None, passwor
             name=friendly_name,
             key=private_key,
             cert=main_cert,
-            cas=ca_certs if ca_certs else None, # Pasamos None si la lista está vacía
+            cas=ca_certs if ca_certs else None,
             encryption_algorithm=encryption_algo
         )
         
         return pfx_data
 
     except ValueError as e:
-        # Captura errores comunes como una clave/certificado mal formado o una contraseña de clave incorrecta.
-        # Es importante relanzar como ValueError para que el endpoint lo convierta en un error 400.
         raise ValueError(f"Failed to process input files. Check if the certificate and key are valid PEM format and match. Details: {e}")
     except Exception as e:
-        # Captura cualquier otro error inesperado (como problemas de la librería)
-        # y lo relanza para que el endpoint lo convierta en un error 500.
-        print(f"CRITICAL ERROR in create_pfx: {e}")
-        # Es importante relanzar un error genérico aquí para no exponer detalles internos.
+        logger.error(f"Unexpected error in create_pfx: {e}")
         raise Exception("An unexpected error occurred during PFX creation.")
 
 

@@ -31,15 +31,20 @@ from cryptography.x509.oid import NameOID  # <-- CAMBIO 1: Importar NameOID aqu�
 from cryptography.hazmat.primitives import serialization, hashes
 from f5.bigip import ManagementRoot
 from core.config import DEFAULT_CHAIN_NAME
+from core.logger import get_f5_logger
 from f5.sdk_exception import F5SDKError
 from sqlalchemy.orm import Session
 from db.models import Certificate, Device
 from cryptography.hazmat.primitives.serialization import pkcs12
 import time
+
+# Setup logger for F5 operations
+logger = get_f5_logger()
+
 # ----------------------------
 # Helper utilities (REST upload + tmsh + PEM sanitize)
 # ----------------------------
-from typing import Tuple
+from typing import Tuple, Optional, List, Dict, Any
 import math
 import requests
 
@@ -225,7 +230,7 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
     """
     try:
         mgmt = ManagementRoot(device.ip_address, username, password, token=True)
-        print(f"Successfully connected to {device.hostname} ({device.ip_address})")
+        logger.info(f"Connected to F5 device {device.hostname} ({device.ip_address})")
 
         f5_certs_stubs = mgmt.tm.sys.file.ssl_certs.get_collection()
         
@@ -261,9 +266,9 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
                     try:
                         expiration_dt = datetime.strptime(expiration_date_str, '%b %d %H:%M:%S %Y %Z')
                     except ValueError:
-                        print(f"WARN: Could not parse date string for cert '{cert_name}': {expiration_date_str}")
+                        logger.warning(f"Could not parse date for cert '{cert_name}': {expiration_date_str}")
                 else:
-                    print(f"WARN: Certificate '{cert_name}' is missing expirationString attribute.")
+                    logger.warning(f"Certificate '{cert_name}' missing expirationString attribute")
 
                 # --- LÓGICA DE BÚSQUEDA Y CREACIÓN CORREGIDA ---
                 
@@ -296,16 +301,16 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
                     new_certs_count += 1
 
             except Exception as e_inner:
-                print(f"ERROR: Failed to process certificate stub '{getattr(cert_stub, 'name', 'UNKNOWN')}'. Skipping. Error: {e_inner}")
+                logger.error(f"Failed to process cert '{getattr(cert_stub, 'name', 'UNKNOWN')}': {e_inner}")
         
         result_message = f"Scan complete for {device.hostname}. New: {new_certs_count}, Updated: {updated_certs_count}."
-        print(result_message)
+        logger.info(result_message)
         return {"status": "success", "message": result_message}
 
     except Exception as e_outer:
         import traceback
-        error_message = f"FATAL ERROR during scan of {device.hostname}: {str(e_outer)}\n{traceback.format_exc()}"
-        print(error_message)
+        error_message = f"Scan failed for {device.hostname}: {str(e_outer)}"
+        logger.error(f"{error_message}\n{traceback.format_exc()}")
         return {"status": "error", "message": str(e_outer)}
 
 
@@ -542,7 +547,7 @@ def delete_certificate_from_f5(hostname: str, username: str, password: str, cert
             key_name = key_full_path.strip('/').split('/')[-1]
     except F5SDKError as e:
         if e.response.status_code == 404:
-            print(f"WARN: Certificate '{cert_name}' not found on {hostname} to get key name. Assuming default name.")
+            logger.warning(f"Certificate '{cert_name}' not found on {hostname} for key lookup")
             key_name = cert_name.rsplit('.crt', 1)[0]
         else:
             raise ValueError(f"F5 API Error: {e}")
@@ -552,20 +557,20 @@ def delete_certificate_from_f5(hostname: str, username: str, password: str, cert
         # Re-cargamos el objeto por si acaso, y lo borramos
         cert_obj_to_delete = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=cert_name, partition=partition)
         cert_obj_to_delete.delete()
-        print(f"INFO: Successfully deleted certificate '{cert_name}' from {hostname}.")
+        logger.info(f"Deleted certificate '{cert_name}' from {hostname}")
     except F5SDKError as e:
         if e.response.status_code == 404:
-            print(f"WARN: Certificate '{cert_name}' not found on {hostname} during deletion. Skipping.")
+            logger.warning(f"Certificate '{cert_name}' not found on {hostname} during deletion")
         else:
             raise ValueError(f"F5 API Error during certificate deletion: {e}")
 
     try:
         key_obj = mgmt.tm.sys.file.ssl_keys.ssl_key.load(name=key_name, partition=partition)
         key_obj.delete()
-        print(f"INFO: Successfully deleted key '{key_name}' from {hostname}.")
+        logger.info(f"Deleted key '{key_name}' from {hostname}")
     except F5SDKError as e:
         if e.response.status_code == 404:
-            print(f"WARN: Key '{key_name}' not found on {hostname} during deletion. Skipping.")
+            logger.warning(f"Key '{key_name}' not found on {hostname} during deletion")
         else:
             raise ValueError(f"F5 API Error during key deletion: {e}")
     
@@ -601,7 +606,7 @@ def export_key_and_create_csr(hostname: str, username: str, password: str, db_ce
 
     # --- MÉTODO DEFINITIVO DE EXTRACCIÓN DE CLAVE ---
     try:
-        print(f"INFO: Attempting to download key '{key_name}' from partition '{key_partition}'...")
+        logger.info(f"Downloading key '{key_name}' from partition '{key_partition}'")
         
         # 1. Obtenemos el objeto de la clave sin cargarlo por completo
         key_obj = mgmt.tm.sys.file.ssl_keys.ssl_key.get_collection(
@@ -621,10 +626,10 @@ def export_key_and_create_csr(hostname: str, username: str, password: str, db_ce
         if "-----BEGIN" not in key_pem_content:
              raise ValueError("Downloaded content does not appear to be a valid PEM key.")
 
-        print("INFO: Private key downloaded successfully.")
+        logger.info("Private key downloaded successfully")
 
     except Exception as e:
-        print(f"ERROR: Failed to download key. Error: {e}")
+        logger.error(f"Failed to download key '{key_name}': {e}")
         raise ValueError(f"Could not extract private key content for '{key_name}'. This may require specific permissions or be due to F5 version incompatibility.")
 
     # --- La generación del CSR se queda igual ---
@@ -741,7 +746,7 @@ def update_profiles_with_new_cert(
             if (profile.fullPath not in sel_names) and (profile.name not in sel_names):
                 continue
         if any(old_cert_name in item.get('cert', '') for item in getattr(profile, 'certKeyChain', [])):
-            print(f"INFO: Updating profile '{profile.name}' to use object '{new_object_name}'")
+            logger.info(f"Updating profile '{profile.name}' to use '{new_object_name}'")
             try:
                 profile.modify(
                     certKeyChain=[{
@@ -754,7 +759,7 @@ def update_profiles_with_new_cert(
                 updated_profiles.append(profile.name)
             except F5SDKError as e_profile:
                 error_text = e_profile.response.text
-                print(f"ERROR: Could not update profile '{profile.name}'. Reason: {error_text}")
+                logger.error(f"Failed to update profile '{profile.name}': {error_text}")
                 raise ValueError(f"Failed to update profile '{profile.name}': {error_text}")
 
     return updated_profiles
@@ -1024,7 +1029,7 @@ def get_certificate_ssl_profiles_simple(hostname: str, username: str, password: 
                         })
                         break  # No necesitamos revisar más items de la chain
         except Exception as e:
-            print(f"Warning: Error fetching client SSL profiles: {e}")
+            logger.warning(f"Error fetching client SSL profiles: {e}")
         
         # Buscar en server-side SSL profiles  
         try:
@@ -1043,10 +1048,10 @@ def get_certificate_ssl_profiles_simple(hostname: str, username: str, password: 
                         })
                         break
         except Exception as e:
-            print(f"Warning: Error fetching server SSL profiles: {e}")
+            logger.warning(f"Error fetching server SSL profiles: {e}")
         
         return ssl_profiles
         
     except Exception as e:
-        print(f"ERROR: Failed to get SSL profiles for cert '{cert_name}' on {hostname}: {e}")
+        logger.error(f"Failed to get SSL profiles for cert '{cert_name}' on {hostname}: {e}")
         return []

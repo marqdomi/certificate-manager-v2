@@ -18,6 +18,9 @@ from db.base import get_db
 from db.models import Device, User, UserRole
 from services import auth_service, pfx_service, f5_service_logic, encryption_service
 from core.config import DEFAULT_CHAIN_NAME
+from core.logger import get_api_logger
+
+logger = get_api_logger()
 
 # IMPORTANT: define the router BEFORE using it in any decorators
 router = APIRouter(tags=["Deployments"])  # no internal prefix; `main.py` adds /api/v1/deployments
@@ -167,7 +170,7 @@ async def new_pfx_deployment(
             deployment_results.append({"device": device.hostname, "status": "success", "details": result})
         except Exception as e:
             error_message = str(e)
-            print(f"ERROR deploying to {device.hostname}: {error_message}")
+            logger.error(f"Deployment to {device.hostname} failed: {error_message}")
             deployment_results.append({"device": device.hostname, "status": "failed", "error": error_message})
             db.rollback()
 

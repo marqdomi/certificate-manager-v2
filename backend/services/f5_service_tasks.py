@@ -2,9 +2,12 @@
 from datetime import datetime
 
 from core.celery_worker import celery_app
+from core.logger import get_celery_logger
 from db.base import SessionLocal
 from db.models import Device
 from services import f5_service_logic, encryption_service
+
+logger = get_celery_logger()
 
 @celery_app.task(name="scan_single_f5")
 def scan_f5_task(device_id: int):
@@ -14,7 +17,7 @@ def scan_f5_task(device_id: int):
     device = db.query(Device).filter(Device.id == device_id).first()
     
     if not device:
-        print(f"ERROR: [Task] Device with ID {device_id} not found in DB.")
+        logger.error(f"[Task] Device ID {device_id} not found in DB")
         db.close()
         return # Salimos temprano si no hay dispositivo
 
@@ -45,7 +48,7 @@ def scan_f5_task(device_id: int):
         # Si algo falla (no hay pass, la desencripción falla, etc.), guardamos el error
         final_status = 'failed'
         final_message = str(e)
-        print(f"ERROR: [Task] Pre-scan check failed for {device_hostname}. Reason: {final_message}")
+        logger.error(f"[Task] Pre-scan check failed for {device_hostname}: {final_message}")
     
     # 6. Actualizamos la BBDD fuera del 'try...except' principal de la lógica de negocio
     #    pero ANTES de cerrar la sesión.
@@ -54,7 +57,7 @@ def scan_f5_task(device_id: int):
     device.last_scan_timestamp = datetime.utcnow()
     db.commit()
 
-    print(f"INFO: [Task] Finalized scan for {device_hostname} with status: {final_status}")
+    logger.info(f"[Task] Scan completed for {device_hostname}: {final_status}")
     
     # 7. Cerramos la sesión y devolvemos las variables locales
     db.close()
@@ -69,14 +72,14 @@ def trigger_scan_for_all_devices_task():
     try:
         devices = db.query(Device).all()
         if not devices:
-            print("INFO: [Celery Beat] No devices to scan.")
+            logger.info("[Celery Beat] No devices to scan")
             return "No devices registered."
 
         for device in devices:
             scan_f5_task.delay(device.id)
         
-        message = f"Successfully queued {len(devices)} scan tasks from scheduled job."
-        print(f"INFO: [Celery Beat] {message}")
+        message = f"Queued {len(devices)} scan tasks from scheduled job"
+        logger.info(f"[Celery Beat] {message}")
         return message
     finally:
         db.close()

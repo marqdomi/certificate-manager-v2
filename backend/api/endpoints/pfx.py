@@ -8,6 +8,9 @@ import io
 from services import pfx_service
 from db.models import User
 from services import auth_service
+from core.logger import get_api_logger
+
+logger = get_api_logger()
 
 router = APIRouter()
 
@@ -28,14 +31,11 @@ async def generate_pfx_file(
         key_bytes = await private_key.read()
         chain_bytes = await chain.read() if chain else None
 
-        # ✅ --- LA CORRECCIÓN CLAVE ESTÁ AQUÍ --- ✅
-        # Cambiamos los nombres de los argumentos para que coincidan con la
-        # definición de la función en pfx_service.py (de _bytes a _pem).
         pfx_data = await run_in_threadpool(
             pfx_service.create_pfx, 
-            cert_pem=cert_bytes,  # <--- CORREGIDO
-            key_pem=key_bytes,    # <--- CORREGIDO
-            chain_pem=chain_bytes,# <--- CORREGIDO
+            cert_pem=cert_bytes,
+            key_pem=key_bytes,
+            chain_pem=chain_bytes,
             password=password
         )
         
@@ -59,7 +59,7 @@ async def generate_pfx_file(
             detail=f"Invalid input for PFX generation: {e}"
         )
     except Exception as e:
-        print(f"UNEXPECTED ERROR in PFX generation: {e}")
+        logger.error(f"Unexpected error in PFX generation: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected internal error occurred while generating the PFX file."

@@ -18,7 +18,9 @@ from services.f5_service_tasks import scan_f5_task
 
 # Rate limiting for sensitive endpoints
 from core.rate_limiter import limiter, SENSITIVE_RATE_LIMIT
+from core.logger import get_api_logger
 
+logger = get_api_logger()
 
 router = APIRouter()
 
@@ -466,7 +468,7 @@ async def deploy_certificate_from_pfx(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         # Para cualquier otro error inesperado
-        print(f"UNEXPECTED ERROR during PFX deploy: {e}")
+        logger.error(f"Unexpected error during PFX deploy: {e}")
         raise HTTPException(status_code=500, detail="An unexpected internal server error occurred.")
 
 @router.post("/new-deployment/pfx", summary="Deploy a new certificate from PFX to multiple devices")
