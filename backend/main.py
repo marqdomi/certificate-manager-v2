@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import os
+
+# Import rate limiter
+from core.rate_limiter import limiter
 
 # Import all routers in one place
 from api.endpoints import (
@@ -15,6 +20,10 @@ from api.endpoints import (
 )
 
 app = FastAPI(title="Certificate Management Tool V2")
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Routers that don't need a special tag/prefix beyond here
 app.include_router(f5_cache.router, prefix="/api/v1", tags=["cache"])

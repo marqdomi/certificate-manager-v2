@@ -1,6 +1,6 @@
 # backend/api/endpoints/certificates.py
 
-from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, status
+from fastapi import APIRouter, Depends, Query, HTTPException, File, UploadFile, Form, status, Request
 from sqlalchemy.orm import Session, joinedload, aliased
 from sqlalchemy import select, func, or_
 from datetime import datetime, timedelta
@@ -16,6 +16,8 @@ from services import certificate_service, f5_service_logic, encryption_service, 
 from services import pfx_service 
 from services.f5_service_tasks import scan_f5_task 
 
+# Rate limiting for sensitive endpoints
+from core.rate_limiter import limiter, SENSITIVE_RATE_LIMIT
 
 
 router = APIRouter()
@@ -372,7 +374,9 @@ class RenewalDetailsResponse(BaseModel):
 @router.get("/renewals/{renewal_id}", 
             response_model=RenewalDetailsResponse, 
             summary="Get CSR and Private Key for an active renewal")
+@limiter.limit(SENSITIVE_RATE_LIMIT)
 def get_renewal_details(
+    request: Request,  # Required for rate limiting
     renewal_id: int,
     db: Session = Depends(get_db),
     # Cualquiera que esté logueado puede ver los detalles de una renovación
@@ -381,6 +385,8 @@ def get_renewal_details(
     """
     Retrieves the details (CSR and decrypted Private Key) for a specific
     renewal request that is in a 'CSR_GENERATED' state.
+    
+    Rate limited to prevent abuse (default: 10 requests/minute per IP).
     """
     # 2. Buscamos la solicitud de renovación en la base de datos por su ID.
     renewal = db.query(RenewalRequest).filter(RenewalRequest.id == renewal_id).first()
@@ -521,7 +527,7 @@ class ProfileUpdateRequest(BaseModel):
     old_cert_name: str
     new_cert_name: str
     # La cadena es opcional, pero permitimos que el frontend la envíe
-    chain_name: Optional[str] = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
+    chain_name: Optional[str] = DEFAULT_CHAIN_NAME
 
 
 # --- ENDPOINT ACTUALIZADO PARA ACTUALIZAR PERFILES SSL ---

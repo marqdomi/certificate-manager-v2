@@ -1,6 +1,9 @@
 import axios from 'axios'
 import { authProvider } from '../pages/LoginPage'
 
+// Enable debug logging only in development mode
+const DEBUG = import.meta.env.DEV;
+
 // Axios instance pointing at Vite proxy. In dev, Vite forwards `/api` to backend.
 // In prod (static build behind the same origin), `/api` should be routed by the reverse proxy.
 const apiClient = axios.create({
@@ -18,7 +21,7 @@ apiClient.interceptors.request.use(
       config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${token}`
     }
-    console.debug('[api]', 'baseURL=', config.baseURL, 'url=', config.url);
+    if (DEBUG) console.debug('[api]', 'baseURL=', config.baseURL, 'url=', config.url);
     // Normalize accidental absolute URLs like "http://backend:8000/api/v1/..." coming from older code paths
     if (typeof config.url === 'string' && /^(https?:)?\/\/backend(:8000)?\//.test(config.url)) {
       try {

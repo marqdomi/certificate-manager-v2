@@ -211,7 +211,7 @@ function ImpactPreviewStep({
         onResolved?.({ profiles: rows, from: "simplified", error: null });
         return; // done - successful simplified lookup
       } catch (e) {
-        console.log("Simplified lookup failed, trying cache fallback:", e.message);
+        if (import.meta.env.DEV) console.log("Simplified lookup failed, trying cache fallback:", e.message);
         // Continue to fallback cache lookup
       } finally {
         setLoadingCache(false);

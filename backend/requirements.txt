@@ -31,3 +31,6 @@ f5-sdk==3.0.21
 requests==2.31.0
 urllib3==1.26.18
 paramiko==2.11.0
+
+# Security - Rate Limiting
+slowapi==0.1.9

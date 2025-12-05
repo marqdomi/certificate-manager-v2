@@ -17,6 +17,7 @@ from cryptography.hazmat.primitives import serialization
 from db.base import get_db
 from db.models import Device, User, UserRole
 from services import auth_service, pfx_service, f5_service_logic, encryption_service
+from core.config import DEFAULT_CHAIN_NAME
 
 # IMPORTANT: define the router BEFORE using it in any decorators
 router = APIRouter(tags=["Deployments"])  # no internal prefix; `main.py` adds /api/v1/deployments
@@ -39,7 +40,7 @@ async def build_deployment_plan(
     key_pem: Optional[str] = Form(None),
     # Options
     install_chain_from_pfx: Optional[bool] = Form(False),
-    chain_name: Optional[str] = Form("DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"),
+    chain_name: Optional[str] = Form(DEFAULT_CHAIN_NAME),
     update_profiles: Optional[bool] = Form(True),
     selected_profiles: Optional[str] = Form(None),
     partition: str = Form("Common"),
@@ -213,7 +214,7 @@ async def confirm_deployment(
     device_id: int = Form(...),
     old_cert_name: str = Form(...),
     new_object_name: str = Form(...),
-    chain_name: str = Form('DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1'),
+    chain_name: str = Form(DEFAULT_CHAIN_NAME),
     selected_profiles: Optional[str] = Form(None),
     current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.OPERATOR]))
 ):
@@ -365,7 +366,7 @@ async def execute_deployment(
     key_pem: Optional[str] = Form(None),
     # Options
     install_chain_from_pfx: Optional[bool] = Form(False),
-    chain_name: Optional[str] = Form("DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"),
+    chain_name: Optional[str] = Form(DEFAULT_CHAIN_NAME),
     update_profiles: Optional[bool] = Form(True),
     selected_profiles: Optional[str] = Form(None),
     dry_run: Optional[bool] = Form(False),

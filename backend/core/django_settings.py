@@ -3,24 +3,38 @@
 
 import os
 
-# Reutilizamos la clave de encriptación como clave secreta, ya que está en el .env
-SECRET_KEY = os.getenv("ENCRYPTION_KEY", "a-default-secret-key-if-not-found")
+# Import centralized config for validated secrets
+from core.config import ENCRYPTION_KEY, DATABASE_URL
+
+# Use the validated encryption key (already checked in config.py)
+SECRET_KEY = ENCRYPTION_KEY
 
 # Zona horaria coherente con Celery
 TIME_ZONE = os.getenv("DJANGO_TIME_ZONE", "UTC")
 USE_TZ = True
 
-# Base de datos: coincide con docker-compose por defecto pero permite override via env
-DATABASES = {
-    "default": {
+# Parse DATABASE_URL for Django format
+# DATABASE_URL format: postgresql://user:password@host:port/dbname
+def _parse_database_url(url: str) -> dict:
+    """Parse DATABASE_URL into Django DATABASES format."""
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    return {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "cmt_db"),
-        "USER": os.getenv("POSTGRES_USER", "user"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "password"),
-        "HOST": os.getenv("POSTGRES_HOST", "db"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "NAME": parsed.path[1:],  # Remove leading /
+        "USER": parsed.username or "",
+        "PASSWORD": parsed.password or "",
+        "HOST": parsed.hostname or "db",
+        "PORT": str(parsed.port) if parsed.port else "5432",
     }
+
+DATABASES = {
+    "default": _parse_database_url(DATABASE_URL)
 }
+
+# Keep these for backward compatibility but they're no longer primary source
+# These are derived from DATABASE_URL now
+_db_config = DATABASES["default"]
 
 INSTALLED_APPS = (
     "django_celery_beat",

@@ -30,6 +30,7 @@ from cryptography import x509
 from cryptography.x509.oid import NameOID  # <-- CAMBIO 1: Importar NameOID aquí
 from cryptography.hazmat.primitives import serialization, hashes
 from f5.bigip import ManagementRoot
+from core.config import DEFAULT_CHAIN_NAME
 from f5.sdk_exception import F5SDKError
 from sqlalchemy.orm import Session
 from db.models import Certificate, Device
@@ -326,7 +327,7 @@ def deploy_from_pem_and_update_profiles(
     old_cert_name: str,
     cert_pem: str,
     key_pem: str,
-    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
+    chain_name: str = DEFAULT_CHAIN_NAME,
     timeout: int = 60,
 ):
     """
@@ -403,7 +404,7 @@ def deploy_from_pfx_and_update_profiles(
     old_cert_name: str,
     pfx_data: bytes,
     pfx_password: Optional[str],
-    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
+    chain_name: str = DEFAULT_CHAIN_NAME,
     install_chain_from_pfx: bool = False,
     timeout: int = 60,
 ):
@@ -460,7 +461,7 @@ def deploy_and_update_f5(
     old_cert_name: str,
     pfx_data: bytes,
     pfx_password: Optional[str],
-    chain_name: str = "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1",
+    chain_name: str = DEFAULT_CHAIN_NAME,
     install_chain_from_pfx: bool = False
 ):
     return deploy_from_pfx_and_update_profiles(

@@ -11,19 +11,13 @@ from sqlalchemy.orm import Session
 
 from db.base import get_db
 from db.models import User, UserRole
-import os
 
+# Import centralized configuration - no more scattered os.getenv calls
+from core.config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-# Prefer a dedicated JWT secret; fall back to ENCRYPTION_KEY for backward compatibility
-JWT_SECRET = os.getenv("JWT_SECRET")
-if not JWT_SECRET:
-    JWT_SECRET = os.getenv("ENCRYPTION_KEY")
-    if not JWT_SECRET:
-        raise ValueError("JWT secret not configured. Set JWT_SECRET in environment (or ENCRYPTION_KEY as fallback).")
-
+# Use the centralized, validated JWT secret
 SECRET_KEY = JWT_SECRET
-ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 8)))  # default 8 hours
+ALGORITHM = JWT_ALGORITHM
 
 # Contexto para el hasheo de contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

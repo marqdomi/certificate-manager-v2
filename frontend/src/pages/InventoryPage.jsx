@@ -183,7 +183,7 @@ function InventoryPage() {
       }
 
       // 2) Borrado definitivo
-      console.debug('[delete] calling', 'certificates/' + certToDeleteId, 'baseURL=', apiClient.defaults?.baseURL);
+      if (import.meta.env.DEV) console.debug('[delete] calling', 'certificates/' + certToDeleteId, 'baseURL=', apiClient.defaults?.baseURL);
       await deleteCertificate(certToDeleteId);
       setNotification({ open: true, message: 'Certificate deleted successfully. Refreshing list...', severity: 'success' });
       setTimeout(() => {
