@@ -36,6 +36,15 @@ class RenewalDetailsResponse(BaseModel):
     csr: str
     private_key: str
 
+class BatchUsageRequest(BaseModel):
+    """Request body for batch usage state lookup"""
+    cert_ids: List[int]
+
+class BatchUsageResponse(BaseModel):
+    """Response for batch usage state lookup"""
+    usage_states: dict  # { cert_id: usage_state }
+    errors: Optional[dict] = None  # { device_hostname: error_message }
+
 # --- Endpoint GET / : Cualquiera puede ver, solo necesita estar logueado ---
 @router.get("/", response_model=List[CertificateResponse])
 def get_certificates(
@@ -246,6 +255,83 @@ def get_cert_usage_details(
         return usage_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get usage data from F5: {str(e)}")
+
+
+# BATCH USAGE - Real-time usage detection for multiple certificates
+@router.post("/batch-usage", response_model=BatchUsageResponse, summary="Get usage state for multiple certificates in real-time")
+def get_batch_certificate_usage(
+    request: BatchUsageRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_active_user)
+):
+    """
+    Real-time usage state lookup for multiple certificates.
+    Groups certificates by device and makes a single F5 connection per device.
+    Returns usage_state for each cert_id: 'active', 'profiles-no-vips', 'no-profiles', or 'error'.
+    """
+    if not request.cert_ids:
+        return BatchUsageResponse(usage_states={}, errors=None)
+    
+    # Fetch all requested certificates with their devices
+    certs = db.query(Certificate).options(
+        joinedload(Certificate.device)
+    ).filter(Certificate.id.in_(request.cert_ids)).all()
+    
+    if not certs:
+        return BatchUsageResponse(usage_states={}, errors={"general": "No certificates found"})
+    
+    # Group certificates by device_id
+    device_certs: dict = {}  # { device_id: [cert, ...] }
+    for cert in certs:
+        if cert.device_id not in device_certs:
+            device_certs[cert.device_id] = []
+        device_certs[cert.device_id].append(cert)
+    
+    usage_states = {}
+    errors = {}
+    
+    # Process each device
+    for device_id, cert_list in device_certs.items():
+        device = cert_list[0].device  # All certs in this list have the same device
+        
+        if not device:
+            for cert in cert_list:
+                usage_states[cert.id] = "error"
+            errors[f"device_{device_id}"] = "Device not found"
+            continue
+        
+        if not device.encrypted_password or not device.username:
+            for cert in cert_list:
+                usage_states[cert.id] = "error"
+            errors[device.hostname] = "Device credentials not configured"
+            continue
+        
+        try:
+            f5_password = encryption_service.decrypt_data(device.encrypted_password)
+            cert_names = [cert.name for cert in cert_list]
+            
+            # Single F5 connection for all certs on this device
+            device_usage = f5_service_logic.get_batch_usage_state(
+                hostname=device.ip_address,
+                username=device.username,
+                password=f5_password,
+                cert_names=cert_names
+            )
+            
+            # Map results back to cert_ids
+            for cert in cert_list:
+                usage_states[cert.id] = device_usage.get(cert.name, "error")
+                
+        except Exception as e:
+            logger.error(f"Batch usage error for device {device.hostname}: {str(e)}")
+            for cert in cert_list:
+                usage_states[cert.id] = "error"
+            errors[device.hostname] = str(e)
+    
+    return BatchUsageResponse(
+        usage_states=usage_states,
+        errors=errors if errors else None
+    )
 
 
 # 2. El endpoint corregido

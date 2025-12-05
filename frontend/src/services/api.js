@@ -253,3 +253,13 @@ export async function deleteCertificate(id) {
   const { data } = await apiClient.delete(`/certificates/${id}`)
   return data
 }
+
+/**
+ * Batch fetch real-time usage states for multiple certificates.
+ * @param {number[]} certIds - Array of certificate IDs
+ * @returns {Promise<{usage_states: Object, errors: Object|null}>}
+ */
+export async function getBatchUsageStates(certIds) {
+  const { data } = await apiClient.post('/certificates/batch-usage', { cert_ids: certIds })
+  return data
+}

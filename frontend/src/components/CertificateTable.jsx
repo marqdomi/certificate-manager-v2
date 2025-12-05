@@ -6,7 +6,22 @@ import { Box, Chip, Button, CircularProgress, Tooltip, IconButton, useTheme } fr
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { authProvider } from '../pages/LoginPage';
+
+// Usage state display configuration
+const USAGE_STATE_CONFIG = {
+  'active': { label: 'In Use', color: 'success', icon: CheckCircleIcon, tooltip: 'Certificate is actively used by VIPs' },
+  'in-use': { label: 'In Use', color: 'success', icon: CheckCircleIcon, tooltip: 'Certificate is actively used by VIPs' },
+  'profiles-no-vips': { label: 'Orphan', color: 'warning', icon: WarningIcon, tooltip: 'Linked to SSL profiles but no VIPs are using those profiles' },
+  'no-profiles': { label: 'Unused', color: 'default', icon: HelpOutlineIcon, tooltip: 'Not linked to any SSL profile' },
+  'error': { label: 'Error', color: 'error', icon: ErrorIcon, tooltip: 'Could not determine usage state' },
+  'loading': { label: '...', color: 'default', icon: null, tooltip: 'Loading usage state...' },
+};
 
 const CertificateTable = ({ 
     certificates, 
@@ -17,10 +32,21 @@ const CertificateTable = ({
     onShowRenewalDetails,
     onDelete,
     actionLoading, 
-    activeActionCertId 
+    activeActionCertId,
+    // New props for real-time usage
+    usageStates = {},
+    onRefreshUsage,
+    usageLoading = false,
 }) => {
   const userRole = authProvider.getRole();
-  const theme = useTheme(); // Usamos el hook para acceder a la paleta de colores
+  const theme = useTheme();
+
+  // Helper to get effective usage state (from prop override or from cert data)
+  const getEffectiveUsageState = (row) => {
+    // Priority: real-time usageStates > certificate's cached usage_state
+    if (usageStates[row.id]) return usageStates[row.id];
+    return row.usage_state;
+  };
 
   // Columnas con redimensionamiento y ajuste automático habilitados
   const columns = [
@@ -78,8 +104,46 @@ const CertificateTable = ({
         let color = 'success';
         if (days <= 0) color = 'error';
         else if (days <= 30) color = 'warning';
-        // Usamos un Chip "filled" (por defecto) y con texto en negrita, mucho más visual
         return <Chip label={days} color={color} size="small" sx={{ fontWeight: 'bold' }} />;
+      },
+    },
+    // NEW: Usage State column
+    {
+      field: 'usage_state',
+      headerName: 'Status',
+      flex: 0.6,
+      minWidth: 110,
+      resizable: true,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const state = getEffectiveUsageState(params.row);
+        const config = USAGE_STATE_CONFIG[state] || USAGE_STATE_CONFIG['loading'];
+        const IconComponent = config.icon;
+        
+        if (state === 'loading' || !state) {
+          return (
+            <Tooltip title="Loading usage state...">
+              <CircularProgress size={16} />
+            </Tooltip>
+          );
+        }
+        
+        return (
+          <Tooltip title={config.tooltip}>
+            <Chip 
+              icon={IconComponent ? <IconComponent fontSize="small" /> : undefined}
+              label={config.label} 
+              color={config.color} 
+              size="small" 
+              variant="outlined"
+              sx={{ 
+                fontWeight: 500,
+                '& .MuiChip-icon': { fontSize: '1rem' }
+              }} 
+            />
+          </Tooltip>
+        );
       },
     },
     {
@@ -94,8 +158,7 @@ const CertificateTable = ({
       renderCell: (params) => {
         const hasActiveRenewal = params.row.renewal_status === 'CSR_GENERATED';
         const canRenew = !!params.row.common_name;
-
-        // La lógica funcional es la misma, solo hemos pulido la presentación
+        
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
                 
@@ -160,6 +223,22 @@ const CertificateTable = ({
   return (
     // La altura se ajusta para ser más flexible
     <Box sx={{ height: 'calc(100vh - 220px)', width: '100%' }}>
+      {/* Refresh Usage Button - only show if handler is provided */}
+      {onRefreshUsage && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+          <Tooltip title="Refresh usage states (real-time F5 query)">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={usageLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+              onClick={onRefreshUsage}
+              disabled={usageLoading}
+            >
+              {usageLoading ? 'Loading...' : 'Refresh Usage'}
+            </Button>
+          </Tooltip>
+        </Box>
+      )}
       {/* DataGrid con columnas redimensionables y responsive */}
       <DataGrid
         rows={certificates}

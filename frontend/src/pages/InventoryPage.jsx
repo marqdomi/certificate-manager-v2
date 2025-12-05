@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -25,6 +25,8 @@ import CertificateUsageDetail from '../components/CertificateUsageDetail';
 import RenewalWizardDialog from '../components/wizard/RenewWizardDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportButton from '../components/ExportButton';
+// Hook for real-time usage state loading
+import { useUsageStateLoader } from '../hooks/useUsageStateLoader';
 
 
 const glassmorphicStyle = {
@@ -65,6 +67,24 @@ function InventoryPage() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Real-time usage state loader hook
+  const { 
+    usageStates, 
+    loadUsageForIds, 
+    refreshAll: refreshUsageStates, 
+    isLoading: usageLoading 
+  } = useUsageStateLoader(allCerts);
+
+  // Auto-load usage states when displayCerts changes (after initial load)
+  useEffect(() => {
+    if (!loading && allCerts.length > 0) {
+      // Load usage for the first page of certificates
+      const pageSize = 25; // Match DataGrid default
+      const firstPageIds = allCerts.slice(0, pageSize).map(c => c.id);
+      loadUsageForIds(firstPageIds);
+    }
+  }, [loading, allCerts.length]); // Only when loading finishes or cert count changes
 
   const handleOpenWizard = (cert) => {
         setActiveCert(cert);
@@ -121,14 +141,20 @@ function InventoryPage() {
         (c.name && c.name.toLowerCase().includes(lowercasedFilter))
       );
     }
-    // --- Orphan filters ---
+    // --- Orphan filters (use real-time usageStates if available, fallback to cached) ---
     if (noProfilesOnly) {
-      dataToFilter = dataToFilter.filter(c => c.usage_state === 'no-profiles');
+      dataToFilter = dataToFilter.filter(c => {
+        const state = usageStates[c.id] || c.usage_state;
+        return state === 'no-profiles';
+      });
     } else if (orphanOnly) {
-      dataToFilter = dataToFilter.filter(c => ['no-profiles','profiles-no-vips'].includes(c.usage_state));
+      dataToFilter = dataToFilter.filter(c => {
+        const state = usageStates[c.id] || c.usage_state;
+        return ['no-profiles','profiles-no-vips'].includes(state);
+      });
     }
     return dataToFilter;
-  }, [allCerts, statusFilter, searchTerm, orphanOnly, noProfilesOnly]);
+  }, [allCerts, statusFilter, searchTerm, orphanOnly, noProfilesOnly, usageStates]);
 
   const handleShowUsage = (certId) => {
     setSelectedCertId(certId);
@@ -276,6 +302,7 @@ function InventoryPage() {
                 certificates={displayCerts} 
                 disabled={loading}
                 filenamePrefix="cmt_certificates"
+                usageStates={usageStates}
               />
             </Box>
           </Box>
@@ -295,6 +322,13 @@ function InventoryPage() {
           onShowUsage={handleShowUsage}
           onDelete={handleDeleteRequest}
           activeActionCertId={activeActionCertId}
+          // Real-time usage state props
+          usageStates={usageStates}
+          onRefreshUsage={() => {
+            const ids = displayCerts.map(c => c.id);
+            loadUsageForIds(ids);
+          }}
+          usageLoading={usageLoading}
         />
 
       </Paper>
