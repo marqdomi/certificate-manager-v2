@@ -10725,3 +10725,221 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='10.132.3.253', port=443)
 2025-12-05 23:09:37,666 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.37.50
 2025-12-05 23:09:48,080 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.86
 2025-12-05 23:10:15,683 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-05 23:10:35,785 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-05 23:10:38,433 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:10:38,451 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:10:38,485 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:10:38,485 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:10:41,488 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:10:41,490 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:10:41,491 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:10:42,765 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-05 23:10:44,569 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:10:44,572 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:10:44,572 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:10:47,620 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:10:47,622 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:10:47,622 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:10:48,834 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:10:48,835 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:10:59,387 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:10:59,407 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:10:59,435 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:10:59,436 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:11:01,214 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:11:01,217 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:11:03,965 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.37.50
+2025-12-05 23:11:13,589 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.86
+2025-12-05 23:11:29,330 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.88
+2025-12-05 23:11:41,784 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.84
+2025-12-05 23:12:05,001 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-05 23:13:26,186 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.88
+2025-12-05 23:13:28,683 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.80
+2025-12-05 23:13:35,647 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.80
+2025-12-05 23:13:38,255 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.84
+2025-12-05 23:13:42,175 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.80
+2025-12-05 23:13:44,202 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,216 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,217 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,217 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,219 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,219 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,224 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,228 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,228 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,228 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,241 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,241 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,242 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,243 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,244 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,246 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,249 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,253 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,256 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,264 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,264 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,266 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,275 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,279 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,280 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,330 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,370 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,407 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,408 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,408 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,408 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,411 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,411 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,411 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,412 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,413 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,413 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,413 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,424 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,424 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,425 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,425 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,425 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,447 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,448 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,448 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,448 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,449 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,449 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,450 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,450 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,450 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,451 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,451 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,452 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,455 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,455 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,455 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,456 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,456 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,456 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,458 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,458 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,458 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,459 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,459 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,459 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,459 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,459 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,460 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,460 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,460 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,460 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,460 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,461 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,461 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,461 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,461 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,461 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,461 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,462 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,462 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,462 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,462 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,462 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,463 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,463 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,463 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,463 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,463 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,463 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,464 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,464 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,464 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,464 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,464 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,464 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,465 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,465 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,465 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,466 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,466 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,466 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,466 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,466 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,466 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,467 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,467 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:44,467 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:44,467 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:44,467 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:45,041 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:47,090 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:47,092 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:47,160 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:49,268 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.80
+2025-12-05 23:13:50,138 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:13:50,139 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:50,139 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:13:53,141 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:53,141 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:53,153 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:56,145 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:56,146 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:13:56,151 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:13:59,151 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:13:59,153 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:13:59,155 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:02,152 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:02,153 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:02,159 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:14:05,159 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:05,161 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:05,162 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:14:08,168 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:08,170 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:08,171 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:11,170 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:11,172 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:11,172 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:14,187 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:14,193 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:14,195 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:17,182 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:17,183 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:17,184 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:14:20,192 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:20,195 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:20,196 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:23,196 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:23,196 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:23,197 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:14:26,207 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:26,212 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:26,214 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:30,074 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:30,078 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:30,079 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:33,076 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:33,078 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:33,079 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:14:35,067 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:35,075 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:36,000 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-05 23:14:36,019 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:36,060 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:36,061 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:39,142 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-05 23:14:39,147 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:39,147 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-05 23:14:39,200 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.88
+2025-12-05 23:14:40,373 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-05 23:14:40,374 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-05 23:14:44,782 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.37.50
+2025-12-05 23:14:52,077 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.84
+2025-12-05 23:14:52,277 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.37.50
+2025-12-05 23:14:54,646 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.86
+2025-12-05 23:15:02,402 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.86
+2025-12-05 23:15:18,611 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.80
+2025-12-05 23:15:46,508 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-05 23:15:54,508 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-05 23:16:18,122 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.84
+2025-12-05 23:16:19,673 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.84
+2025-12-05 23:16:25,172 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.84
+2025-12-05 23:16:28,962 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.84

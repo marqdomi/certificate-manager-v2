@@ -113,6 +113,7 @@ const CertificateTable = ({
       resizable: true,
     },
     { 
+      field: 'common_name',
       headerName: 'Common Name', 
       flex: 1.2, 
       minWidth: 180,
