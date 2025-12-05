@@ -15,18 +15,73 @@ function DashboardPage() {
 
     async function load() {
       try {
-        // OJO: slash final para evitar redirect 307
-        const { data: certs } = await apiClient.get('/certificates/');
+        // Fetch certificates and devices in parallel
+        const [certsRes, devicesRes] = await Promise.all([
+          apiClient.get('/certificates/'),
+          apiClient.get('/devices/')
+        ]);
         if (!active) return;
 
-        const total = certs.length ?? 0;
+        const certs = certsRes.data || [];
+        const devices = devicesRes.data || [];
+
+        // Basic stats
+        const total = certs.length;
         const healthy = certs.filter(c => (c?.days_remaining ?? 0) > 30).length;
         const warning = certs.filter(c => (c?.days_remaining ?? 0) > 0 && (c?.days_remaining ?? 0) <= 30).length;
         const expired = certs.filter(c => (c?.days_remaining ?? 0) <= 0).length;
 
-        setStats({ total, healthy, warning, expired });
+        // Expiration bands (more granular)
+        const expirationBands = {
+          expired: certs.filter(c => (c?.days_remaining ?? 0) <= 0).length,
+          critical: certs.filter(c => (c?.days_remaining ?? 0) > 0 && (c?.days_remaining ?? 0) <= 7).length,
+          urgent: certs.filter(c => (c?.days_remaining ?? 0) > 7 && (c?.days_remaining ?? 0) <= 30).length,
+          soon: certs.filter(c => (c?.days_remaining ?? 0) > 30 && (c?.days_remaining ?? 0) <= 60).length,
+          ok: certs.filter(c => (c?.days_remaining ?? 0) > 60 && (c?.days_remaining ?? 0) <= 90).length,
+          healthy: certs.filter(c => (c?.days_remaining ?? 0) > 90).length,
+        };
+
+        // Certificates per device
+        const certsPerDevice = {};
+        certs.forEach(cert => {
+          const deviceName = cert.f5_device_hostname || 'Unknown';
+          certsPerDevice[deviceName] = (certsPerDevice[deviceName] || 0) + 1;
+        });
+
+        // Top 10 devices by cert count
+        const topDevices = Object.entries(certsPerDevice)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([name, count]) => ({ name, count }));
+
+        // Usage state distribution (if available)
+        const usageStates = {
+          active: certs.filter(c => c?.usage_state === 'active').length,
+          noProfiles: certs.filter(c => c?.usage_state === 'no-profiles').length,
+          profilesNoVips: certs.filter(c => c?.usage_state === 'profiles-no-vips').length,
+          unknown: certs.filter(c => !c?.usage_state || c?.usage_state === 'unknown').length,
+        };
+
+        // Device summary
+        const deviceStats = {
+          total: devices.length,
+          withCreds: devices.filter(d => d?.has_credential).length,
+          withoutCreds: devices.filter(d => !d?.has_credential).length,
+        };
+
+        setStats({ 
+          total, 
+          healthy, 
+          warning, 
+          expired,
+          expirationBands,
+          topDevices,
+          usageStates,
+          deviceStats,
+          certificates: certs, // For renewal history calculation
+        });
       } catch (err) {
-        console.error('Error fetching data for dashboard:', err);
+        if (import.meta.env.DEV) console.error('Error fetching data for dashboard:', err);
       } finally {
         if (active) setLoading(false);
       }
