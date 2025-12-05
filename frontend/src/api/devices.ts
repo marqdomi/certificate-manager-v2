@@ -1,16 +1,10 @@
 import api from '../services/api';
+import type { Device, DeviceRow, VipProfile, VipItem, ScanResponse, DeviceCreate, DeviceUpdate, DeviceCredentials } from '../types/device';
 
-export type VipProfile = {
-  full_path: string;
-  partition: string;
-  name: string;
-  cert_name?: string | null;
-};
+// Re-export types for backwards compatibility
+export type { Device, DeviceRow, VipProfile, VipItem, ScanResponse, DeviceCreate, DeviceUpdate, DeviceCredentials };
 
-export type VipItem = {
-  vip_name: string;
-  profiles: VipProfile[];
-};
+// VipProfile and VipItem are now in types/device.ts
 
 /**
  * Obtener VIPs cacheadas para un device específico
@@ -58,24 +52,7 @@ export async function scanDevicesAll(full: boolean = false): Promise<{ queued: b
 }
 
 // --- New Device Facts & Cache API (uses preconfigured api client baseURL) ---
-export type DeviceRow = {
-  id: number;
-  hostname: string;
-  ip_address: string;
-  site?: string;
-  version?: string | null;
-  platform?: string | null;
-  serial_number?: string | null;
-  ha_state?: string | null; // ACTIVE / STANDBY / etc
-  sync_status?: string | null; // In Sync / Changes Pending
-  last_sync_color?: string | null; // green / yellow / red
-  dns_servers?: string | null;
-  last_facts_refresh?: string | null;
-  last_scan_status?: string | null;
-  last_scan_message?: string | null;
-  last_scan_timestamp?: string | null;
-  active: boolean;
-};
+// DeviceRow type is now imported from types/device.ts
 
 export async function getDevices(params: {
   search?: string;
@@ -106,5 +83,48 @@ export async function refreshFactsAll(): Promise<{message: string}> {
 export async function refreshCache(deviceId: number, limit_certs?: number): Promise<{message: string}> {
   const qs = limit_certs != null ? `?limit_certs=${encodeURIComponent(String(limit_certs))}` : '';
   const res = await api.post(`/devices/${deviceId}/refresh-cache${qs}`);
+  return res.data;
+}
+
+// --- Device CRUD Operations ---
+
+/**
+ * Create a new device
+ */
+export async function createDevice(data: DeviceCreate): Promise<Device> {
+  const res = await api.post('/devices', data);
+  return res.data;
+}
+
+/**
+ * Update a device
+ */
+export async function updateDevice(deviceId: number, data: DeviceUpdate): Promise<Device> {
+  const res = await api.put(`/devices/${deviceId}`, data);
+  return res.data;
+}
+
+/**
+ * Delete a device
+ */
+export async function deleteDevice(deviceId: number): Promise<void> {
+  await api.delete(`/devices/${deviceId}`);
+}
+
+/**
+ * Update device credentials
+ */
+export async function updateDeviceCredentials(deviceId: number, credentials: DeviceCredentials): Promise<{message: string}> {
+  const res = await api.put(`/devices/${deviceId}/credentials`, credentials);
+  return res.data;
+}
+
+// --- F5 Scan Operations ---
+
+/**
+ * Trigger scan for all devices (legacy endpoint)
+ */
+export async function scanAllDevices(deviceIds?: number[]): Promise<{message: string}> {
+  const res = await api.post('/f5/scan-all', deviceIds ? { device_ids: deviceIds } : {});
   return res.data;
 }

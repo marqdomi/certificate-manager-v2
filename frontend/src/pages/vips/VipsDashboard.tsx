@@ -8,32 +8,21 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SyncIcon from '@mui/icons-material/Sync';
 import api from '../../services/api';
+import type { DeviceMinimal, DeviceCacheStatus } from '../../types/device';
 
-// Tipos locales para este componente
-export type Device = {
-  id: number;
-  hostname: string;
-  ip_address?: string;
-  site?: string | null;
-};
-
-export type CacheStatus = {
-  device_id: number;
-  profiles_count: number;
-  vips_count: number;
-  links_count: number;
-  last_updated: string | null;
-};
+// Re-export for backwards compatibility
+export type Device = DeviceMinimal;
+export type CacheStatus = DeviceCacheStatus;
 
 type Row = {
-  device: Device;
-  status?: CacheStatus;
+  device: DeviceMinimal;
+  status?: DeviceCacheStatus;
   loading: boolean;
   error?: string;
 };
 
 const VipsDashboard: React.FC = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<DeviceMinimal[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
@@ -42,7 +31,7 @@ const VipsDashboard: React.FC = () => {
   // load devices once
   useEffect(() => {
     let cancelled = false;
-    api.get<Device[]>('/devices/')
+    api.get<DeviceMinimal[]>('/devices/')
       .then(res => {
         if (!cancelled) {
           const d = res.data;

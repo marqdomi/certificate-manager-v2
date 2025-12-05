@@ -16,8 +16,10 @@ import {
 } from '@mui/material';
 import api from '../../services/api';
 import { scanDevicesAll, scanDevicesByIds } from '../../api/devices';
+import type { DeviceMinimal } from '../../types/device';
 
-export type Device = { id: number; hostname: string };
+// Re-export for backwards compatibility
+export type Device = DeviceMinimal;
 
 interface Props {
   open: boolean;
@@ -27,7 +29,7 @@ interface Props {
 
 const ScanModal: React.FC<Props> = ({ open, onClose, onLaunched }) => {
   const [mode, setMode] = React.useState<'all' | 'selected'>('all');
-  const [devices, setDevices] = React.useState<Device[]>([]);
+  const [devices, setDevices] = React.useState<DeviceMinimal[]>([]);
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
   const [full, setFull] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -36,7 +38,7 @@ const ScanModal: React.FC<Props> = ({ open, onClose, onLaunched }) => {
     if (!open) return;
     (async () => {
       try {
-        const res = await api.get<Device[]>('/devices/');
+        const res = await api.get<DeviceMinimal[]>('/devices/');
         setDevices(res.data ?? []);
       } catch {
         setDevices([]);

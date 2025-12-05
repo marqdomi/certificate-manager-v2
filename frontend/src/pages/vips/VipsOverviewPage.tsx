@@ -15,6 +15,7 @@ import api from '../../services/api';
 import ScanModal from './ScanModal';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import type { Device } from '../../types/device';
 dayjs.extend(relativeTime);
 
 interface OverviewItem {
@@ -29,14 +30,8 @@ interface Row extends OverviewItem {
   id: number; // alias of device_id for DataGrid
 }
 
-// Mínimo necesario desde /devices/ para decidir qué mostrar
-interface DeviceMin {
-  id: number;
-  active?: boolean;
-  ha_state?: string | null;
-  cluster_key?: string | null;
-  is_primary_preferred?: boolean | null;
-}
+// DeviceMin now uses Device from types
+type DeviceMin = Pick<Device, 'id' | 'active' | 'ha_state' | 'cluster_key' | 'is_primary_preferred'>;
 
 const columns: GridColDef<Row>[] = [
   { field: 'hostname', headerName: 'Device', flex: 1, minWidth: 260 },

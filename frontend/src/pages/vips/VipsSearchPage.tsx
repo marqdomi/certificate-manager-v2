@@ -21,6 +21,7 @@ import {
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import api from '../../services/api';
 import { searchVips } from '../../api/vips';
+import type { DeviceMinimal } from '../../types/device';
 
 // Helper to display timestamps that may include microseconds, using local timezone with dayjs
 const fmtTimestamp = (v: string | null | undefined): string => {
@@ -37,8 +38,6 @@ const fmtTimestamp = (v: string | null | undefined): string => {
     return String(v);
   }
 };
-
-type Device = { id: number; hostname: string };
 
 interface SearchParams {
   q?: string;
@@ -98,7 +97,7 @@ const columns: GridColDef<VipRow>[] = [
 ];
 
 const VipsSearchPage: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
-  const [devices, setDevices] = React.useState<Device[]>([]);
+  const [devices, setDevices] = React.useState<DeviceMinimal[]>([]);
   const [params, setParams] = React.useState<SearchParams>({ limit: 200 });
   const [rows, setRows] = React.useState<VipRow[]>([]);
   const [loading, setLoading] = React.useState(false);
