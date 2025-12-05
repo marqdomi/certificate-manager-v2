@@ -838,27 +838,35 @@ function InventoryPage() {
                     p: 2,
                     cursor: 'pointer',
                     border: '1px solid',
-                    borderColor: isFav ? 'warning.main' : 'divider',
+                    borderColor: isFav ? alpha('#f59e0b', 0.5) : 'divider',
                     borderRadius: 2,
                     transition: 'all 0.2s ease-in-out',
+                    backgroundColor: (theme) => theme.palette.background.paper,
                     '&:hover': {
                       transform: 'translateY(-2px)',
-                      boxShadow: 4,
+                      boxShadow: 2,
                       borderColor: 'primary.main',
                     },
                     position: 'relative',
                   }}
                 >
-                  {/* Favorite Star */}
+                  {/* Favorite Star - subtle */}
                   <IconButton
                     size="small"
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(cert.id); }}
-                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                    sx={{ 
+                      position: 'absolute', 
+                      top: 6, 
+                      right: 6,
+                      opacity: isFav ? 1 : 0.3,
+                      '&:hover': { opacity: 1 },
+                      transition: 'opacity 0.2s',
+                    }}
                   >
-                    {isFav ? <StarIcon sx={{ color: '#f59e0b' }} /> : <StarBorderIcon sx={{ color: 'text.disabled' }} />}
+                    {isFav ? <StarIcon sx={{ color: '#f59e0b', fontSize: 18 }} /> : <StarBorderIcon sx={{ color: 'text.disabled', fontSize: 18 }} />}
                   </IconButton>
 
-                  {/* Status indicator */}
+                  {/* Status indicator dot */}
                   <Box
                     sx={{
                       width: 8,
@@ -866,57 +874,59 @@ function InventoryPage() {
                       borderRadius: '50%',
                       backgroundColor: statusColor,
                       position: 'absolute',
-                      top: 16,
-                      left: 16,
+                      top: 14,
+                      left: 14,
                     }}
                   />
 
-                  <Box sx={{ pl: 2.5 }}>
-                    <Typography variant="subtitle2" fontWeight={600} noWrap sx={{ pr: 4 }}>
+                  <Box sx={{ pl: 2.5, pr: 3 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap>
                       {cert.common_name || cert.name}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" noWrap>
+                    <Typography variant="caption" color="text.secondary" display="block" noWrap sx={{ opacity: 0.7 }}>
                       {cert.name}
                     </Typography>
                   </Box>
 
-                  <Divider sx={{ my: 1.5 }} />
+                  <Divider sx={{ my: 1.5, opacity: 0.6 }} />
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
                     <Typography variant="caption" color="text.secondary">
                       Days Left
                     </Typography>
-                    <Typography variant="caption" fontWeight={600} sx={{ color: statusColor }}>
-                      {daysRemaining <= 0 ? 'Expired' : `${daysRemaining} days`}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: statusColor }} />
+                      <Typography variant="caption" fontWeight={500}>
+                        {daysRemaining <= 0 ? 'Expired' : daysRemaining}
+                      </Typography>
+                    </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
                     <Typography variant="caption" color="text.secondary">
-                      Usage
+                      Status
                     </Typography>
-                    <Chip
-                      size="small"
-                      label={usageState || 'unknown'}
+                    <Typography 
+                      variant="caption" 
                       sx={{ 
-                        height: 20, 
-                        fontSize: '0.65rem',
-                        backgroundColor: usageState === 'in-use' ? alpha('#10b981', 0.1) :
-                                        usageState === 'no-profiles' ? alpha('#ef4444', 0.1) :
-                                        alpha('#6b7280', 0.1),
-                        color: usageState === 'in-use' ? '#10b981' :
-                               usageState === 'no-profiles' ? '#ef4444' :
+                        fontWeight: 500,
+                        color: usageState === 'in-use' ? '#059669' :
+                               usageState === 'no-profiles' ? '#dc2626' :
                                '#6b7280',
                       }}
-                    />
+                    >
+                      {usageState === 'in-use' ? 'In Use' : 
+                       usageState === 'no-profiles' ? 'Unused' : 
+                       usageState === 'profiles-no-vips' ? 'Orphan' : '—'}
+                    </Typography>
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="caption" color="text.secondary">
                       Device
                     </Typography>
-                    <Typography variant="caption" noWrap sx={{ maxWidth: 120 }}>
-                      {cert.f5_device_hostname || '-'}
+                    <Typography variant="caption" noWrap sx={{ maxWidth: 120, fontWeight: 500 }}>
+                      {cert.f5_device_hostname || '—'}
                     </Typography>
                   </Box>
                 </Paper>

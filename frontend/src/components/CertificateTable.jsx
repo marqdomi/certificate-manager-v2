@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Chip, Button, CircularProgress, Tooltip, IconButton, useTheme } from '@mui/material';
+import { Box, Chip, Button, CircularProgress, Tooltip, IconButton, useTheme, Typography, alpha } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -13,6 +13,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { authProvider } from '../pages/LoginPage';
 
 // Usage state display configuration
@@ -79,11 +80,11 @@ const CertificateTable = ({
 
   // Columnas con redimensionamiento y ajuste automático habilitados
   const columns = [
-    // Favorite column
+    // Favorite column - subtle star
     ...(onToggleFavorite ? [{
       field: 'favorite',
       headerName: '',
-      width: 50,
+      width: 44,
       sortable: false,
       disableColumnMenu: true,
       renderCell: (params) => (
@@ -93,9 +94,14 @@ const CertificateTable = ({
             e.stopPropagation();
             onToggleFavorite(params.row.id);
           }}
-          sx={{ color: isFavorite(params.row.id) ? '#f59e0b' : 'text.disabled' }}
+          sx={{ 
+            color: isFavorite(params.row.id) ? '#f59e0b' : 'text.disabled',
+            opacity: isFavorite(params.row.id) ? 1 : 0.4,
+            '&:hover': { opacity: 1 },
+            transition: 'opacity 0.2s',
+          }}
         >
-          {isFavorite(params.row.id) ? <StarIcon /> : <StarBorderIcon />}
+          {isFavorite(params.row.id) ? <StarIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
         </IconButton>
       ),
     }] : []),
@@ -147,12 +153,35 @@ const CertificateTable = ({
       renderCell: (params) => {
         const days = params.value;
         if (days === null || typeof days === 'undefined') {
-          return <Chip label="N/A" size="small" />;
+          return <Typography variant="body2" color="text.secondary">—</Typography>;
         }
-        let color = 'success';
-        if (days <= 0) color = 'error';
-        else if (days <= 30) color = 'warning';
-        return <Chip label={days} color={color} size="small" sx={{ fontWeight: 'bold' }} />;
+        // Color based on status - more subtle palette
+        let color = '#10b981'; // green for healthy
+        if (days <= 0) color = '#ef4444'; // red for expired
+        else if (days <= 30) color = '#f59e0b'; // amber for warning
+        
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: color,
+                flexShrink: 0,
+              }}
+            />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 500,
+                color: days <= 0 ? 'error.main' : 'text.primary',
+              }}
+            >
+              {days <= 0 ? 'Expired' : days}
+            </Typography>
+          </Box>
+        );
       },
     },
     // NEW: Usage State column
@@ -167,27 +196,44 @@ const CertificateTable = ({
       renderCell: (params) => {
         const state = getEffectiveUsageState(params.row);
         const config = USAGE_STATE_CONFIG[state] || USAGE_STATE_CONFIG['loading'];
-        const IconComponent = config.icon;
         
         if (state === 'loading' || !state) {
           return (
             <Tooltip title="Loading usage state...">
-              <CircularProgress size={16} />
+              <CircularProgress size={14} />
             </Tooltip>
           );
         }
+
+        // Subtle background colors
+        const bgColors = {
+          success: alpha('#10b981', 0.1),
+          warning: alpha('#f59e0b', 0.1),
+          error: alpha('#ef4444', 0.1),
+          default: alpha('#6b7280', 0.1),
+        };
+        const textColors = {
+          success: '#059669',
+          warning: '#d97706',
+          error: '#dc2626',
+          default: '#6b7280',
+        };
         
         return (
           <Tooltip title={config.tooltip}>
             <Chip 
-              icon={IconComponent ? <IconComponent fontSize="small" /> : undefined}
               label={config.label} 
-              color={config.color} 
               size="small" 
-              variant="outlined"
               sx={{ 
                 fontWeight: 500,
-                '& .MuiChip-icon': { fontSize: '1rem' }
+                fontSize: '0.75rem',
+                height: 24,
+                backgroundColor: bgColors[config.color] || bgColors.default,
+                color: textColors[config.color] || textColors.default,
+                border: 'none',
+                '& .MuiChip-label': {
+                  px: 1.5,
+                }
               }} 
             />
           </Tooltip>
@@ -210,14 +256,19 @@ const CertificateTable = ({
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
                 
-                {/* --- Mantenemos la jerarquía visual de los botones --- */}
-
+                {/* View Usage - subtle icon button */}
                 <Tooltip title="Show Usage Details">
-                    <IconButton onClick={() => onShowUsage(params.row.id)} size="small" aria-label="show usage">
-                        <VisibilityIcon />
+                    <IconButton 
+                      onClick={() => onShowUsage(params.row.id)} 
+                      size="small" 
+                      aria-label="show usage"
+                      sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                    >
+                        <VisibilityIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
 
+                {/* Renewal Details - subtle icon button */}
                 <Tooltip title={hasActiveRenewal ? "Show Renewal Details (CSR/Key)" : "No active renewal process"}>
                     <span>
                         <IconButton 
@@ -225,27 +276,59 @@ const CertificateTable = ({
                             size="small" 
                             disabled={!hasActiveRenewal}
                             aria-label="show renewal details"
+                            sx={{ color: 'text.secondary', '&:hover': { color: 'info.main' } }}
                         >
-                            <InfoIcon />
+                            <InfoIcon fontSize="small" />
                         </IconButton>
                     </span>
                 </Tooltip>
                 
                 {userRole !== 'viewer' && (
                     hasActiveRenewal 
-                    ? ( // Botón secundario para una acción de continuación
-                        <Button variant="contained" color="secondary" size="small" onClick={() => onOpenDeploy(params.row)}>
-                            DEPLOY
+                    ? ( // Deploy button - outlined style
+                        <Button 
+                          variant="outlined" 
+                          color="primary" 
+                          size="small" 
+                          onClick={() => onOpenDeploy(params.row)}
+                          sx={{ 
+                            textTransform: 'none',
+                            fontSize: '0.75rem',
+                            minWidth: 64,
+                            height: 28,
+                            borderRadius: 1.5,
+                          }}
+                        >
+                          Deploy
                         </Button>
                     ) : (
-                        // Botón primario para la acción principal, con tooltip aclaratorio
+                        // Renew button - subtle outlined style
                         <Tooltip title="Open renewal wizard">
                           <span>
-                            <Button variant="contained" size="small" onClick={() => onInitiateRenewal(params.row)} disabled={!canRenew}>
+                            <Button 
+                              variant="outlined" 
+                              size="small" 
+                              onClick={() => onInitiateRenewal(params.row)} 
+                              disabled={!canRenew}
+                              startIcon={actionLoading && activeActionCertId === params.row.id ? null : <AutorenewIcon sx={{ fontSize: 16 }} />}
+                              sx={{ 
+                                textTransform: 'none',
+                                fontSize: '0.75rem',
+                                minWidth: 72,
+                                height: 28,
+                                borderRadius: 1.5,
+                                borderColor: 'divider',
+                                color: 'text.primary',
+                                '&:hover': {
+                                  borderColor: 'primary.main',
+                                  backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                },
+                              }}
+                            >
                               {actionLoading && activeActionCertId === params.row.id ? (
-                                <CircularProgress size={20} color="inherit" />
+                                <CircularProgress size={16} color="inherit" />
                               ) : (
-                                'RENEW'
+                                'Renew'
                               )}
                             </Button>
                           </span>
@@ -253,11 +336,19 @@ const CertificateTable = ({
                     )
                 )}
 
-                {userRole === 'admin' && ( // Acción destructiva
+                {userRole === 'admin' && ( // Delete - subtle red icon
                     <Tooltip title="Delete Certificate">
                         <span>
-                            <IconButton color="error" size="small" onClick={() => onDelete(params.row.id)} disabled={actionLoading}>
-                                <DeleteIcon />
+                            <IconButton 
+                              size="small" 
+                              onClick={() => onDelete(params.row.id)} 
+                              disabled={actionLoading}
+                              sx={{ 
+                                color: 'text.disabled',
+                                '&:hover': { color: 'error.main' },
+                              }}
+                            >
+                                <DeleteIcon fontSize="small" />
                             </IconButton>
                         </span>
                     </Tooltip>
