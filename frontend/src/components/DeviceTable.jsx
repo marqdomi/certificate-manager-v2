@@ -16,6 +16,7 @@ dayjs.extend(timezone);
 const DeviceTable = ({
   onSetCredentials,
   onDeleteDevice,
+  onRowClick,
   searchTerm,
   refreshTrigger,
   userRole,
@@ -260,6 +261,17 @@ const DeviceTable = ({
         // Selection
         checkboxSelection
         
+        // Row click handler (opens detail drawer)
+        onRowClick={(params, event) => {
+          // Don't trigger if clicking on action buttons or checkboxes
+          if (event.target.closest('button, .MuiCheckbox-root, .MuiIconButton-root')) {
+            return;
+          }
+          if (onRowClick) {
+            onRowClick(params.row);
+          }
+        }}
+        
         // En v6, el parámetro de onSelectionModelChange es el array de IDs.
         // Mantenemos esta prop y quitamos disableSelectionOnClick para evitar conflictos.
         onSelectionModelChange={(newSelection) => {
@@ -283,6 +295,10 @@ const DeviceTable = ({
             '&:hover .MuiDataGrid-columnSeparator': {
               color: 'primary.main',
             },
+          },
+          // Cursor pointer on rows to indicate clickable
+          '& .MuiDataGrid-row': {
+            cursor: 'pointer',
           },
         }}
       />

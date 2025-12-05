@@ -5,6 +5,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { authProvider } from './LoginPage';
 import apiClient from '../services/api';
 import DeviceTable from '../components/DeviceTable';
+import DeviceDetailDrawer from '../components/DeviceDetailDrawer';
 import CredentialDialog from '../components/CredentialDialog';
 import AddDeviceDialog from '../components/AddDeviceDialog';
 import BulkActionsBar from '../components/BulkActionsBar';
@@ -26,6 +27,8 @@ const DevicesPage = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [credentialModalOpen, setCredentialModalOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+  const [drawerDevice, setDrawerDevice] = useState(null);
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [limitCertsInput, setLimitCertsInput] = useState('');
@@ -86,6 +89,30 @@ const DevicesPage = () => {
     setClearSelectionKey((k) => k + 1);
   };
 
+  // Device detail drawer handlers
+  const handleRowClick = (device) => {
+    setDrawerDevice(device);
+    setDetailDrawerOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setDetailDrawerOpen(false);
+  };
+
+  const handleScanDevice = (device) => {
+    apiClient.post('/f5/scan-all', { device_ids: [device.id] })
+      .then((res) => {
+        setNotification({ open: true, message: `Scan queued for ${device.hostname}`, severity: 'success' });
+        forceTableRefresh();
+      })
+      .catch((err) => setNotification({ open: true, message: `Failed: ${err.message}`, severity: 'error' }));
+  };
+
+  const handleEditDevice = (device) => {
+    // TODO: Implement edit modal in Task 2.2
+    setNotification({ open: true, message: 'Edit functionality coming soon!', severity: 'info' });
+  };
+
   return (
     <Box>
       <Paper elevation={0} sx={glassmorphicStyle}>
@@ -125,6 +152,7 @@ const DevicesPage = () => {
         <DeviceTable
           onSetCredentials={(d) => { setSelectedDevice(d); setCredentialModalOpen(true); }}
           onDeleteDevice={handleDeleteDevice}
+          onRowClick={handleRowClick}
           refreshTrigger={refreshKey}
           searchTerm={searchTerm}
           userRole={userRole}
@@ -132,6 +160,20 @@ const DevicesPage = () => {
           clearSelectionKey={clearSelectionKey}
         />
       </Paper>
+
+      {/* Device Detail Drawer */}
+      <DeviceDetailDrawer
+        open={detailDrawerOpen}
+        onClose={handleDrawerClose}
+        device={drawerDevice}
+        onSetCredentials={(d) => {
+          setSelectedDevice(d);
+          setCredentialModalOpen(true);
+          setDetailDrawerOpen(false);
+        }}
+        onEdit={handleEditDevice}
+        onScan={handleScanDevice}
+      />
 
       <CredentialDialog open={credentialModalOpen} onClose={() => setCredentialModalOpen(false)} onSave={handleSaveCredentials} device={selectedDevice} />
       {userRole === 'admin' && <AddDeviceDialog open={addModalOpen} onClose={() => setAddModalOpen(false)} onAdd={handleAddDevice} />}
