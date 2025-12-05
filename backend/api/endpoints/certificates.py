@@ -15,6 +15,7 @@ from schemas.certificate import CertificateResponse
 from services import certificate_service, f5_service_logic, encryption_service, auth_service
 from services import pfx_service 
 from services.f5_service_tasks import scan_f5_task 
+from core.config import DEFAULT_CHAIN_NAME
 
 # Rate limiting for sensitive endpoints
 from core.rate_limiter import limiter, SENSITIVE_RATE_LIMIT
