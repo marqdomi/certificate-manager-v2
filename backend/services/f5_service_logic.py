@@ -821,7 +821,7 @@ def get_realtime_certs_from_f5(hostname: str, username: str, password: str, devi
             }
             cert_list.append(cert_data)
         except Exception as e:
-            print(f"WARN: Could not process certificate '{cert_stub.name}'. Error: {e}")
+            logger.warning(f"Could not process certificate '{cert_stub.name}'. Error: {e}")
     
     return cert_list
 
