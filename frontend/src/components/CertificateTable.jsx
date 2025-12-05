@@ -1,6 +1,6 @@
 // frontend/src/components/CertificateTable.jsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Chip, Button, CircularProgress, Tooltip, IconButton, useTheme } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -11,6 +11,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { authProvider } from '../pages/LoginPage';
 
 // Usage state display configuration
@@ -37,9 +39,33 @@ const CertificateTable = ({
     usageStates = {},
     onRefreshUsage,
     usageLoading = false,
+    // Bulk selection props
+    onSelectionChange,
+    clearSelectionKey,
+    // Row click handler for detail drawer
+    onRowClick,
+    // Favorites props
+    favorites = [],
+    onToggleFavorite,
 }) => {
   const userRole = authProvider.getRole();
   const theme = useTheme();
+  const [rowSelectionModel, setRowSelectionModel] = useState([]);
+
+  // Clear selection when clearSelectionKey changes
+  useEffect(() => {
+    if (clearSelectionKey) {
+      setRowSelectionModel([]);
+    }
+  }, [clearSelectionKey]);
+
+  // Notify parent of selection changes
+  const handleSelectionChange = (newSelection) => {
+    setRowSelectionModel(newSelection);
+    if (onSelectionChange) {
+      onSelectionChange(newSelection);
+    }
+  };
 
   // Helper to get effective usage state (from prop override or from cert data)
   const getEffectiveUsageState = (row) => {
@@ -48,8 +74,31 @@ const CertificateTable = ({
     return row.usage_state;
   };
 
+  // Helper to check if certificate is favorite
+  const isFavorite = (certId) => favorites.includes(certId);
+
   // Columnas con redimensionamiento y ajuste automático habilitados
   const columns = [
+    // Favorite column
+    ...(onToggleFavorite ? [{
+      field: 'favorite',
+      headerName: '',
+      width: 50,
+      sortable: false,
+      disableColumnMenu: true,
+      renderCell: (params) => (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(params.row.id);
+          }}
+          sx={{ color: isFavorite(params.row.id) ? '#f59e0b' : 'text.disabled' }}
+        >
+          {isFavorite(params.row.id) ? <StarIcon /> : <StarBorderIcon />}
+        </IconButton>
+      ),
+    }] : []),
     { 
       field: 'id', 
       headerName: 'ID', 
@@ -58,7 +107,6 @@ const CertificateTable = ({
       resizable: true,
     },
     { 
-      field: 'common_name', 
       headerName: 'Common Name', 
       flex: 1.2, 
       minWidth: 180,
@@ -250,7 +298,23 @@ const CertificateTable = ({
         }}
         pageSizeOptions={[15, 25, 50, 100]}
         getRowId={(row) => row.id}
+        
+        // Bulk selection
+        checkboxSelection
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={handleSelectionChange}
         disableRowSelectionOnClick
+        
+        // Row click handler for detail drawer
+        onRowClick={(params, event) => {
+          // Ignore clicks on action buttons or checkboxes
+          if (event.target.closest('button') || event.target.closest('.MuiCheckbox-root')) {
+            return;
+          }
+          if (onRowClick) {
+            onRowClick(params.row);
+          }
+        }}
         
         // Habilitar redimensionamiento de columnas
         disableColumnResize={false}
@@ -259,6 +323,7 @@ const CertificateTable = ({
         sx={{
           border: 'none', // Quitamos el borde principal del DataGrid
           backgroundColor: 'transparent', // Hacemos el fondo transparente para que se vea el "vidrio"
+          cursor: onRowClick ? 'pointer' : 'default',
           
           // Estilo de las cabeceras de columna
           '& .MuiDataGrid-columnHeaders': {
