@@ -22,6 +22,7 @@ import PublishIcon from '@mui/icons-material/Publish';
 import RadarIcon from '@mui/icons-material/Radar';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 
 const drawerWidth = 240;
 
@@ -33,6 +34,7 @@ const navItems = [
   { text: 'CSR Generator', icon: <AssignmentIcon />, path: '/generate-csr' },
   { text: 'PFX Generator', icon: <BuildIcon />, path: '/pfx-generator' },
   { text: 'Deploy Center', icon: <PublishIcon />, path: '/deploy' },
+  { text: 'Batch Renewal', icon: <AutorenewIcon />, path: '/batch-renewal' },
   { text: 'Audit Log', icon: <HistoryIcon />, path: '/audit-log' },
 ];
 

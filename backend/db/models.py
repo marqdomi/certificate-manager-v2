@@ -161,7 +161,11 @@ class RenewalRequest(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship with Certificate
-    original_certificate = relationship("Certificate")
+    original_certificate = relationship(
+        "Certificate", 
+        foreign_keys=[original_certificate_id],
+        backref="renewal_requests"
+    )
 
     def __repr__(self):
         return f"<RenewalRequest(id={self.id}, cn='{self.common_name}', status='{self.status.name}')>"
