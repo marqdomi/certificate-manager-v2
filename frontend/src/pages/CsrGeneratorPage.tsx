@@ -1,4 +1,4 @@
-// frontend/src/pages/CsrGeneratorPage.jsx
+// frontend/src/pages/CsrGeneratorPage.tsx
 /**
  * CSR Generator Page v2.5
  * 
@@ -12,11 +12,11 @@
  * - Download ready PFX files
  */
 
-import React, { useState } from 'react';
+import React, { useState, FC } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
     Box, Typography, Paper, Alert, Button, 
-    Divider, Tabs, Tab,
+    Tabs, Tab,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -24,31 +24,43 @@ import {
 } from '@mui/icons-material';
 import CSRGeneratorWizard from '../components/CSRGeneratorWizard';
 import PendingCSRsPanel from '../components/PendingCSRsPanel';
+import type { CertificateToRenew, CSRCompleteResponse } from '../types/csr';
 
-function TabPanel({ children, value, index, ...other }) {
+interface TabPanelProps {
+    children?: React.ReactNode;
+    value: number;
+    index: number;
+}
+
+const TabPanel: FC<TabPanelProps> = ({ children, value, index, ...other }) => {
     return (
         <div role="tabpanel" hidden={value !== index} {...other}>
             {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
         </div>
     );
+};
+
+interface LocationState {
+    certificateToRenew?: CertificateToRenew;
 }
 
-function CsrGeneratorPage() {
+const CsrGeneratorPage: FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     
     // Certificate passed from inventory (optional)
-    const certificateToRenew = location.state?.certificateToRenew;
+    const locationState = location.state as LocationState | null;
+    const certificateToRenew = locationState?.certificateToRenew;
     
-    const [tabValue, setTabValue] = useState(0);
-    const [wizardOpen, setWizardOpen] = useState(!!certificateToRenew);
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [tabValue, setTabValue] = useState<number>(0);
+    const [wizardOpen, setWizardOpen] = useState<boolean>(!!certificateToRenew);
+    const [refreshKey, setRefreshKey] = useState<number>(0);
 
-    const handleOpenWizard = () => {
+    const handleOpenWizard = (): void => {
         setWizardOpen(true);
     };
 
-    const handleCloseWizard = () => {
+    const handleCloseWizard = (): void => {
         setWizardOpen(false);
         // Clear the location state so refreshing doesn't reopen
         if (certificateToRenew) {
@@ -56,7 +68,7 @@ function CsrGeneratorPage() {
         }
     };
 
-    const handleCompleted = (result) => {
+    const handleCompleted = (result: CSRCompleteResponse): void => {
         // Refresh the pending list
         setRefreshKey(prev => prev + 1);
         setTabValue(0); // Switch to pending tab
@@ -88,7 +100,7 @@ function CsrGeneratorPage() {
             <Paper sx={{ p: 0 }}>
                 <Tabs 
                     value={tabValue} 
-                    onChange={(e, v) => setTabValue(v)}
+                    onChange={(_, v) => setTabValue(v)}
                     sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}
                 >
                     <Tab label="Pending Requests" icon={<ListIcon />} iconPosition="start" />
@@ -112,6 +124,6 @@ function CsrGeneratorPage() {
             />
         </Box>
     );
-}
+};
 
 export default CsrGeneratorPage;

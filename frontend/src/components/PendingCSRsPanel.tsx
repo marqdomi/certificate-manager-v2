@@ -9,7 +9,7 @@
  * - Delete abandoned requests
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, FC } from 'react';
 import {
   Box,
   Paper,
@@ -41,53 +41,40 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { listPendingCSRs, deleteCSRRequest, completeCSR, getCSRDownloadUrl } from '../services/api';
+import type { PendingCSR, CSRStatus } from '../types/csr';
+import { STATUS_COLORS, STATUS_LABELS } from '../types/csr';
 
-const STATUS_COLORS = {
-  CSR_GENERATED: 'warning',
-  CERT_RECEIVED: 'info',
-  PFX_READY: 'success',
-  DEPLOYED: 'success',
-  COMPLETED: 'default',
-  FAILED: 'error',
-  EXPIRED: 'error',
-};
+interface PendingCSRsPanelProps {
+  onRefresh?: () => void;
+}
 
-const STATUS_LABELS = {
-  CSR_GENERATED: 'Awaiting CA',
-  CERT_RECEIVED: 'Processing',
-  PFX_READY: 'Ready to Deploy',
-  DEPLOYED: 'Deployed',
-  COMPLETED: 'Completed',
-  FAILED: 'Failed',
-  EXPIRED: 'Expired',
-};
-
-const PendingCSRsPanel = ({ onRefresh }) => {
-  const [pendingCSRs, setPendingCSRs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
+  const [pendingCSRs, setPendingCSRs] = useState<PendingCSR[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Complete dialog state
-  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
-  const [selectedCSR, setSelectedCSR] = useState(null);
-  const [signedCert, setSignedCert] = useState('');
-  const [chainCert, setChainCert] = useState('');
-  const [pfxPassword, setPfxPassword] = useState('');
-  const [completing, setCompleting] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState<boolean>(false);
+  const [selectedCSR, setSelectedCSR] = useState<PendingCSR | null>(null);
+  const [signedCert, setSignedCert] = useState<string>('');
+  const [chainCert, setChainCert] = useState<string>('');
+  const [pfxPassword, setPfxPassword] = useState<string>('');
+  const [completing, setCompleting] = useState<boolean>(false);
   
   // View CSR dialog
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [viewingCSR, setViewingCSR] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false);
+  const [viewingCSR, setViewingCSR] = useState<PendingCSR | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
 
-  const fetchPendingCSRs = useCallback(async () => {
+  const fetchPendingCSRs = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
       const data = await listPendingCSRs();
       setPendingCSRs(data.pending_requests || []);
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to fetch pending CSRs');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(error.response?.data?.detail || error.message || 'Failed to fetch pending CSRs');
     } finally {
       setLoading(false);
     }
@@ -97,19 +84,20 @@ const PendingCSRsPanel = ({ onRefresh }) => {
     fetchPendingCSRs();
   }, [fetchPendingCSRs]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number): Promise<void> => {
     if (!window.confirm('Are you sure you want to delete this CSR request? The private key will be permanently lost.')) {
       return;
     }
     try {
       await deleteCSRRequest(id);
       fetchPendingCSRs();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to delete CSR request');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || 'Failed to delete CSR request');
     }
   };
 
-  const handleOpenComplete = (csr) => {
+  const handleOpenComplete = (csr: PendingCSR): void => {
     setSelectedCSR(csr);
     setSignedCert('');
     setChainCert('');
@@ -117,28 +105,29 @@ const PendingCSRsPanel = ({ onRefresh }) => {
     setCompleteDialogOpen(true);
   };
 
-  const handleComplete = async () => {
+  const handleComplete = async (): Promise<void> => {
     if (!selectedCSR || !signedCert.trim()) return;
     
     setCompleting(true);
     try {
-      await completeCSR(selectedCSR.id, signedCert, chainCert || null, pfxPassword || null);
+      await (completeCSR as Function)(selectedCSR.id, signedCert, chainCert || null, pfxPassword || null);
       setCompleteDialogOpen(false);
       fetchPendingCSRs();
       onRefresh?.();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to complete CSR');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || 'Failed to complete CSR');
     } finally {
       setCompleting(false);
     }
   };
 
-  const handleViewCSR = (csr) => {
+  const handleViewCSR = (csr: PendingCSR): void => {
     setViewingCSR(csr);
     setViewDialogOpen(true);
   };
 
-  const handleCopyCSR = async () => {
+  const handleCopyCSR = async (): Promise<void> => {
     if (viewingCSR?.csr_pem) {
       try {
         await navigator.clipboard.writeText(viewingCSR.csr_pem);
@@ -209,7 +198,7 @@ const PendingCSRsPanel = ({ onRefresh }) => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {csr.san_names?.length > 0 ? (
+                    {csr.san_names && csr.san_names.length > 0 ? (
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {csr.san_names.slice(0, 3).map((san, i) => (
                           <Chip key={i} label={san} size="small" variant="outlined" />
@@ -348,14 +337,14 @@ const PendingCSRsPanel = ({ onRefresh }) => {
             <Typography variant="caption" color="text.secondary">Status</Typography>
             <Box>
               <Chip 
-                label={STATUS_LABELS[viewingCSR?.status] || viewingCSR?.status}
-                color={STATUS_COLORS[viewingCSR?.status] || 'default'}
+                label={STATUS_LABELS[viewingCSR?.status as CSRStatus] || viewingCSR?.status}
+                color={STATUS_COLORS[viewingCSR?.status as CSRStatus] || 'default'}
                 size="small"
               />
             </Box>
           </Box>
           
-          {viewingCSR?.san_names?.length > 0 && (
+          {viewingCSR?.san_names && viewingCSR.san_names.length > 0 && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" color="text.secondary">SANs</Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>

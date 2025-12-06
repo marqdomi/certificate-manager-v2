@@ -10,7 +10,7 @@
  * This solves the F5 key export limitation by generating keys locally.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, ChangeEvent, FC } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -26,7 +26,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  IconButton,
   Tooltip,
   Paper,
   Divider,
@@ -36,21 +35,26 @@ import {
   MenuItem,
   Grid,
   Snackbar,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   ContentCopy as CopyIcon,
   Download as DownloadIcon,
   Add as AddIcon,
-  Delete as DeleteIcon,
   Warning as WarningIcon,
   CheckCircle as CheckIcon,
-  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { generateCSR, completeCSR, getCSRDownloadUrl } from '../services/api';
+import type { 
+  CSRFormData, 
+  CSRGenerateResponse, 
+  CSRCompleteResponse,
+  CertificateToRenew 
+} from '../types/csr';
 
 const STEPS = ['Certificate Details', 'Generate CSR & Key', 'Complete with Signed Cert'];
 
-const DEFAULT_FORM = {
+const DEFAULT_FORM: CSRFormData = {
   common_name: '',
   organization: '',
   organizational_unit: '',
@@ -63,42 +67,54 @@ const DEFAULT_FORM = {
   key_size: 2048,
 };
 
-const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) => {
-  const [activeStep, setActiveStep] = useState(0);
-  const [form, setForm] = useState({ ...DEFAULT_FORM });
-  const [sanInput, setSanInput] = useState('');
-  const [ipInput, setIpInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+interface CSRGeneratorWizardProps {
+  open: boolean;
+  onClose: () => void;
+  certificate?: CertificateToRenew | null;
+  onCompleted?: (result: CSRCompleteResponse) => void;
+}
+
+type CopiedField = 'key' | 'csr' | null;
+
+const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({ 
+  open, 
+  onClose, 
+  certificate = null, 
+  onCompleted 
+}) => {
+  const [activeStep, setActiveStep] = useState<number>(0);
+  const [form, setForm] = useState<CSRFormData>({ ...DEFAULT_FORM });
+  const [sanInput, setSanInput] = useState<string>('');
+  const [ipInput, setIpInput] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Generated CSR data (from step 1)
-  const [csrData, setCsrData] = useState(null);
+  const [csrData, setCsrData] = useState<CSRGenerateResponse | null>(null);
   
   // Completion data (step 2)
-  const [signedCert, setSignedCert] = useState('');
-  const [chainCert, setChainCert] = useState('');
-  const [pfxPassword, setPfxPassword] = useState('');
-  const [completionResult, setCompletionResult] = useState(null);
+  const [signedCert, setSignedCert] = useState<string>('');
+  const [chainCert, setChainCert] = useState<string>('');
+  const [pfxPassword, setPfxPassword] = useState<string>('');
+  const [completionResult, setCompletionResult] = useState<CSRCompleteResponse | null>(null);
   
   // Clipboard feedback
-  const [copiedField, setCopiedField] = useState(null);
+  const [copiedField, setCopiedField] = useState<CopiedField>(null);
 
   // Pre-fill form when editing existing certificate
   useEffect(() => {
     if (certificate && open) {
+      const sanNames = certificate.san_names 
+        ? (typeof certificate.san_names === 'string' 
+            ? JSON.parse(certificate.san_names) 
+            : certificate.san_names)
+        : [];
+      
       setForm(prev => ({
         ...prev,
         common_name: certificate.common_name || certificate.name || '',
-        san_dns_names: certificate.san_names 
-          ? (typeof certificate.san_names === 'string' 
-              ? JSON.parse(certificate.san_names) 
-              : certificate.san_names).filter(s => !s.match(/^\d+\.\d+\.\d+\.\d+$/))
-          : [],
-        san_ip_addresses: certificate.san_names
-          ? (typeof certificate.san_names === 'string'
-              ? JSON.parse(certificate.san_names)
-              : certificate.san_names).filter(s => s.match(/^\d+\.\d+\.\d+\.\d+$/))
-          : [],
+        san_dns_names: sanNames.filter((s: string) => !s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+        san_ip_addresses: sanNames.filter((s: string) => s.match(/^\d+\.\d+\.\d+\.\d+$/)),
       }));
     }
   }, [certificate, open]);
@@ -118,11 +134,17 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
     onClose?.();
   }, [onClose]);
 
-  const handleFormChange = (field) => (e) => {
+  const handleFormChange = (field: keyof CSRFormData) => (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleAddSan = () => {
+  const handleKeySizeChange = (e: SelectChangeEvent<number>) => {
+    setForm(prev => ({ ...prev, key_size: e.target.value as 2048 | 4096 }));
+  };
+
+  const handleAddSan = (): void => {
     if (sanInput.trim() && !form.san_dns_names.includes(sanInput.trim())) {
       setForm(prev => ({
         ...prev,
@@ -132,14 +154,14 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
     }
   };
 
-  const handleRemoveSan = (san) => {
+  const handleRemoveSan = (san: string): void => {
     setForm(prev => ({
       ...prev,
       san_dns_names: prev.san_dns_names.filter(s => s !== san)
     }));
   };
 
-  const handleAddIp = () => {
+  const handleAddIp = (): void => {
     if (ipInput.trim() && !form.san_ip_addresses.includes(ipInput.trim())) {
       setForm(prev => ({
         ...prev,
@@ -149,14 +171,14 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
     }
   };
 
-  const handleRemoveIp = (ip) => {
+  const handleRemoveIp = (ip: string): void => {
     setForm(prev => ({
       ...prev,
       san_ip_addresses: prev.san_ip_addresses.filter(i => i !== ip)
     }));
   };
 
-  const handleCopy = async (text, field) => {
+  const handleCopy = async (text: string, field: CopiedField): Promise<void> => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
@@ -166,7 +188,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
     }
   };
 
-  const handleDownload = (content, filename) => {
+  const handleDownload = (content: string, filename: string): void => {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -177,7 +199,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
   };
 
   // Step 1: Generate CSR
-  const handleGenerateCSR = async () => {
+  const handleGenerateCSR = async (): Promise<void> => {
     setLoading(true);
     setError(null);
     
@@ -199,15 +221,16 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
       const result = await generateCSR(payload);
       setCsrData(result);
       setActiveStep(1);
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to generate CSR');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(error.response?.data?.detail || error.message || 'Failed to generate CSR');
     } finally {
       setLoading(false);
     }
   };
 
   // Step 2: Complete with signed certificate
-  const handleComplete = async () => {
+  const handleComplete = async (): Promise<void> => {
     if (!csrData?.renewal_request_id) {
       setError('No renewal request ID found');
       return;
@@ -217,24 +240,25 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
     setError(null);
     
     try {
-      const result = await completeCSR(
+      const result = await (completeCSR as Function)(
         csrData.renewal_request_id,
         signedCert,
         chainCert || null,
         pfxPassword || null
-      );
+      ) as CSRCompleteResponse;
       setCompletionResult(result);
       setActiveStep(2);
       onCompleted?.(result);
-    } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to complete CSR');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(error.response?.data?.detail || error.message || 'Failed to complete CSR');
     } finally {
       setLoading(false);
     }
   };
 
   // Render Step 0: Certificate Details Form
-  const renderDetailsStep = () => (
+  const renderDetailsStep = (): JSX.Element => (
     <Box sx={{ mt: 2 }}>
       <Alert severity="info" sx={{ mb: 3 }}>
         <strong>New CSR Generation</strong> — Enter certificate details below. 
@@ -354,7 +378,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
             <Select
               value={form.key_size}
               label="Key Size"
-              onChange={handleFormChange('key_size')}
+              onChange={handleKeySizeChange}
             >
               <MenuItem value={2048}>2048 bits (Standard)</MenuItem>
               <MenuItem value={4096}>4096 bits (High Security)</MenuItem>
@@ -366,7 +390,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
   );
 
   // Render Step 1: CSR & Key Generated
-  const renderCSRStep = () => (
+  const renderCSRStep = (): JSX.Element => (
     <Box sx={{ mt: 2 }}>
       <Alert severity="warning" icon={<WarningIcon />} sx={{ mb: 3 }}>
         <strong>⚠️ IMPORTANT:</strong> Save the Private Key NOW! 
@@ -408,7 +432,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
             <Button 
               size="small" 
               startIcon={<CopyIcon />}
-              onClick={() => handleCopy(csrData?.key_pem, 'key')}
+              onClick={() => handleCopy(csrData?.key_pem || '', 'key')}
               color={copiedField === 'key' ? 'success' : 'primary'}
             >
               {copiedField === 'key' ? 'Copied!' : 'Copy Key'}
@@ -418,7 +442,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
             <Button 
               size="small" 
               startIcon={<DownloadIcon />}
-              onClick={() => handleDownload(csrData?.key_pem, `${form.common_name.replace(/\*/g, 'wildcard')}.key`)}
+              onClick={() => handleDownload(csrData?.key_pem || '', `${form.common_name.replace(/\*/g, 'wildcard')}.key`)}
             >
               Download .key
             </Button>
@@ -446,7 +470,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
             <Button 
               size="small" 
               startIcon={<CopyIcon />}
-              onClick={() => handleCopy(csrData?.csr_pem, 'csr')}
+              onClick={() => handleCopy(csrData?.csr_pem || '', 'csr')}
               color={copiedField === 'csr' ? 'success' : 'primary'}
             >
               {copiedField === 'csr' ? 'Copied!' : 'Copy CSR'}
@@ -456,7 +480,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
             <Button 
               size="small" 
               startIcon={<DownloadIcon />}
-              onClick={() => handleDownload(csrData?.csr_pem, `${form.common_name.replace(/\*/g, 'wildcard')}.csr`)}
+              onClick={() => handleDownload(csrData?.csr_pem || '', `${form.common_name.replace(/\*/g, 'wildcard')}.csr`)}
             >
               Download .csr
             </Button>
@@ -510,7 +534,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
   );
 
   // Render Step 2: Completion
-  const renderCompletionStep = () => (
+  const renderCompletionStep = (): JSX.Element => (
     <Box sx={{ mt: 2, textAlign: 'center' }}>
       <CheckIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
       <Typography variant="h5" gutterBottom>
@@ -546,7 +570,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
         variant="contained"
         size="large"
         startIcon={<DownloadIcon />}
-        href={getCSRDownloadUrl(csrData?.renewal_request_id)}
+        href={getCSRDownloadUrl(csrData?.renewal_request_id || 0)}
         download
         sx={{ mr: 2 }}
       >
@@ -559,7 +583,7 @@ const CSRGeneratorWizard = ({ open, onClose, certificate = null, onCompleted }) 
     </Box>
   );
 
-  const canProceed = () => {
+  const canProceed = (): boolean => {
     if (activeStep === 0) {
       return form.common_name.trim().length > 0;
     }
