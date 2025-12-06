@@ -80,7 +80,6 @@ const Dashboard = ({ stats, onFilterSelect }) => {
   const expired = safeStats.expired ?? 0;
   const expirationBands = safeStats.expirationBands || {};
   const topDevices = safeStats.topDevices || [];
-  const usageStates = safeStats.usageStates || {};
   const deviceStats = safeStats.deviceStats || {};
 
   // Main health pie chart
@@ -99,14 +98,6 @@ const Dashboard = ({ stats, onFilterSelect }) => {
     { name: '61-90d', value: expirationBands.ok || 0, fill: theme.palette.info.main },
     { name: '> 90d', value: expirationBands.healthy || 0, fill: theme.palette.success.main },
   ];
-
-  // Usage state pie data
-  const usagePieData = [
-    { name: 'Active (in VIPs)', value: usageStates.active || 0, color: theme.palette.success.main },
-    { name: 'No Profiles', value: usageStates.noProfiles || 0, color: theme.palette.grey[400] },
-    { name: 'Profiles, No VIPs', value: usageStates.profilesNoVips || 0, color: theme.palette.warning.light },
-    { name: 'Unknown', value: usageStates.unknown || 0, color: theme.palette.grey[600] },
-  ].filter(d => d.value > 0);
   
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }) => {
     if (percent * 100 < 5) return null;
@@ -281,66 +272,21 @@ const Dashboard = ({ stats, onFilterSelect }) => {
         </Paper>
       </Grid>
 
-      {/* Usage State Pie Chart */}
-      <Grid item xs={12} md={6}>
-        <Paper elevation={0} sx={glassmorphicStyle}>
-          <Typography variant="h6" align="center" sx={{ fontWeight: 'bold', mb: 2 }}>
-            Certificate Usage
-          </Typography>
-          <Box sx={{ width: '100%', height: 280 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie 
-                  data={usagePieData} 
-                  dataKey="value" 
-                  nameKey="name" 
-                  cx="50%" 
-                  cy="50%" 
-                  outerRadius="75%"
-                  innerRadius="45%"
-                  labelLine={false}
-                  label={renderCustomizedLabel}
-                >
-                  {usagePieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke={theme.palette.background.paper} strokeWidth={2} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: theme.palette.background.paper,
-                    borderColor: theme.palette.divider,
-                    borderRadius: 8
-                  }}
-                  formatter={(value) => [value, 'Certificates']} 
-                />
-                <Legend iconSize={10} verticalAlign="bottom" wrapperStyle={{paddingTop: 10}} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
-      </Grid>
-
       {/* Quick Stats Row */}
       <Grid item xs={12}>
         <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
           <Grid container spacing={2} justifyContent="center">
-            <Grid item xs={6} sm={4} md={2}>
+            <Grid item xs={6} sm={4} md={3}>
               <MiniStatCard title="Critical (< 7d)" value={expirationBands.critical || 0} color={theme.palette.error.main} />
             </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            <Grid item xs={6} sm={4} md={3}>
               <MiniStatCard title="Urgent (8-30d)" value={expirationBands.urgent || 0} color={theme.palette.warning.main} />
             </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            <Grid item xs={6} sm={4} md={3}>
               <MiniStatCard title="Soon (31-60d)" value={expirationBands.soon || 0} color={theme.palette.warning.light} />
             </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            <Grid item xs={6} sm={4} md={3}>
               <MiniStatCard title="OK (61-90d)" value={expirationBands.ok || 0} color={theme.palette.info.main} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <MiniStatCard title="Orphan Certs" value={(usageStates.noProfiles || 0) + (usageStates.profilesNoVips || 0)} color={theme.palette.grey[500]} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <MiniStatCard title="Active in VIPs" value={usageStates.active || 0} color={theme.palette.success.main} />
             </Grid>
           </Grid>
         </Paper>

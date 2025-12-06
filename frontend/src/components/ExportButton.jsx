@@ -45,13 +45,11 @@ const escapeCSVField = (value) => {
  * @param {Array} props.certificates - Array of certificate objects to export
  * @param {boolean} props.disabled - Whether the button should be disabled
  * @param {string} props.filenamePrefix - Prefix for downloaded files (default: 'certificates')
- * @param {Object} props.usageStates - Optional map of cert_id -> real-time usage_state
  */
 const ExportButton = ({ 
   certificates = [], 
   disabled = false,
-  filenamePrefix = 'certificates',
-  usageStates = {}
+  filenamePrefix = 'certificates'
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -64,9 +62,6 @@ const ExportButton = ({
     setAnchorEl(null);
   };
 
-  // Helper to get effective usage state (real-time override or cached)
-  const getUsageState = (cert) => usageStates[cert.id] || cert.usage_state;
-
   const exportCSV = () => {
     const headers = [
       'ID',
@@ -76,7 +71,6 @@ const ExportButton = ({
       'Partition',
       'Expiration Date',
       'Days Remaining',
-      'Usage State',
       'Issuer'
     ];
 
@@ -88,7 +82,6 @@ const ExportButton = ({
       escapeCSVField(cert.partition),
       escapeCSVField(cert.expiration_date ? new Date(cert.expiration_date).toLocaleDateString() : ''),
       escapeCSVField(cert.days_remaining),
-      escapeCSVField(getUsageState(cert)),
       escapeCSVField(cert.issuer)
     ]);
 
@@ -112,7 +105,6 @@ const ExportButton = ({
       partition: cert.partition,
       expiration_date: cert.expiration_date,
       days_remaining: cert.days_remaining,
-      usage_state: getUsageState(cert),
       issuer: cert.issuer,
       device_id: cert.device_id
     }));

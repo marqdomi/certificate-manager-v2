@@ -14,8 +14,6 @@ import DevicesPage from './pages/DevicesPage';
 import PfxPage from './pages/PfxPage';
 import CsrGeneratorPage from './pages/CsrGeneratorPage';
 import DeployCenterPage from './pages/DeployCenterPage';
-import VipsOverviewPage from './pages/vips/VipsOverviewPage';
-import VipsSearchPage from './pages/vips/VipsSearchPage';
 import DiscoveryPage from './pages/DiscoveryPage';
 
 function App() {
@@ -39,9 +37,6 @@ function App() {
                   <Route path="/certificates" element={<InventoryPage />} />
                   <Route path="/devices" element={<DevicesPage />} />
                   <Route path="/discovery" element={<DiscoveryPage />} />
-                  <Route path="/vips" element={<Navigate to="/vips/overview" replace />} />
-                  <Route path="/vips/overview" element={<VipsOverviewPage />} />
-                  <Route path="/vips/search" element={<VipsSearchPage />} />
                   <Route path="/pfx-generator" element={<PfxPage />} />
                   <Route path="/generate-csr" element={<CsrGeneratorPage />} />
                   <Route path="/deploy" element={<DeployCenterPage />} />

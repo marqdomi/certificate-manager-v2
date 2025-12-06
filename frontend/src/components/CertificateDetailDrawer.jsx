@@ -10,7 +10,6 @@ import {
   Tooltip,
   Button,
   Stack,
-  CircularProgress,
   alpha,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -18,14 +17,8 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SecurityIcon from '@mui/icons-material/Security';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -52,26 +45,14 @@ const InfoRow = ({ label, value, copyable = false, onCopy }) => (
   </Box>
 );
 
-// Usage state configuration
-const USAGE_STATE_CONFIG = {
-  'active': { label: 'In Use', color: 'success', icon: CheckCircleIcon },
-  'in-use': { label: 'In Use', color: 'success', icon: CheckCircleIcon },
-  'profiles-no-vips': { label: 'Orphan', color: 'warning', icon: WarningIcon },
-  'no-profiles': { label: 'Unused', color: 'default', icon: HelpOutlineIcon },
-  'error': { label: 'Error', color: 'error', icon: ErrorIcon },
-};
-
 const CertificateDetailDrawer = ({
   open,
   onClose,
   certificate,
-  usageState,
   isFavorite,
   onToggleFavorite,
   onRenew,
   onShowUsage,
-  onDelete,
-  userRole,
 }) => {
   if (!certificate) return null;
 
@@ -93,11 +74,6 @@ const CertificateDetailDrawer = ({
     if (days <= 30) return 'warning';
     return 'success';
   };
-
-  // Get usage state display
-  const effectiveUsageState = usageState || certificate.usage_state;
-  const usageConfig = USAGE_STATE_CONFIG[effectiveUsageState] || USAGE_STATE_CONFIG['error'];
-  const UsageIcon = usageConfig.icon;
 
   return (
     <Drawer
@@ -177,13 +153,6 @@ const CertificateDetailDrawer = ({
               size="small"
               sx={{ fontWeight: 600 }}
             />
-            <Chip
-              icon={UsageIcon ? <UsageIcon fontSize="small" /> : undefined}
-              label={usageConfig.label}
-              color={usageConfig.color}
-              size="small"
-              variant="outlined"
-            />
             {certificate.renewal_status === 'CSR_GENERATED' && (
               <Chip label="CSR Generated" color="info" size="small" />
             )}
@@ -218,26 +187,6 @@ const CertificateDetailDrawer = ({
           
           <InfoRow label="Hostname" value={certificate.f5_device_hostname} copyable onCopy={handleCopy} />
           <InfoRow label="Device ID" value={certificate.device_id} />
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Usage Info Section */}
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Usage Status
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            {UsageIcon && <UsageIcon color={usageConfig.color} />}
-            <Typography variant="body2">
-              {effectiveUsageState === 'active' || effectiveUsageState === 'in-use'
-                ? 'This certificate is actively used by virtual servers'
-                : effectiveUsageState === 'profiles-no-vips'
-                ? 'Linked to SSL profiles but no VIPs are using them'
-                : effectiveUsageState === 'no-profiles'
-                ? 'Not linked to any SSL profile'
-                : 'Usage status unknown'}
-            </Typography>
-          </Box>
 
           {certificate.renewal_status && (
             <>

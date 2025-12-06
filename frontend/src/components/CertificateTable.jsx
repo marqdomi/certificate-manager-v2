@@ -2,29 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Chip, Button, CircularProgress, Tooltip, IconButton, useTheme, Typography, alpha } from '@mui/material';
+import { Box, Button, CircularProgress, Tooltip, IconButton, useTheme, Typography, alpha } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { authProvider } from '../pages/LoginPage';
-
-// Usage state display configuration
-const USAGE_STATE_CONFIG = {
-  'active': { label: 'In Use', color: 'success', icon: CheckCircleIcon, tooltip: 'Certificate is actively used by VIPs' },
-  'in-use': { label: 'In Use', color: 'success', icon: CheckCircleIcon, tooltip: 'Certificate is actively used by VIPs' },
-  'profiles-no-vips': { label: 'Orphan', color: 'warning', icon: WarningIcon, tooltip: 'Linked to SSL profiles but no VIPs are using those profiles' },
-  'no-profiles': { label: 'Unused', color: 'default', icon: HelpOutlineIcon, tooltip: 'Not linked to any SSL profile' },
-  'error': { label: 'Error', color: 'error', icon: ErrorIcon, tooltip: 'Could not determine usage state' },
-  'loading': { label: '...', color: 'default', icon: null, tooltip: 'Loading usage state...' },
-};
 
 const CertificateTable = ({ 
     certificates, 
@@ -36,10 +21,6 @@ const CertificateTable = ({
     onDelete,
     actionLoading, 
     activeActionCertId,
-    // New props for real-time usage
-    usageStates = {},
-    onRefreshUsage,
-    usageLoading = false,
     // Bulk selection props
     onSelectionChange,
     clearSelectionKey,
@@ -66,13 +47,6 @@ const CertificateTable = ({
     if (onSelectionChange) {
       onSelectionChange(newSelection);
     }
-  };
-
-  // Helper to get effective usage state (from prop override or from cert data)
-  const getEffectiveUsageState = (row) => {
-    // Priority: real-time usageStates > certificate's cached usage_state
-    if (usageStates[row.id]) return usageStates[row.id];
-    return row.usage_state;
   };
 
   // Helper to check if certificate is favorite
@@ -182,62 +156,6 @@ const CertificateTable = ({
               {days <= 0 ? 'Expired' : days}
             </Typography>
           </Box>
-        );
-      },
-    },
-    // NEW: Usage State column
-    {
-      field: 'usage_state',
-      headerName: 'Status',
-      flex: 0.6,
-      minWidth: 110,
-      resizable: true,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => {
-        const state = getEffectiveUsageState(params.row);
-        const config = USAGE_STATE_CONFIG[state] || USAGE_STATE_CONFIG['loading'];
-        
-        if (state === 'loading' || !state) {
-          return (
-            <Tooltip title="Loading usage state...">
-              <CircularProgress size={14} />
-            </Tooltip>
-          );
-        }
-
-        // Subtle background colors
-        const bgColors = {
-          success: alpha('#10b981', 0.1),
-          warning: alpha('#f59e0b', 0.1),
-          error: alpha('#ef4444', 0.1),
-          default: alpha('#6b7280', 0.1),
-        };
-        const textColors = {
-          success: '#059669',
-          warning: '#d97706',
-          error: '#dc2626',
-          default: '#6b7280',
-        };
-        
-        return (
-          <Tooltip title={config.tooltip}>
-            <Chip 
-              label={config.label} 
-              size="small" 
-              sx={{ 
-                fontWeight: 500,
-                fontSize: '0.75rem',
-                height: 24,
-                backgroundColor: bgColors[config.color] || bgColors.default,
-                color: textColors[config.color] || textColors.default,
-                border: 'none',
-                '& .MuiChip-label': {
-                  px: 1.5,
-                }
-              }} 
-            />
-          </Tooltip>
         );
       },
     },
@@ -363,22 +281,6 @@ const CertificateTable = ({
   return (
     // La altura se ajusta para ser más flexible
     <Box sx={{ height: 'calc(100vh - 220px)', width: '100%' }}>
-      {/* Refresh Usage Button - only show if handler is provided */}
-      {onRefreshUsage && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-          <Tooltip title="Refresh usage states (real-time F5 query)">
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={usageLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
-              onClick={onRefreshUsage}
-              disabled={usageLoading}
-            >
-              {usageLoading ? 'Loading...' : 'Refresh Usage'}
-            </Button>
-          </Tooltip>
-        </Box>
-      )}
       {/* DataGrid con columnas redimensionables y responsive */}
       <DataGrid
         rows={certificates}

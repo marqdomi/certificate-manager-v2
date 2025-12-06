@@ -109,38 +109,9 @@ export interface DeviceUpdate {
 }
 
 /**
- * Estado del cache de un device
- */
-export interface DeviceCacheStatus {
-  device_id: number;
-  profiles_count: number;
-  vips_count: number;
-  links_count: number;
-  last_updated: string | null;
-}
-
-/**
  * Respuesta de scan/refresh
  */
 export interface ScanResponse {
   queued: boolean;
   message?: string;
-}
-
-/**
- * VIP Profile de un device
- */
-export interface VipProfile {
-  full_path: string;
-  partition: string;
-  name: string;
-  cert_name?: string | null;
-}
-
-/**
- * VIP Item con sus profiles
- */
-export interface VipItem {
-  vip_name: string;
-  profiles: VipProfile[];
 }

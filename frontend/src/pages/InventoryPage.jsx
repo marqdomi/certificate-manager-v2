@@ -39,7 +39,6 @@ import SecurityIcon from '@mui/icons-material/Security';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
@@ -57,8 +56,6 @@ import RenewalWizardDialog from '../components/wizard/RenewWizardDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportButton from '../components/ExportButton';
 import CertificateDetailDrawer from '../components/CertificateDetailDrawer';
-// Hook for real-time usage state loading
-import { useUsageStateLoader } from '../hooks/useUsageStateLoader';
 
 // localStorage keys
 const FILTERS_KEY = 'cmt_cert_filters';
@@ -146,9 +143,6 @@ function InventoryPage() {
 
   // Usage modal state
   const [selectedCertId, setSelectedCertId] = useState(null);
-  // Orphan filter states
-  const [orphanOnly, setOrphanOnly] = useState(false);
-  const [noProfilesOnly, setNoProfilesOnly] = useState(false);
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
   const [clearSelectionKey, setClearSelectionKey] = useState(0);
@@ -184,14 +178,6 @@ function InventoryPage() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // Real-time usage state loader hook
-  const { 
-    usageStates, 
-    loadUsageForIds, 
-    refreshAll: refreshUsageStates, 
-    isLoading: usageLoading 
-  } = useUsageStateLoader(allCerts);
 
   // Persist filters to localStorage
   useEffect(() => {
@@ -249,12 +235,8 @@ function InventoryPage() {
     const healthy = allCerts.filter(c => c.days_remaining > 30).length;
     const expiring = allCerts.filter(c => c.days_remaining > 0 && c.days_remaining <= 30).length;
     const expired = allCerts.filter(c => c.days_remaining <= 0).length;
-    const orphans = allCerts.filter(c => {
-      const state = usageStates[c.id] || c.usage_state;
-      return ['no-profiles', 'profiles-no-vips'].includes(state);
-    }).length;
-    return { total, healthy, expiring, expired, orphans };
-  }, [allCerts, usageStates]);
+    return { total, healthy, expiring, expired };
+  }, [allCerts]);
 
   // Helper function for relative time
   const getRelativeTime = (date) => {
@@ -271,16 +253,12 @@ function InventoryPage() {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (statusFilter) count++;
-    if (orphanOnly) count++;
-    if (noProfilesOnly) count++;
     return count;
-  }, [statusFilter, orphanOnly, noProfilesOnly]);
+  }, [statusFilter]);
 
   // Clear all filters
   const clearAllFilters = () => {
     setStatusFilter(null);
-    setOrphanOnly(false);
-    setNoProfilesOnly(false);
     setShowFavoritesOnly(false);
     setSearchTerm('');
   };
@@ -290,16 +268,6 @@ function InventoryPage() {
     setSelectedIds([]);
     setClearSelectionKey(k => k + 1);
   }, []);
-
-  // Auto-load usage states when displayCerts changes (after initial load)
-  useEffect(() => {
-    if (!loading && allCerts.length > 0) {
-      // Load usage for the first page of certificates
-      const pageSize = 25; // Match DataGrid default
-      const firstPageIds = allCerts.slice(0, pageSize).map(c => c.id);
-      loadUsageForIds(firstPageIds);
-    }
-  }, [loading, allCerts.length]); // Only when loading finishes or cert count changes
 
   const handleOpenWizard = (cert) => {
         setActiveCert(cert);
@@ -358,24 +326,12 @@ function InventoryPage() {
         (c.name && c.name.toLowerCase().includes(lowercasedFilter))
       );
     }
-    // --- Orphan filters (use real-time usageStates if available, fallback to cached) ---
-    if (noProfilesOnly) {
-      dataToFilter = dataToFilter.filter(c => {
-        const state = usageStates[c.id] || c.usage_state;
-        return state === 'no-profiles';
-      });
-    } else if (orphanOnly) {
-      dataToFilter = dataToFilter.filter(c => {
-        const state = usageStates[c.id] || c.usage_state;
-        return ['no-profiles','profiles-no-vips'].includes(state);
-      });
-    }
     // --- Favorites filter ---
     if (showFavoritesOnly) {
       dataToFilter = dataToFilter.filter(c => favorites.includes(c.id));
     }
     return dataToFilter;
-  }, [allCerts, statusFilter, searchTerm, orphanOnly, noProfilesOnly, usageStates, showFavoritesOnly, favorites]);
+  }, [allCerts, statusFilter, searchTerm, showFavoritesOnly, favorites]);
 
   // Export selected certificates (must be after displayCerts is defined)
   const exportSelectedCerts = useCallback(() => {
@@ -383,15 +339,14 @@ function InventoryPage() {
     if (selectedCerts.length === 0) return;
     
     const csvContent = [
-      ['ID', 'Common Name', 'Certificate Name', 'F5 Device', 'Expiration Date', 'Days Left', 'Usage State'].join(','),
+      ['ID', 'Common Name', 'Certificate Name', 'F5 Device', 'Expiration Date', 'Days Left'].join(','),
       ...selectedCerts.map(c => [
         c.id,
         `"${c.common_name || ''}"`,
         `"${c.name || ''}"`,
         `"${c.f5_device_hostname || ''}"`,
         c.expiration_date || '',
-        c.days_remaining ?? '',
-        usageStates[c.id] || c.usage_state || ''
+        c.days_remaining ?? ''
       ].join(','))
     ].join('\n');
     
@@ -402,7 +357,7 @@ function InventoryPage() {
     link.click();
     
     setNotification({ open: true, message: `Exported ${selectedCerts.length} certificates`, severity: 'success' });
-  }, [displayCerts, selectedIds, usageStates]);
+  }, [displayCerts, selectedIds]);
 
   // Open certificate detail drawer
   const handleOpenDetailDrawer = useCallback((cert) => {
@@ -530,15 +485,15 @@ function InventoryPage() {
             label="Total Certificates"
             value={stats.total}
             color="#6366f1"
-            onClick={() => { setStatusFilter(null); setOrphanOnly(false); setNoProfilesOnly(false); }}
-            active={!statusFilter && !orphanOnly && !noProfilesOnly}
+            onClick={() => { setStatusFilter(null); }}
+            active={!statusFilter}
           />
           <StatCard
             icon={<CheckCircleOutlineIcon />}
             label="Healthy"
             value={stats.healthy}
             color="#10b981"
-            onClick={() => { setStatusFilter('healthy'); setOrphanOnly(false); setNoProfilesOnly(false); }}
+            onClick={() => { setStatusFilter('healthy'); }}
             active={statusFilter === 'healthy'}
           />
           <StatCard
@@ -546,7 +501,7 @@ function InventoryPage() {
             label="Expiring Soon"
             value={stats.expiring}
             color="#f59e0b"
-            onClick={() => { setStatusFilter('warning'); setOrphanOnly(false); setNoProfilesOnly(false); }}
+            onClick={() => { setStatusFilter('warning'); }}
             active={statusFilter === 'warning'}
           />
           <StatCard
@@ -554,16 +509,8 @@ function InventoryPage() {
             label="Expired"
             value={stats.expired}
             color="#ef4444"
-            onClick={() => { setStatusFilter('expired'); setOrphanOnly(false); setNoProfilesOnly(false); }}
+            onClick={() => { setStatusFilter('expired'); }}
             active={statusFilter === 'expired'}
-          />
-          <StatCard
-            icon={<LinkOffIcon />}
-            label="Orphans"
-            value={stats.orphans}
-            color="#8b5cf6"
-            onClick={() => { setOrphanOnly(true); setStatusFilter(null); setNoProfilesOnly(false); }}
-            active={orphanOnly}
           />
         </Box>
 
@@ -709,7 +656,6 @@ function InventoryPage() {
             certificates={displayCerts} 
             disabled={loading}
             filenamePrefix="cmt_certificates"
-            usageStates={usageStates}
           />
         </Box>
 
@@ -725,24 +671,6 @@ function InventoryPage() {
                 label={`Status: ${statusFilter}`}
                 onDelete={() => setStatusFilter(null)}
                 color="primary"
-                variant="outlined"
-              />
-            )}
-            {orphanOnly && (
-              <Chip
-                size="small"
-                label="Orphans only"
-                onDelete={() => setOrphanOnly(false)}
-                color="warning"
-                variant="outlined"
-              />
-            )}
-            {noProfilesOnly && (
-              <Chip
-                size="small"
-                label="No profiles only"
-                onDelete={() => setNoProfilesOnly(false)}
-                color="success"
                 variant="outlined"
               />
             )}
@@ -801,13 +729,6 @@ function InventoryPage() {
             onShowUsage={handleShowUsage}
             onDelete={handleDeleteRequest}
             activeActionCertId={activeActionCertId}
-            // Real-time usage state props
-            usageStates={usageStates}
-            onRefreshUsage={() => {
-              const ids = displayCerts.map(c => c.id);
-              loadUsageForIds(ids);
-            }}
-            usageLoading={usageLoading}
             // Bulk selection props
             onSelectionChange={setSelectedIds}
             clearSelectionKey={clearSelectionKey}
@@ -825,7 +746,6 @@ function InventoryPage() {
             gap: 2 
           }}>
             {displayCerts.map((cert) => {
-              const usageState = usageStates[cert.id] || cert.usage_state;
               const daysRemaining = cert.days_remaining;
               const statusColor = daysRemaining <= 0 ? '#ef4444' : daysRemaining <= 30 ? '#f59e0b' : '#10b981';
               const isFav = isFavorite(cert.id);
@@ -902,25 +822,6 @@ function InventoryPage() {
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Status
-                    </Typography>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        fontWeight: 500,
-                        color: usageState === 'in-use' ? '#059669' :
-                               usageState === 'no-profiles' ? '#dc2626' :
-                               '#6b7280',
-                      }}
-                    >
-                      {usageState === 'in-use' ? 'In Use' : 
-                       usageState === 'no-profiles' ? 'Unused' : 
-                       usageState === 'profiles-no-vips' ? 'Orphan' : '—'}
-                    </Typography>
-                  </Box>
-
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="caption" color="text.secondary">
                       Device
@@ -968,24 +869,6 @@ function InventoryPage() {
               <MenuItem value="healthy">Healthy (&gt;30 days)</MenuItem>
               <MenuItem value="warning">Expiring Soon (1-30 days)</MenuItem>
               <MenuItem value="expired">Expired</MenuItem>
-            </Select>
-          </FormControl>
-
-          {/* Usage Filter */}
-          <FormControl fullWidth size="small">
-            <InputLabel>Usage State</InputLabel>
-            <Select
-              value={orphanOnly ? 'orphans' : noProfilesOnly ? 'no-profiles' : ''}
-              label="Usage State"
-              onChange={(e) => {
-                const val = e.target.value;
-                setOrphanOnly(val === 'orphans');
-                setNoProfilesOnly(val === 'no-profiles');
-              }}
-            >
-              <MenuItem value="">All Usage States</MenuItem>
-              <MenuItem value="orphans">Orphans (unused)</MenuItem>
-              <MenuItem value="no-profiles">No Profiles</MenuItem>
             </Select>
           </FormControl>
 
@@ -1081,7 +964,6 @@ function InventoryPage() {
         certificate={selectedCertForDetail}
         onShowUsage={handleShowUsageFromDrawer}
         onRenew={handleRenewFromDrawer}
-        usageState={selectedCertForDetail ? (usageStates[selectedCertForDetail.id] || selectedCertForDetail.usage_state) : null}
         isFavorite={selectedCertForDetail ? isFavorite(selectedCertForDetail.id) : false}
         onToggleFavorite={() => selectedCertForDetail && toggleFavorite(selectedCertForDetail.id)}
       />

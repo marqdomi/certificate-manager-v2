@@ -226,23 +226,6 @@ export async function refreshDeviceCerts(deviceId, { fast = true } = {}) {
   }
 }
 
-// ---------------- VIPs helpers ----------------
-export async function getVipsOverview() {
-  const { data } = await apiClient.get('/vips/overview')
-  return data
-}
-
-export async function searchVips(query, { limit = 200, deviceId, enabled } = {}) {
-  const params = {}
-  const q = (query ?? '').trim()
-  if (q) params.q = q
-  if (limit != null) params.limit = limit
-  if (deviceId !== undefined && deviceId !== null && `${deviceId}` !== '') params.device_id = Number(deviceId)
-  if (typeof enabled === 'boolean') params.enabled = enabled
-  const { data } = await apiClient.get('/vips/search', { params })
-  return data
-}
-
 export async function getImpactPreview(deviceId, certName) {
   const params = { device_id: deviceId, cert_name: certName };
   const { data } = await apiClient.get('/f5/cache/impact-preview', { params });
@@ -251,15 +234,5 @@ export async function getImpactPreview(deviceId, certName) {
 
 export async function deleteCertificate(id) {
   const { data } = await apiClient.delete(`/certificates/${id}`)
-  return data
-}
-
-/**
- * Batch fetch real-time usage states for multiple certificates.
- * @param {number[]} certIds - Array of certificate IDs
- * @returns {Promise<{usage_states: Object, errors: Object|null}>}
- */
-export async function getBatchUsageStates(certIds) {
-  const { data } = await apiClient.post('/certificates/batch-usage', { cert_ids: certIds })
   return data
 }

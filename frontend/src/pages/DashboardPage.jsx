@@ -54,14 +54,6 @@ function DashboardPage() {
           .slice(0, 10)
           .map(([name, count]) => ({ name, count }));
 
-        // Usage state distribution (if available)
-        const usageStates = {
-          active: certs.filter(c => c?.usage_state === 'active').length,
-          noProfiles: certs.filter(c => c?.usage_state === 'no-profiles').length,
-          profilesNoVips: certs.filter(c => c?.usage_state === 'profiles-no-vips').length,
-          unknown: certs.filter(c => !c?.usage_state || c?.usage_state === 'unknown').length,
-        };
-
         // Device summary
         const deviceStats = {
           total: devices.length,
@@ -76,7 +68,6 @@ function DashboardPage() {
           expired,
           expirationBands,
           topDevices,
-          usageStates,
           deviceStats,
           certificates: certs, // For renewal history calculation
         });
