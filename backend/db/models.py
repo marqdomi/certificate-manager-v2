@@ -138,7 +138,7 @@ class RenewalRequest(Base):
     key_size = Column(Integer, default=2048)
     
     # Status tracking
-    status = Column(Enum(RenewalStatus), nullable=False, default=RenewalStatus.CSR_GENERATED)
+    status = Column(Enum(RenewalStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=RenewalStatus.CSR_GENERATED)
     
     # CSR and Key storage
     csr_content = Column(Text, nullable=False)
