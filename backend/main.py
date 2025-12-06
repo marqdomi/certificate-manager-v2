@@ -27,6 +27,7 @@ from api.endpoints import (
     websocket,
     discovery,
     csr,
+    audit,
 )
 
 app = FastAPI(
@@ -79,6 +80,7 @@ app.include_router(deployments.router,  prefix="/api/v1/deployments",  tags=["De
 app.include_router(websocket.router,    prefix="/api/v1",              tags=["WebSocket"])
 app.include_router(discovery.router,    prefix="/api/v1",              tags=["Discovery"])
 app.include_router(csr.router,          prefix="/api/v1",              tags=["CSR Generator"])
+app.include_router(audit.router,        prefix="/api/v1",              tags=["Audit Log"])
 
 # Optional: hashing self-test at startup to catch env/package drift early
 try:

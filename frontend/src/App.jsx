@@ -15,6 +15,7 @@ import PfxPage from './pages/PfxPage';
 import CsrGeneratorPage from './pages/CsrGeneratorPage';
 import DeployCenterPage from './pages/DeployCenterPage';
 import DiscoveryPage from './pages/DiscoveryPage';
+import AuditLogPage from './pages/AuditLogPage';
 
 function App() {
   const basename = import.meta.env.VITE_ROUTER_BASENAME || '/';
@@ -40,6 +41,7 @@ function App() {
                   <Route path="/pfx-generator" element={<PfxPage />} />
                   <Route path="/generate-csr" element={<CsrGeneratorPage />} />
                   <Route path="/deploy" element={<DeployCenterPage />} />
+                  <Route path="/audit-log" element={<AuditLogPage />} />
                   {/* Fallback */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>

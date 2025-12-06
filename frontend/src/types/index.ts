@@ -3,3 +3,4 @@
 
 export * from './device';
 export * from './csr';
+export * from './audit';

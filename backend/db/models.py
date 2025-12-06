@@ -16,6 +16,22 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from .base import Base 
 
+
+# -------------------------------------------------------------------
+# ENUMS
+# -------------------------------------------------------------------
+class CertificateRenewalStatus(str, enum.Enum):
+    """Status of a certificate in the renewal lifecycle."""
+    NONE = "none"                   # No renewal in progress
+    EXPIRING = "expiring"           # Detected as expiring soon
+    CSR_CREATED = "csr_created"     # CSR has been generated
+    PENDING_CA = "pending_ca"       # Submitted to CA, awaiting signature
+    CERT_READY = "cert_ready"       # Certificate received from CA
+    DEPLOYED = "deployed"           # Deployed to F5
+    VERIFIED = "verified"           # Verified working in production
+    FAILED = "failed"               # Renewal failed at some stage
+
+
 # -------------------------------------------------------------------
 # MODELO Device (Ahora es el "padre")
 # -------------------------------------------------------------------
@@ -74,6 +90,17 @@ class Certificate(Base):
     
     partition = Column(String, default="Common")
     last_scanned = Column(DateTime, default=datetime.utcnow, nullable=True)
+    
+    # --- RENEWAL TRACKING (v2.5) ---
+    renewal_status = Column(
+        Enum(CertificateRenewalStatus), 
+        nullable=False, 
+        default=CertificateRenewalStatus.NONE,
+        index=True
+    )
+    renewal_request_id = Column(Integer, ForeignKey("renewal_requests.id", ondelete="SET NULL"), nullable=True)
+    renewal_started_at = Column(DateTime, nullable=True)
+    renewal_notes = Column(Text, nullable=True)  # Free-form notes about renewal progress
 
     __table_args__ = (UniqueConstraint('device_id', 'name', name='uq_cert_device_name'),)
 
@@ -156,7 +183,95 @@ class User(Base):
 
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role.value}')>"
+
+
+# -------------------------------------------------------------------
+# AUDIT LOG - v2.5 (December 2025)
+# -------------------------------------------------------------------
+class AuditAction(str, enum.Enum):
+    """Types of auditable actions."""
+    # Certificate operations
+    CERT_DEPLOYED = "cert_deployed"
+    CERT_RENEWED = "cert_renewed"
+    CERT_DELETED = "cert_deleted"
+    CERT_UPLOADED = "cert_uploaded"
     
+    # CSR operations
+    CSR_GENERATED = "csr_generated"
+    CSR_COMPLETED = "csr_completed"
+    CSR_DELETED = "csr_deleted"
+    
+    # Device operations
+    DEVICE_ADDED = "device_added"
+    DEVICE_MODIFIED = "device_modified"
+    DEVICE_DELETED = "device_deleted"
+    DEVICE_SCANNED = "device_scanned"
+    
+    # SSL Profile operations
+    PROFILE_CREATED = "profile_created"
+    PROFILE_MODIFIED = "profile_modified"
+    PROFILE_DELETED = "profile_deleted"
+    
+    # User operations
+    USER_LOGIN = "user_login"
+    USER_LOGOUT = "user_logout"
+    USER_CREATED = "user_created"
+    USER_MODIFIED = "user_modified"
+
+
+class AuditResult(str, enum.Enum):
+    """Result of an audited operation."""
+    SUCCESS = "success"
+    FAILURE = "failure"
+    PARTIAL = "partial"  # Some operations succeeded, some failed
+
+
+class AuditLog(Base):
+    """
+    Audit log for tracking all significant operations in CMT.
+    Provides compliance-ready traceability for certificate management.
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # When
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Who
+    username = Column(String, nullable=True, index=True)  # Null for system operations
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # What
+    action = Column(Enum(AuditAction), nullable=False, index=True)
+    result = Column(Enum(AuditResult), nullable=False, default=AuditResult.SUCCESS)
+    
+    # On what
+    resource_type = Column(String, nullable=False)  # 'certificate', 'device', 'profile', etc.
+    resource_id = Column(Integer, nullable=True)     # ID of the affected resource
+    resource_name = Column(String, nullable=True)    # Human-readable name
+    
+    # Where (for F5 operations)
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="SET NULL"), nullable=True)
+    device_hostname = Column(String, nullable=True)  # Denormalized for queries
+    
+    # Details
+    description = Column(Text, nullable=True)        # Human-readable description
+    details = Column(Text, nullable=True)            # JSON with additional details
+    error_message = Column(Text, nullable=True)      # Error details if failed
+    
+    # Request context
+    ip_address = Column(String, nullable=True)       # Client IP
+    user_agent = Column(String, nullable=True)       # Client user agent
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    device = relationship("Device", foreign_keys=[device_id])
+
+    def __repr__(self):
+        return f"<AuditLog(id={self.id}, action='{self.action.value}', user='{self.username}')>"
+    
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ⚠️ DEPRECATED CACHE TABLES - v2.5 (December 2025)
 # ═══════════════════════════════════════════════════════════════════════════════
