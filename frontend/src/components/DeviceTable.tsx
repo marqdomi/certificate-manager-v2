@@ -264,7 +264,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: '',
       width: 50,
       sortable: false,
-      resizable: false,
+      
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -294,7 +294,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'Device',
       flex: 1.2,
       minWidth: 250,
-      resizable: true,
+      
       renderCell: (params) => {
         const isPrimary = params.row?.is_primary_preferred === true;
         const hasCredentials = !!params.row?.username;
@@ -334,7 +334,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'Site',
       flex: 0.4,
       minWidth: 80,
-      resizable: true,
+      
       renderCell: (params) => (
         <Typography variant="body2" color="text.secondary">
           {params.value || '—'}
@@ -346,7 +346,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'Cluster',
       flex: 0.6,
       minWidth: 120,
-      resizable: true,
+      
       renderCell: (params) => {
         const cluster = params.value;
         if (!cluster) return <Typography color="text.disabled">—</Typography>;
@@ -371,7 +371,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'Version',
       flex: 0.4,
       minWidth: 90,
-      resizable: true,
+      
       renderCell: (params) => (
         <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
           {params.value || '—'}
@@ -383,7 +383,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'HA / Sync',
       flex: 0.9,
       minWidth: 180,
-      resizable: true,
+      
       sortable: false,
       renderCell: (params) => (
         <HASyncCell
@@ -398,7 +398,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'Last Scan',
       flex: 0.6,
       minWidth: 130,
-      resizable: true,
+      
       renderCell: (params) => {
         const raw = params?.value;
         if (!raw) return <Typography color="text.disabled">Never</Typography>;
@@ -419,7 +419,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       headerName: 'Health',
       flex: 0.35,
       minWidth: 70,
-      resizable: true,
+      
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -438,7 +438,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       sortable: false,
       flex: 0.5,
       minWidth: 100,
-      resizable: false,
+      
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {

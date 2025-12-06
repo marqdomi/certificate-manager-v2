@@ -11122,3 +11122,1217 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='10.132.3.253', port=443)
 2025-12-06 00:53:54,496 - cmt.main - INFO - <module>:86 - Password hashing self-test passed
 2025-12-06 00:54:42,273 - cmt.main - INFO - <module>:86 - Password hashing self-test passed
 2025-12-06 00:54:43,653 - cmt.main - INFO - <module>:86 - Password hashing self-test passed
+2025-12-06 01:28:07,947 - cmt.main - INFO - <module>:88 - Password hashing self-test passed
+2025-12-06 01:28:07,954 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:07,955 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:07,955 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:07,955 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:07,976 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:07,976 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:07,976 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:07,978 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:07,978 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:07,978 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:08,089 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:08,089 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:08,242 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:08,262 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:08,263 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:08,263 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:08,550 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:08,598 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:08,963 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,198 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,236 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,240 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,268 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,268 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,268 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,276 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,282 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,282 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,283 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,296 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,376 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,381 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,408 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,473 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,572 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,572 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,572 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,607 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,607 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,607 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,608 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,612 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,612 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,612 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,613 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,613 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,633 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,633 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,633 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,637 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,637 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,637 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,638 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,638 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,639 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,641 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,641 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,641 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,644 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,644 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,644 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,644 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,644 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,645 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,645 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,645 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,645 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,646 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,646 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,646 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,646 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,646 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,646 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,647 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,647 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,647 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,647 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,647 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,647 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,648 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,648 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,648 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,648 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,648 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,649 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,650 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,650 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,650 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,650 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,650 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,650 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,651 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,651 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,651 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,651 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,651 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,651 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,652 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,652 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,652 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,652 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,652 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,652 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,653 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,653 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,653 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,653 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,653 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,653 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,654 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,654 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,654 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,654 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,654 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,654 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,655 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,656 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,656 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,656 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,656 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,656 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,656 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,657 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,657 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,657 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,657 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,658 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,658 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,658 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,658 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,658 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,658 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,659 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,660 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,661 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,661 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,661 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,661 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,661 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,661 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,662 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,662 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,662 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,662 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,662 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,662 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,663 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,664 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,665 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,666 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,666 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,666 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,666 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,666 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,666 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,667 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,668 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,668 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,668 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,668 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,668 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,668 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,669 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,669 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,669 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,669 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,669 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,669 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,670 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,670 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,670 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,670 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,670 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,670 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,671 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,671 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,671 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,671 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,671 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,671 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,672 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,672 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,672 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,672 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,672 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,673 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,673 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,673 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,673 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,674 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,675 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,675 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,675 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,675 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,675 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,676 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,676 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,676 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,677 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,677 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,677 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,678 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,678 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,678 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,678 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,678 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,678 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,679 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,679 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,679 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:09,680 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:09,680 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:09,680 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:12,121 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:12,121 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:13,365 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:16,120 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:16,121 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:16,610 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:20,120 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:20,121 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:20,183 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:24,123 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:24,124 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:24,142 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:28,121 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:28,122 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:28,133 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:32,120 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:32,121 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:32,131 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:32,257 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:32,257 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:34,848 - cmt.main - INFO - <module>:88 - Password hashing self-test passed
+2025-12-06 01:28:36,127 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:40,141 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-06 01:28:40,145 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:40,146 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-06 01:28:43,146 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:43,146 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:43,235 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:46,160 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-06 01:28:46,167 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:46,170 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-06 01:28:47,731 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:47,740 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 01:28:48,997 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 1
+2025-12-06 01:28:49,017 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-06 01:28:49,076 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:49,084 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-06 01:28:52,079 - cmt.websocket - INFO - connect:33 - WebSocket connected. Total connections: 2
+2025-12-06 01:28:52,091 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:52,092 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 1
+2025-12-06 01:28:52,848 - cmt.websocket - INFO - websocket_devices:127 - WebSocket client disconnected normally
+2025-12-06 01:28:52,853 - cmt.websocket - INFO - disconnect:39 - WebSocket disconnected. Total connections: 0
+2025-12-06 03:00:03,020 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.87
+2025-12-06 03:00:03,030 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device USDC01-LB02-GRPUR-SEC.solera.farm (10.119.0.87)
+2025-12-06 03:00:03,076 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.85
+2025-12-06 03:00:03,080 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-002-white.network.axadmin.net (10.119.8.85)
+2025-12-06 03:00:03,101 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.89
+2025-12-06 03:00:03,104 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device USDC01-LB02-BLUENP-SEC.solera.farm (10.119.0.89)
+2025-12-06 03:00:03,194 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.13
+2025-12-06 03:00:03,200 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-prd-01.mgmt.omnitracs.com (192.168.13.13)
+2025-12-06 03:00:03,455 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.91
+2025-12-06 03:00:03,455 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-test.network.axadmin.net (10.119.16.91)
+2025-12-06 03:00:03,464 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for USDC01-LB02-GRPUR-SEC.solera.farm: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:03,536 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.83
+2025-12-06 03:00:03,540 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-black.network.axadmin.net (10.119.16.83)
+2025-12-06 03:00:03,574 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/tm/sys/
+Text: '{"code":404,"message":"Public URI path not registered: /tm/sys/","referer":"10.119.1.7","restOperationId":51239142,"kind":":resterrorresponse"}'. Retrying in 2.0s...
+2025-12-06 03:00:03,620 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for usdc02-fab1-lb-002-white.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:03,666 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.76
+2025-12-06 03:00:03,670 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-vcmp.network.axadmin.net (10.119.16.76)
+2025-12-06 03:00:03,768 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.88
+2025-12-06 03:00:03,772 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-001-rell-npd.solera.farm (10.119.8.88)
+2025-12-06 03:00:04,286 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.84
+2025-12-06 03:00:04,287 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-white.network.axadmin.net (10.119.24.84)
+2025-12-06 03:00:04,344 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for usdc02-fab1-lb-001-rell-npd.solera.farm: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:04,380 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for eudc01-lb-002-black.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:05,699 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for USDC01-LB02-BLUENP-SEC.solera.farm. Certs - New: 0, Updated: 22. Facts refreshed: 0 field(s).
+2025-12-06 03:00:05,836 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-test.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:00:06,036 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-vcmp.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:00:07,287 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.88
+2025-12-06 03:00:07,287 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-nonprod.network.axadmin.net (10.119.16.88)
+2025-12-06 03:00:07,378 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.82
+2025-12-06 03:00:07,379 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-black.network.axadmin.net (10.119.16.82)
+2025-12-06 03:00:07,458 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/tm/sys/
+Text: '{"code":404,"message":"Public URI path not registered: /tm/sys/","referer":"10.119.1.7","restOperationId":51239232,"kind":":resterrorresponse"}'. Retrying in 4.0s...
+2025-12-06 03:00:07,464 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.80
+2025-12-06 03:00:07,465 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-blue.network.axadmin.net (10.119.16.80)
+2025-12-06 03:00:07,513 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for USDC01-LB02-GRPUR-SEC.solera.farm. Certs - New: 43, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:07,664 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-prd-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 33. Facts refreshed: 0 field(s).
+2025-12-06 03:00:08,127 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for eudc01-lb-001-nonprod.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:08,177 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for eudc01-lb-001-black.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:09,187 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.90
+2025-12-06 03:00:09,188 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-test.network.axadmin.net (10.119.16.90)
+2025-12-06 03:00:09,323 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.84
+2025-12-06 03:00:09,323 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-white.network.axadmin.net (10.119.16.84)
+2025-12-06 03:00:09,584 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-002-white.network.axadmin.net. Certs - New: 52, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:10,671 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.88
+2025-12-06 03:00:10,672 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device USDC01-LB01-BLUENP-PRI.solera.farm (10.119.0.88)
+2025-12-06 03:00:11,165 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-test.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:00:12,686 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/tm/sys/
+Text: '{"code":404,"message":"Public URI path not registered: /tm/sys/","referer":"10.119.1.7","restOperationId":51239371,"kind":":resterrorresponse"}'
+2025-12-06 03:00:12,781 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.90
+2025-12-06 03:00:12,816 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-test.network.axadmin.net (10.119.24.90)
+2025-12-06 03:00:12,854 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for USDC01-LB02-BLUE-SEC.network.axadmin.net: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/tm/sys/
+Text: '{"code":404,"message":"Public URI path not registered: /tm/sys/","referer":"10.119.1.7","restOperationId":51239371,"kind":":resterrorresponse"}'
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 295, in wrapper
+    raise iControlUnexpectedHTTPError(error_message, response=response)
+icontrol.exceptions.iControlUnexpectedHTTPError: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/tm/sys/
+Text: '{"code":404,"message":"Public URI path not registered: /tm/sys/","referer":"10.119.1.7","restOperationId":51239371,"kind":":resterrorresponse"}'
+
+2025-12-06 03:00:13,248 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-001-rell-npd.solera.farm. Certs - New: 69, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:13,475 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for USDC01-LB01-BLUENP-PRI.solera.farm. Certs - New: 0, Updated: 22. Facts refreshed: 0 field(s).
+2025-12-06 03:00:13,845 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.91
+2025-12-06 03:00:13,846 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-002-black-nonprod.network.axadmin.net (10.119.0.91)
+2025-12-06 03:00:14,813 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-test.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:00:14,920 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.86
+2025-12-06 03:00:14,922 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-greenpurple.network.axadmin.net (10.119.24.86)
+2025-12-06 03:00:15,125 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.88
+2025-12-06 03:00:15,126 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-nonprod.network.axadmin.net (10.119.24.88)
+2025-12-06 03:00:15,828 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.84
+2025-12-06 03:00:15,829 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-001-white.network.axadmin.net (10.119.8.84)
+2025-12-06 03:00:16,318 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for usdc02-fab1-lb-001-white.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:21,757 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-002-black-nonprod.network.axadmin.net. Certs - New: 0, Updated: 82. Facts refreshed: 0 field(s).
+2025-12-06 03:00:21,877 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-001-white.network.axadmin.net. Certs - New: 52, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:23,417 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.89
+2025-12-06 03:00:23,418 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-nonprod.network.axadmin.net (10.119.16.89)
+2025-12-06 03:00:23,509 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.82
+2025-12-06 03:00:23,509 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-black.network.axadmin.net (10.119.24.82)
+2025-12-06 03:00:23,533 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-black.network.axadmin.net. Certs - New: 107, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:24,202 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for eudc01-lb-002-nonprod.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:25,106 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.80
+2025-12-06 03:00:25,107 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-blue.network.axadmin.net (10.119.24.80)
+2025-12-06 03:00:26,845 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-black.network.axadmin.net. Certs - New: 107, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:27,797 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.86
+2025-12-06 03:00:27,797 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device USDC01-LB01-GRPUR-PRI.network.axadmin.net (10.119.0.86)
+2025-12-06 03:00:28,229 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for USDC01-LB01-GRPUR-PRI.network.axadmin.net: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:00:28,656 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-blue.network.axadmin.net. Certs - New: 0, Updated: 114. Facts refreshed: 0 field(s).
+2025-12-06 03:00:30,369 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.85
+2025-12-06 03:00:30,369 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-white.network.axadmin.net (10.119.16.85)
+2025-12-06 03:00:30,532 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-nonprod.network.axadmin.net. Certs - New: 128, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:30,762 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-greenpurple.network.axadmin.net. Certs - New: 0, Updated: 79. Facts refreshed: 0 field(s).
+2025-12-06 03:00:31,818 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.90
+2025-12-06 03:00:31,819 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-001-black-nonprod.network.axadmin.net (10.119.0.90)
+2025-12-06 03:00:32,007 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.86
+2025-12-06 03:00:32,007 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-greenpurple.network.axadmin.net (10.119.16.86)
+2025-12-06 03:00:32,192 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for USDC01-LB01-GRPUR-PRI.network.axadmin.net. Certs - New: 43, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:32,248 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-white.network.axadmin.net. Certs - New: 0, Updated: 129. Facts refreshed: 0 field(s).
+2025-12-06 03:00:33,178 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.84
+2025-12-06 03:00:33,178 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-001-white.network.axadmin.net (10.119.0.84)
+2025-12-06 03:00:33,317 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.80
+2025-12-06 03:00:33,318 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device USDC01-LB01-BLUE-PRI.network.axadmin.net (10.119.0.80)
+2025-12-06 03:00:37,322 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-001-white.network.axadmin.net. Certs - New: 0, Updated: 38. Facts refreshed: 0 field(s).
+2025-12-06 03:00:38,311 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.82
+2025-12-06 03:00:38,312 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-001-black.network.axadmin.net (10.119.0.82)
+2025-12-06 03:00:38,913 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for USDC01-LB01-BLUE-PRI.network.axadmin.net. Certs - New: 0, Updated: 54. Facts refreshed: 0 field(s).
+2025-12-06 03:00:39,245 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-greenpurple.network.axadmin.net. Certs - New: 0, Updated: 36. Facts refreshed: 0 field(s).
+2025-12-06 03:00:39,859 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-001-black-nonprod.network.axadmin.net. Certs - New: 0, Updated: 82. Facts refreshed: 0 field(s).
+2025-12-06 03:00:40,034 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.18
+2025-12-06 03:00:40,034 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-f5-xrs-prod-02.mgmt.omnitracs.com (192.168.13.18)
+2025-12-06 03:00:40,370 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.49
+2025-12-06 03:00:40,371 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-intp-02.mgmt.omnitracs.com (192.168.13.49)
+2025-12-06 03:00:41,003 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.12
+2025-12-06 03:00:41,003 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-tst-01.mgmt.omnitracs.com (192.168.13.12)
+2025-12-06 03:00:42,761 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-f5-xrs-prod-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 18. Facts refreshed: 0 field(s).
+2025-12-06 03:00:43,708 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.100
+2025-12-06 03:00:43,708 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-pem-01.mgmt.omnitracs.com (192.168.13.100)
+2025-12-06 03:00:43,743 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-001-black.network.axadmin.net. Certs - New: 0, Updated: 56. Facts refreshed: 0 field(s).
+2025-12-06 03:00:44,766 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-intp-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 31. Facts refreshed: 0 field(s).
+2025-12-06 03:00:44,822 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.101
+2025-12-06 03:00:44,822 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-pem-02.mgmt.omnitracs.com (192.168.13.101)
+2025-12-06 03:00:44,936 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-pem-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:00:45,604 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-tst-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 35. Facts refreshed: 0 field(s).
+2025-12-06 03:00:45,709 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.35
+2025-12-06 03:00:45,709 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-apm-dev-01.mgmt.omnitracs.com (192.168.13.35)
+2025-12-06 03:00:46,055 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-pem-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:00:46,125 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.184
+2025-12-06 03:00:46,125 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-internal-acpt-02.mgmt.omnitracs.com (192.168.52.184)
+2025-12-06 03:00:46,562 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.15
+2025-12-06 03:00:46,562 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-prd-02.mgmt.omnitracs.com (192.168.13.15)
+2025-12-06 03:00:46,601 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-nonprod.network.axadmin.net. Certs - New: 128, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:00:46,833 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-apm-dev-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:00:47,108 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.17
+2025-12-06 03:00:47,109 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-f5-xrs-prod-01.mgmt.omnitracs.com (192.168.13.17)
+2025-12-06 03:00:47,648 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.185
+2025-12-06 03:00:47,649 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-sag-dev-01.mgmt.omnitracs.com (192.168.52.185)
+2025-12-06 03:00:47,878 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-internal-acpt-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 8. Facts refreshed: 0 field(s).
+2025-12-06 03:00:47,887 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.183
+2025-12-06 03:00:47,888 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-internal-acpt-01.mgmt.omnitracs.com (192.168.52.183)
+2025-12-06 03:00:48,883 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.187
+2025-12-06 03:00:48,884 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-test-pcrf-01.mgmt.omnitracs.com (192.168.52.187)
+2025-12-06 03:00:49,373 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-nonprod.network.axadmin.net. Certs - New: 0, Updated: 178. Facts refreshed: 0 field(s).
+2025-12-06 03:00:49,597 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-internal-acpt-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 8. Facts refreshed: 0 field(s).
+2025-12-06 03:00:49,809 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-f5-xrs-prod-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 18. Facts refreshed: 0 field(s).
+2025-12-06 03:00:50,114 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-test-pcrf-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:00:50,345 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.14
+2025-12-06 03:00:50,346 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-acpt-01.mgmt.omnitracs.com (192.168.13.14)
+2025-12-06 03:00:50,708 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.53
+2025-12-06 03:00:50,711 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-f5-xrs-int-03.mgmt.omnitracs.com (192.168.13.53)
+2025-12-06 03:00:50,944 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-sag-dev-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 21. Facts refreshed: 0 field(s).
+2025-12-06 03:00:51,029 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-prd-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 33. Facts refreshed: 0 field(s).
+2025-12-06 03:00:51,057 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.186
+2025-12-06 03:00:51,057 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-sag-test-01.mgmt.omnitracs.com (192.168.52.186)
+2025-12-06 03:00:51,178 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.54
+2025-12-06 03:00:51,178 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-f5-xrs-int-04.mgmt.omnitracs.com (192.168.13.54)
+2025-12-06 03:00:51,834 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-f5-xrs-int-03.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:00:52,290 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-f5-xrs-int-04.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:00:52,648 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.81
+2025-12-06 03:00:52,648 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-blue.network.axadmin.net (10.119.16.81)
+2025-12-06 03:00:52,744 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.87
+2025-12-06 03:00:52,744 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-greenpurple.network.axadmin.net (10.119.24.87)
+2025-12-06 03:00:53,159 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.82
+2025-12-06 03:00:53,169 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-001-black.network.axadmin.net (10.119.8.82)
+2025-12-06 03:00:53,620 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-white.network.axadmin.net. Certs - New: 0, Updated: 129. Facts refreshed: 0 field(s).
+2025-12-06 03:00:53,781 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.85
+2025-12-06 03:00:53,782 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-white.network.axadmin.net (10.119.24.85)
+2025-12-06 03:00:54,536 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.83
+2025-12-06 03:00:54,537 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device USDC01-LB02-BLACK-SEC.solera.farm (10.119.0.83)
+2025-12-06 03:00:55,746 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-acpt-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 40. Facts refreshed: 0 field(s).
+2025-12-06 03:00:56,796 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.87
+2025-12-06 03:00:56,797 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-002-grpur.network.axadmin.net (10.119.8.87)
+2025-12-06 03:00:57,472 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-sag-test-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 45. Facts refreshed: 0 field(s).
+2025-12-06 03:00:58,635 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.81
+2025-12-06 03:00:58,636 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-002-blue.network.axadmin.net (10.119.8.81)
+2025-12-06 03:00:59,967 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for USDC01-LB02-BLACK-SEC.solera.farm. Certs - New: 0, Updated: 56. Facts refreshed: 0 field(s).
+2025-12-06 03:01:00,921 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.86
+2025-12-06 03:01:00,922 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-001-grpur.network.axadmin.net (10.119.8.86)
+2025-12-06 03:01:01,849 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-002-grpur.network.axadmin.net. Certs - New: 0, Updated: 42. Facts refreshed: 0 field(s).
+2025-12-06 03:01:03,526 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.89
+2025-12-06 03:01:03,528 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-002-rell-npd.solera.farm (10.119.8.89)
+2025-12-06 03:01:04,065 - cmt.f5 - INFO - _perform_scan:361 - Facts updated for usdc02-fab1-lb-002-rell-npd.solera.farm: ['version', 'ha_state', 'sync_status', 'dns_servers']
+2025-12-06 03:01:06,141 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-001-grpur.network.axadmin.net. Certs - New: 0, Updated: 42. Facts refreshed: 0 field(s).
+2025-12-06 03:01:06,934 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-002-blue.network.axadmin.net. Certs - New: 0, Updated: 66. Facts refreshed: 0 field(s).
+2025-12-06 03:01:07,031 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.80
+2025-12-06 03:01:07,032 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-001-blue.network.axadmin.net (10.119.8.80)
+2025-12-06 03:01:07,987 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-001-black.network.axadmin.net. Certs - New: 0, Updated: 133. Facts refreshed: 0 field(s).
+2025-12-06 03:01:08,407 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.91
+2025-12-06 03:01:08,408 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-test.network.axadmin.net (10.119.24.91)
+2025-12-06 03:01:08,786 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-greenpurple.network.axadmin.net. Certs - New: 0, Updated: 79. Facts refreshed: 0 field(s).
+2025-12-06 03:01:08,978 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.83
+2025-12-06 03:01:08,979 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-002-black.network.axadmin.net (10.119.8.83)
+2025-12-06 03:01:09,898 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-black.network.axadmin.net. Certs - New: 0, Updated: 244. Facts refreshed: 0 field(s).
+2025-12-06 03:01:10,438 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-test.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:10,663 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-white.network.axadmin.net. Certs - New: 0, Updated: 335. Facts refreshed: 0 field(s).
+2025-12-06 03:01:10,675 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.87
+2025-12-06 03:01:10,675 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.85
+2025-12-06 03:01:10,676 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-002-greenpurple.network.axadmin.net (10.119.16.87)
+2025-12-06 03:01:10,676 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-002-white.network.axadmin.net (10.119.0.85)
+2025-12-06 03:01:12,131 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.89
+2025-12-06 03:01:12,132 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-nonprod.network.axadmin.net (10.119.24.89)
+2025-12-06 03:01:12,277 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-002-rell-npd.solera.farm. Certs - New: 69, Updated: 0. Facts refreshed: 4 field(s).
+2025-12-06 03:01:12,316 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.83
+2025-12-06 03:01:12,317 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-black.network.axadmin.net (10.119.24.83)
+2025-12-06 03:01:14,378 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.81
+2025-12-06 03:01:14,379 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-blue.network.axadmin.net (10.119.24.81)
+2025-12-06 03:01:15,049 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-blue.network.axadmin.net. Certs - New: 0, Updated: 114. Facts refreshed: 0 field(s).
+2025-12-06 03:01:15,105 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-002-white.network.axadmin.net. Certs - New: 0, Updated: 38. Facts refreshed: 0 field(s).
+2025-12-06 03:01:15,150 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-001-blue.network.axadmin.net. Certs - New: 0, Updated: 66. Facts refreshed: 0 field(s).
+2025-12-06 03:01:16,265 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.20
+2025-12-06 03:01:16,266 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-asm-prd-01.mgmt.omnitracs.com (192.168.13.20)
+2025-12-06 03:01:16,599 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.16
+2025-12-06 03:01:16,601 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-tst-02.mgmt.omnitracs.com (192.168.13.16)
+2025-12-06 03:01:17,752 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-asm-prd-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:01:18,560 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-002-greenpurple.network.axadmin.net. Certs - New: 0, Updated: 36. Facts refreshed: 0 field(s).
+2025-12-06 03:01:19,228 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.181
+2025-12-06 03:01:19,234 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-internal-prod-01.mgmt.omnitracs.com (192.168.52.181)
+2025-12-06 03:01:19,577 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":20184494,"kind":":resterrorresponse"}'. Retrying in 2.0s...
+2025-12-06 03:01:19,661 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.48
+2025-12-06 03:01:19,662 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-intp-01.mgmt.omnitracs.com (192.168.13.48)
+2025-12-06 03:01:20,504 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-blue.network.axadmin.net. Certs - New: 0, Updated: 288. Facts refreshed: 0 field(s).
+2025-12-06 03:01:21,843 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.5
+2025-12-06 03:01:21,844 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-f5-xrs-int-01.mgmt.omnitracs.com (192.168.13.5)
+2025-12-06 03:01:22,478 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-tst-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 35. Facts refreshed: 0 field(s).
+2025-12-06 03:01:23,225 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-f5-xrs-int-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:01:24,379 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.11
+2025-12-06 03:01:24,379 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-sag-dev-01.mgmt.omnitracs.com (192.168.13.11)
+2025-12-06 03:01:24,800 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-intp-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 31. Facts refreshed: 0 field(s).
+2025-12-06 03:01:24,992 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-internal-prod-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 30. Facts refreshed: 0 field(s).
+2025-12-06 03:01:25,954 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.102
+2025-12-06 03:01:25,954 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-pem-api-01.mgmt.omnitracs.com (192.168.13.102)
+2025-12-06 03:01:26,041 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-002-black.network.axadmin.net. Certs - New: 0, Updated: 133. Facts refreshed: 0 field(s).
+2025-12-06 03:01:26,469 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.6
+2025-12-06 03:01:26,469 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-f5-xrs-int-02.mgmt.omnitracs.com (192.168.13.6)
+2025-12-06 03:01:26,674 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-sag-dev-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 9. Facts refreshed: 0 field(s).
+2025-12-06 03:01:27,195 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.13.103
+2025-12-06 03:01:27,196 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device dc1-pem-api-02.mgmt.omnitracs.com (192.168.13.103)
+2025-12-06 03:01:27,425 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":20184816,"kind":":resterrorresponse"}'. Retrying in 4.0s...
+2025-12-06 03:01:27,628 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-pem-api-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:27,946 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-f5-xrs-int-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 4. Facts refreshed: 0 field(s).
+2025-12-06 03:01:28,161 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.51:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":110929873,"kind":":resterrorresponse"}'. Retrying in 2.0s...
+2025-12-06 03:01:28,581 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for dc1-pem-api-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:29,109 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 192.168.52.182
+2025-12-06 03:01:29,110 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device na-oec-02-internal-prod-02.mgmt.omnitracs.com (192.168.52.182)
+2025-12-06 03:01:31,221 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.8:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47699364,"kind":":resterrorresponse"}'. Retrying in 2.0s...
+2025-12-06 03:01:32,239 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.50:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":146711362,"kind":":resterrorresponse"}'. Retrying in 2.0s...
+2025-12-06 03:01:32,981 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.9:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47824014,"kind":":resterrorresponse"}'. Retrying in 2.0s...
+2025-12-06 03:01:33,750 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for na-oec-02-internal-prod-02.mgmt.omnitracs.com. Certs - New: 0, Updated: 30. Facts refreshed: 0 field(s).
+2025-12-06 03:01:35,050 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":20185049,"kind":":resterrorresponse"}'
+2025-12-06 03:01:35,062 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for ip-10-32-0-115.monitor.smartdrivesystems.com: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":20185049,"kind":":resterrorresponse"}'
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 159, in get_new_token
+    raise iControlUnexpectedHTTPError(error_message,
+icontrol.exceptions.iControlUnexpectedHTTPError: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":20185049,"kind":":resterrorresponse"}'
+
+2025-12-06 03:01:35,393 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.16.75
+2025-12-06 03:01:35,394 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc01-lb-001-vcmp.network.axadmin.net (10.119.16.75)
+2025-12-06 03:01:35,463 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.51:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":110930055,"kind":":resterrorresponse"}'. Retrying in 4.0s...
+2025-12-06 03:01:36,667 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.75
+2025-12-06 03:01:36,668 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-001-vcmp.network.axadmin.net (10.119.24.75)
+2025-12-06 03:01:37,422 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc01-lb-001-vcmp.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:38,089 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.8:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47699610,"kind":":resterrorresponse"}'. Retrying in 4.0s...
+2025-12-06 03:01:38,448 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.75
+2025-12-06 03:01:38,449 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-001.network.axadmin.net (10.119.8.75)
+2025-12-06 03:01:38,735 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.50:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":146711504,"kind":":resterrorresponse"}'. Retrying in 4.0s...
+2025-12-06 03:01:38,798 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-001-vcmp.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:39,244 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.9:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47824300,"kind":":resterrorresponse"}'. Retrying in 4.0s...
+2025-12-06 03:01:39,647 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-001.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:39,738 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.78
+2025-12-06 03:01:39,738 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-004.network.axadmin.net (10.119.0.78)
+2025-12-06 03:01:40,414 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.77
+2025-12-06 03:01:40,414 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-003.network.axadmin.net (10.119.0.77)
+2025-12-06 03:01:43,249 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.51:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":110930318,"kind":":resterrorresponse"}'
+2025-12-06 03:01:43,270 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for audc10-fab1-lb-002.network.axadmin.net: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.51:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":110930318,"kind":":resterrorresponse"}'
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 159, in get_new_token
+    raise iControlUnexpectedHTTPError(error_message,
+icontrol.exceptions.iControlUnexpectedHTTPError: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.51:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":110930318,"kind":":resterrorresponse"}'
+
+2025-12-06 03:01:44,865 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.24.76
+2025-12-06 03:01:44,866 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device eudc02-lb-002-vcmp.network.axadmin.net (10.119.24.76)
+2025-12-06 03:01:46,958 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.8:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47700034,"kind":":resterrorresponse"}'
+2025-12-06 03:01:46,972 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for bedc01-fab1-lb-001.network.axadmin.net: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.8:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47700034,"kind":":resterrorresponse"}'
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 159, in get_new_token
+    raise iControlUnexpectedHTTPError(error_message,
+icontrol.exceptions.iControlUnexpectedHTTPError: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.8:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47700034,"kind":":resterrorresponse"}'
+
+2025-12-06 03:01:46,980 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-vcmp.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:47,317 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-nonprod.network.axadmin.net. Certs - New: 0, Updated: 178. Facts refreshed: 0 field(s).
+2025-12-06 03:01:47,874 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.50:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":146711702,"kind":":resterrorresponse"}'
+2025-12-06 03:01:47,885 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for audc10-fab1-lb-001.network.axadmin.net: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.50:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":146711702,"kind":":resterrorresponse"}'
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 159, in get_new_token
+    raise iControlUnexpectedHTTPError(error_message,
+icontrol.exceptions.iControlUnexpectedHTTPError: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.35.50:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.35.8","restOperationId":146711702,"kind":":resterrorresponse"}'
+
+2025-12-06 03:01:48,073 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.9:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47824719,"kind":":resterrorresponse"}'
+2025-12-06 03:01:48,081 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for bedc01-fab1-lb-002.network.axadmin.net: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.9:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47824719,"kind":":resterrorresponse"}'
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 159, in get_new_token
+    raise iControlUnexpectedHTTPError(error_message,
+icontrol.exceptions.iControlUnexpectedHTTPError: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.34.9:443/mgmt/shared/authn/login
+Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.17.4","restOperationId":47824719,"kind":":resterrorresponse"}'
+
+2025-12-06 03:01:48,488 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-004.network.axadmin.net. Certs - New: 0, Updated: 90. Facts refreshed: 0 field(s).
+2025-12-06 03:01:49,022 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-003.network.axadmin.net. Certs - New: 0, Updated: 90. Facts refreshed: 0 field(s).
+2025-12-06 03:01:49,358 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.76
+2025-12-06 03:01:49,359 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-002.network.axadmin.net (10.119.0.76)
+2025-12-06 03:01:49,694 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.36.51
+2025-12-06 03:01:49,695 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device rudc10-lb-002.network.axadmin.net (10.119.36.51)
+2025-12-06 03:01:50,024 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.36.50
+2025-12-06 03:01:50,025 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device rudc10-lb-001.network.axadmin.net (10.119.36.50)
+2025-12-06 03:01:50,069 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='172.20.188.52', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c8d5950>: Failed to establish a new connection: [Errno 113] No route to host')). Retrying in 2.0s...
+2025-12-06 03:01:50,371 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-002.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:51,237 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.0.75
+2025-12-06 03:01:51,238 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc01-fab1-lb-001.network.axadmin.net (10.119.0.75)
+2025-12-06 03:01:52,278 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.37.51
+2025-12-06 03:01:52,279 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device sgdc10-fab1-lb-002.network.axadmin.net (10.119.37.51)
+2025-12-06 03:01:52,292 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc01-fab1-lb-001.network.axadmin.net. Certs - New: 0, Updated: 5. Facts refreshed: 0 field(s).
+2025-12-06 03:01:54,873 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.37.50
+2025-12-06 03:01:54,874 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device sgdc10-fab1-lb-001.network.axadmin.net (10.119.37.50)
+2025-12-06 03:01:55,192 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='172.20.188.52', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c9adad0>: Failed to establish a new connection: [Errno 113] No route to host')). Retrying in 4.0s...
+2025-12-06 03:01:57,200 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for rudc10-lb-002.network.axadmin.net. Certs - New: 0, Updated: 28. Facts refreshed: 0 field(s).
+2025-12-06 03:01:57,600 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for rudc10-lb-001.network.axadmin.net. Certs - New: 0, Updated: 28. Facts refreshed: 0 field(s).
+2025-12-06 03:01:58,472 - cmt.f5 - INFO - _connect_to_f5:336 - Successfully connected to F5: 10.119.8.76
+2025-12-06 03:01:58,473 - cmt.f5 - INFO - _perform_scan:354 - Scanning certificates on F5 device usdc02-fab1-lb-002.network.axadmin.net (10.119.8.76)
+2025-12-06 03:01:58,600 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-white.network.axadmin.net. Certs - New: 0, Updated: 335. Facts refreshed: 0 field(s).
+2025-12-06 03:01:59,322 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for sgdc10-fab1-lb-002.network.axadmin.net. Certs - New: 0, Updated: 19. Facts refreshed: 0 field(s).
+2025-12-06 03:01:59,387 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-black.network.axadmin.net. Certs - New: 0, Updated: 244. Facts refreshed: 0 field(s).
+2025-12-06 03:01:59,751 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for usdc02-fab1-lb-002.network.axadmin.net. Certs - New: 0, Updated: 6. Facts refreshed: 0 field(s).
+2025-12-06 03:02:00,310 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7caabbd0>: Failed to establish a new connection: [Errno 113] No route to host')). Retrying in 2.0s...
+2025-12-06 03:02:02,002 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for sgdc10-fab1-lb-001.network.axadmin.net. Certs - New: 0, Updated: 19. Facts refreshed: 0 field(s).
+2025-12-06 03:02:02,299 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='172.20.188.52', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff80f0ed50>: Failed to establish a new connection: [Errno 113] No route to host'))
+2025-12-06 03:02:02,313 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for axrudc10lb150.network.axadmin.net: HTTPSConnectionPool(host='172.20.188.52', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff80f0ed50>: Failed to establish a new connection: [Errno 113] No route to host'))
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 174, in _new_conn
+    conn = connection.create_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/connection.py", line 95, in create_connection
+    raise err
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/connection.py", line 85, in create_connection
+    sock.connect(sa)
+OSError: [Errno 113] No route to host
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 715, in urlopen
+    httplib_response = self._make_request(
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 404, in _make_request
+    self._validate_conn(conn)
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1058, in _validate_conn
+    conn.connect()
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 363, in connect
+    self.sock = conn = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 186, in _new_conn
+    raise NewConnectionError(
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPSConnection object at 0xffff80f0ed50>: Failed to establish a new connection: [Errno 113] No route to host
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 486, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 799, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='172.20.188.52', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff80f0ed50>: Failed to establish a new connection: [Errno 113] No route to host'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 146, in get_new_token
+    response = requests.post(
+               ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 519, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='172.20.188.52', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff80f0ed50>: Failed to establish a new connection: [Errno 113] No route to host'))
+
+2025-12-06 03:02:05,428 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c7f5050>: Failed to establish a new connection: [Errno 113] No route to host')). Retrying in 4.0s...
+2025-12-06 03:02:09,857 - cmt.f5 - INFO - _perform_scan:438 - Scan complete for eudc02-lb-002-blue.network.axadmin.net. Certs - New: 0, Updated: 288. Facts refreshed: 0 field(s).
+2025-12-06 03:02:12,535 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c7f00d0>: Failed to establish a new connection: [Errno 113] No route to host'))
+2025-12-06 03:02:12,541 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for axrudc10lb151.network.axadmin.net: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c7f00d0>: Failed to establish a new connection: [Errno 113] No route to host'))
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 174, in _new_conn
+    conn = connection.create_connection(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/connection.py", line 95, in create_connection
+    raise err
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/connection.py", line 85, in create_connection
+    sock.connect(sa)
+OSError: [Errno 113] No route to host
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 715, in urlopen
+    httplib_response = self._make_request(
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 404, in _make_request
+    self._validate_conn(conn)
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1058, in _validate_conn
+    conn.connect()
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 363, in connect
+    self.sock = conn = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 186, in _new_conn
+    raise NewConnectionError(
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPSConnection object at 0xffff7c7f00d0>: Failed to establish a new connection: [Errno 113] No route to host
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 486, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 799, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c7f00d0>: Failed to establish a new connection: [Errno 113] No route to host'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 146, in get_new_token
+    response = requests.post(
+               ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 519, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffff7c7f00d0>: Failed to establish a new connection: [Errno 113] No route to host'))
+
+2025-12-06 03:02:37,001 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
+2025-12-06 03:02:37,376 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
+2025-12-06 03:03:34,988 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
+2025-12-06 03:03:35,375 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
+2025-12-06 03:04:34,982 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+2025-12-06 03:04:34,991 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for usdc01-fab1-lb-006.network.axadmin.net: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 715, in urlopen
+    httplib_response = self._make_request(
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 404, in _make_request
+    self._validate_conn(conn)
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1058, in _validate_conn
+    conn.connect()
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 419, in connect
+    self.sock = ssl_wrap_socket(
+                ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 453, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 495, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/usr/local/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLEOFError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 486, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 799, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 146, in get_new_token
+    response = requests.post(
+               ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 517, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+
+2025-12-06 03:04:35,378 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+2025-12-06 03:04:35,391 - cmt.f5 - ERROR - _perform_scan:444 - Scan failed for usdc01-fab1-lb-005.network.axadmin.net: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 715, in urlopen
+    httplib_response = self._make_request(
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 404, in _make_request
+    self._validate_conn(conn)
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 1058, in _validate_conn
+    conn.connect()
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connection.py", line 419, in connect
+    self.sock = ssl_wrap_socket(
+                ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 453, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/ssl_.py", line 495, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/ssl.py", line 517, in wrap_socket
+    return self.sslsocket_class._create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/ssl.py", line 1104, in _create
+    self.do_handshake()
+  File "/usr/local/lib/python3.11/ssl.py", line 1382, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLEOFError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 486, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/connectionpool.py", line 799, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/services/f5_service_logic.py", line 353, in _perform_scan
+    mgmt = _connect_to_f5(device.ip_address, username, password)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/core/retry.py", line 42, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/services/f5_service_logic.py", line 335, in _connect_to_f5
+    mgmt = ManagementRoot(hostname, username, password, token=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 183, in __init__
+    self.post_configuration_setup()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 119, in post_configuration_setup
+    self._get_tmos_version()
+  File "/usr/local/lib/python3.11/site-packages/f5/bigip/__init__.py", line 138, in _get_tmos_version
+    response = connect.get(base_uri)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 281, in wrapper
+    response = method(self, REST_uri, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/session.py", line 524, in get
+    prepared = self.session.prepare_request(req)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 486, in prepare_request
+    p.prepare(
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 372, in prepare
+    self.prepare_auth(auth, url)
+  File "/usr/local/lib/python3.11/site-packages/requests/models.py", line 603, in prepare_auth
+    r = auth(self)
+        ^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 254, in __call__
+    self.get_new_token(netloc)
+  File "/usr/local/lib/python3.11/site-packages/icontrol/authtoken.py", line 146, in get_new_token
+    response = requests.post(
+               ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/requests/adapters.py", line 517, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
+

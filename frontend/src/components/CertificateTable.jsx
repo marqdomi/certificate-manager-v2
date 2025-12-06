@@ -84,35 +84,35 @@ const CertificateTable = ({
       headerName: 'ID', 
       flex: 0.3,
       minWidth: 60,
-      resizable: true,
+      
     },
     { 
       field: 'common_name',
       headerName: 'Common Name', 
       flex: 1.2, 
       minWidth: 180,
-      resizable: true,
+      
     },
     { 
       field: 'name', 
       headerName: 'Certificate Name', 
       flex: 1.2, 
       minWidth: 180,
-      resizable: true,
+      
     },
     { 
       field: 'f5_device_hostname', 
       headerName: 'F5 Device', 
       flex: 1, 
       minWidth: 180,
-      resizable: true,
+      
     },
     {
       field: 'expiration_date',
       headerName: 'Expiration Date',
       flex: 0.6,
       minWidth: 120,
-      resizable: true,
+      
       align: 'center',
       headerAlign: 'center',
       valueGetter: (params) => (params.value ? new Date(params.value).toLocaleDateString() : 'N/A'),
@@ -122,7 +122,7 @@ const CertificateTable = ({
       headerName: 'Days Left',
       flex: 0.5,
       minWidth: 100,
-      resizable: true,
+      
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -164,7 +164,7 @@ const CertificateTable = ({
       headerName: 'Actions',
       flex: 1,
       minWidth: 230,
-      resizable: true,
+      
       sortable: false,
       align: 'center',
       headerAlign: 'center',
