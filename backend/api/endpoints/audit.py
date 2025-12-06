@@ -249,11 +249,8 @@ async def get_audit_stats(
     
     by_result = {r.value: c for r, c in result_counts}
     
-    # Recent failures
-    failures = db.query(AuditLog).filter(
-        AuditLog.timestamp >= cutoff,
-        AuditLog.result != AuditResult.SUCCESS
-    ).count()
+    # Recent failures - sum all non-success results from the counts we already have
+    failures = sum(c for r, c in result_counts if r != AuditResult.SUCCESS)
     
     return AuditStatsResponse(
         total_entries=total,
