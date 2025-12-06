@@ -1,8 +1,9 @@
 # Archivo: .gitignore
 
 # Dependencias de Node
-/frontend/node_modules
-/frontend/build
+node_modules/
+dist/
+build/
 .pnp
 .pnp.js
 

@@ -37,7 +37,7 @@ from services.csr_service import (
     create_pfx_from_components,
     CSRGenerationError,
 )
-from api.endpoints.auth import get_current_user
+from services.auth_service import get_current_user
 from db.models import User
 
 logger = logging.getLogger(__name__)
