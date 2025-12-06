@@ -93,7 +93,7 @@ class Certificate(Base):
     
     # --- RENEWAL TRACKING (v2.5) ---
     renewal_status = Column(
-        Enum(CertificateRenewalStatus), 
+        Enum(CertificateRenewalStatus, values_callable=lambda x: [e.value for e in x]), 
         nullable=False, 
         default=CertificateRenewalStatus.NONE,
         index=True
@@ -247,8 +247,8 @@ class AuditLog(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # What
-    action = Column(Enum(AuditAction), nullable=False, index=True)
-    result = Column(Enum(AuditResult), nullable=False, default=AuditResult.SUCCESS)
+    action = Column(Enum(AuditAction, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    result = Column(Enum(AuditResult, values_callable=lambda x: [e.value for e in x]), nullable=False, default=AuditResult.SUCCESS)
     
     # On what
     resource_type = Column(String, nullable=False)  # 'certificate', 'device', 'profile', etc.
