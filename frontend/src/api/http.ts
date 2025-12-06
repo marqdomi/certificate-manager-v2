@@ -11,7 +11,8 @@ export const API_BASE: string = String(VITE_ENV.VITE_API_BASE_URL || '')
 
 function authHeader(): Record<string, string> {
   try {
-    const token = localStorage.getItem('access_token');
+    // Try both possible keys for compatibility
+    const token = localStorage.getItem('user_token') || localStorage.getItem('access_token');
     return token ? { Authorization: `Bearer ${token}` } : {};
   } catch {
     return {};

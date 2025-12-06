@@ -54,7 +54,7 @@ const EditDeviceDialog = ({ open, onClose, device, onSave }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('user_token');
       const response = await fetch(`/api/v1/devices/${device.id}`, {
         method: 'PUT',
         headers: {
