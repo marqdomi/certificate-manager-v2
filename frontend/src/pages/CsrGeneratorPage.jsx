@@ -1,122 +1,114 @@
 // frontend/src/pages/CsrGeneratorPage.jsx
+/**
+ * CSR Generator Page v2.5
+ * 
+ * NEW APPROACH: Generate private key locally (not from F5)
+ * This solves the F5 key export limitation.
+ * 
+ * Features:
+ * - Generate new CSR + Private Key
+ * - View pending CSR requests
+ * - Complete CSRs with signed certificates
+ * - Download ready PFX files
+ */
 
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-    Box, Typography, Paper, Alert, TextField, Button, 
-    CircularProgress 
+    Box, Typography, Paper, Alert, Button, 
+    Divider, Tabs, Tab,
 } from '@mui/material';
-import apiClient from '../services/api';
+import {
+    Add as AddIcon,
+    List as ListIcon,
+} from '@mui/icons-material';
+import CSRGeneratorWizard from '../components/CSRGeneratorWizard';
+import PendingCSRsPanel from '../components/PendingCSRsPanel';
 
-// Importamos el diálogo para mostrar el resultado
-import CsrResultDialog from '../components/CsrResultDialog';
+function TabPanel({ children, value, index, ...other }) {
+    return (
+        <div role="tabpanel" hidden={value !== index} {...other}>
+            {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+        </div>
+    );
+}
 
 function CsrGeneratorPage() {
     const location = useLocation();
     const navigate = useNavigate();
+    
+    // Certificate passed from inventory (optional)
     const certificateToRenew = location.state?.certificateToRenew;
     
-    // Estados locales de esta página
-    const [privateKey, setPrivateKey] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    
-    const [resultData, setResultData] = useState(null);
-    const [resultDialogOpen, setResultDialogOpen] = useState(false);
-    const [notification, setNotification] = useState({ open: false, message: ''});
+    const [tabValue, setTabValue] = useState(0);
+    const [wizardOpen, setWizardOpen] = useState(!!certificateToRenew);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-
-    // Si alguien llega a esta página sin un certificado seleccionado, le mostramos un error
-    if (!certificateToRenew) {
-        return (
-            <Alert severity="error">
-                No certificate selected for renewal. Please go back to the 
-                <Button component="a" href="/certificates">Inventory</Button> 
-                and start the process again.
-            </Alert>
-        );
-    }
-
-    const handleGenerateCsr = () => {
-        if (!privateKey.trim()) {
-            setError('Private key content is required.');
-            return;
-        }
-        setError('');
-        setLoading(true);
-
-        const payload = { private_key_content: privateKey };
-
-        apiClient.post(`/certificates/${certificateToRenew.id}/initiate-renewal`, payload)
-            .then(res => {
-                setResultData(res.data);
-                setResultDialogOpen(true); // Abrimos el diálogo con el CSR
-            })
-            .catch(err => {
-                setNotification({ open: true, message: `Error: ${err.response?.data?.detail || 'An unknown error occurred.'}`});
-            })
-            .finally(() => setLoading(false));
+    const handleOpenWizard = () => {
+        setWizardOpen(true);
     };
 
-    const handleCloseResultDialog = () => {
-        setResultDialogOpen(false);
-        // Después de ver el CSR, lo mandamos de vuelta al inventario
-        navigate('/certificates'); 
+    const handleCloseWizard = () => {
+        setWizardOpen(false);
+        // Clear the location state so refreshing doesn't reopen
+        if (certificateToRenew) {
+            navigate('/generate-csr', { replace: true });
+        }
+    };
+
+    const handleCompleted = (result) => {
+        // Refresh the pending list
+        setRefreshKey(prev => prev + 1);
+        setTabValue(0); // Switch to pending tab
     };
 
     return (
         <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-                CSR Generator
-            </Typography>
-
-            <Alert severity="info" sx={{ mb: 4 }}>
-                <Typography>
-                    Initiating renewal for: <strong>{certificateToRenew.common_name}</strong>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h4" component="h1">
+                    CSR Generator
                 </Typography>
-                <Typography variant="caption">
-                    (This will create a new renewal request or update an existing one)
+                <Button 
+                    variant="contained" 
+                    startIcon={<AddIcon />}
+                    onClick={handleOpenWizard}
+                >
+                    Generate New CSR
+                </Button>
+            </Box>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                    <strong>How it works:</strong> CMT generates the private key locally (not on F5). 
+                    Submit the CSR to your Certificate Authority, then complete the process here to get a PFX file 
+                    ready for deployment.
                 </Typography>
             </Alert>
 
-            {notification.open && <Alert severity="error" sx={{ mb: 2 }}>{notification.message}</Alert>}
-
-            <Paper elevation={3} sx={{ p: 3, maxWidth: '900px' }}>
-                <Typography variant="h6" gutterBottom>1. Provide Existing Private Key</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
-                    To generate a CSR, you must provide the private key that corresponds to the certificate you are renewing. 
-                    Please export the key from the F5 GUI and paste its full content below.
-                </Typography>
-                <TextField 
-                    label="Private Key Content (Required)" 
-                    multiline 
-                    rows={15} 
-                    fullWidth 
-                    value={privateKey} 
-                    onChange={e => setPrivateKey(e.target.value)} 
-                    required 
-                    error={!!error} 
-                    helperText={error}
-                    placeholder="-----BEGIN PRIVATE KEY-----
-...
------END PRIVATE KEY-----"
-                />
-                <Button 
-                    onClick={handleGenerateCsr} 
-                    variant="contained" 
-                    sx={{ mt: 2 }} 
-                    disabled={loading} 
-                    fullWidth 
-                    size="large"
+            <Paper sx={{ p: 0 }}>
+                <Tabs 
+                    value={tabValue} 
+                    onChange={(e, v) => setTabValue(v)}
+                    sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}
                 >
-                    {loading ? <CircularProgress size={24} /> : "Generate & Save CSR"}
-                </Button>
+                    <Tab label="Pending Requests" icon={<ListIcon />} iconPosition="start" />
+                </Tabs>
+                
+                <Box sx={{ p: 3 }}>
+                    <TabPanel value={tabValue} index={0}>
+                        <PendingCSRsPanel 
+                            key={refreshKey}
+                            onRefresh={() => setRefreshKey(prev => prev + 1)} 
+                        />
+                    </TabPanel>
+                </Box>
             </Paper>
 
-            <CsrResultDialog 
-                open={resultDialogOpen} 
-                onClose={handleCloseResultDialog} 
-                data={resultData} 
+            <CSRGeneratorWizard
+                open={wizardOpen}
+                onClose={handleCloseWizard}
+                certificate={certificateToRenew}
+                onCompleted={handleCompleted}
             />
         </Box>
     );

@@ -20,6 +20,7 @@ import { authProvider } from '../pages/LoginPage';
 import soleraLogo from '../assets/solera_logo.svg';
 import PublishIcon from '@mui/icons-material/Publish';
 import RadarIcon from '@mui/icons-material/Radar';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const drawerWidth = 240;
 
@@ -28,6 +29,7 @@ const navItems = [
   { text: 'Certificates', icon: <VpnKeyIcon />, path: '/certificates' },
   { text: 'Devices', icon: <DnsIcon />, path: '/devices' },
   { text: 'Discovery', icon: <RadarIcon />, path: '/discovery' },
+  { text: 'CSR Generator', icon: <AssignmentIcon />, path: '/generate-csr' },
   { text: 'PFX Generator', icon: <BuildIcon />, path: '/pfx-generator' },
   { text: 'Deploy Center', icon: <PublishIcon />, path: '/deploy' },
 ];

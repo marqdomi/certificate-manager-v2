@@ -26,6 +26,7 @@ from api.endpoints import (
     f5_vips,
     websocket,
     discovery,
+    csr,
 )
 
 app = FastAPI(
@@ -77,6 +78,7 @@ app.include_router(pfx.router,          prefix="/api/v1/pfx",          tags=["PF
 app.include_router(deployments.router,  prefix="/api/v1/deployments",  tags=["Deployments"])
 app.include_router(websocket.router,    prefix="/api/v1",              tags=["WebSocket"])
 app.include_router(discovery.router,    prefix="/api/v1",              tags=["Discovery"])
+app.include_router(csr.router,          prefix="/api/v1",              tags=["CSR Generator"])
 
 # Optional: hashing self-test at startup to catch env/package drift early
 try:

@@ -236,3 +236,44 @@ export async function deleteCertificate(id) {
   const { data } = await apiClient.delete(`/certificates/${id}`)
   return data
 }
+
+// -------------------- CSR Generator API --------------------
+export async function generateCSR(params) {
+  const { data } = await apiClient.post('/csr/generate', params)
+  return data
+}
+
+export async function validateCSR(csrPem) {
+  const { data } = await apiClient.post('/csr/validate', { csr_pem: csrPem })
+  return data
+}
+
+export async function listPendingCSRs(statusFilter = null) {
+  const params = statusFilter ? { status_filter: statusFilter } : {}
+  const { data } = await apiClient.get('/csr/pending', { params })
+  return data
+}
+
+export async function getCSRRequest(requestId) {
+  const { data } = await apiClient.get(`/csr/${requestId}`)
+  return data
+}
+
+export async function completeCSR(requestId, certificatePem, chainPem = null, pfxPassphrase = null) {
+  const { data } = await apiClient.post('/csr/complete', {
+    renewal_request_id: requestId,
+    certificate_pem: certificatePem,
+    chain_pem: chainPem,
+    pfx_passphrase: pfxPassphrase
+  })
+  return data
+}
+
+export async function deleteCSRRequest(requestId) {
+  const { data } = await apiClient.delete(`/csr/${requestId}`)
+  return data
+}
+
+export function getCSRDownloadUrl(requestId) {
+  return `/api/v1/csr/${requestId}/download-pfx`
+}

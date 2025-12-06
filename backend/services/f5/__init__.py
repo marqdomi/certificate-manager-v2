@@ -47,7 +47,7 @@ from services.f5_service_logic import (
     verify_cert_object,
     verify_installed_certificate,
     delete_certificate_from_f5,
-    export_key_and_create_csr,
+    # NOTE: export_key_and_create_csr REMOVED in v2.5 - F5 blocks key export
     # Profiles
     _list_client_ssl_profiles,
     list_client_ssl_profiles_bulk,
@@ -112,7 +112,7 @@ __all__ = [
     'verify_cert_object',
     'verify_installed_certificate',
     'delete_certificate_from_f5',
-    'export_key_and_create_csr',
+    # 'export_key_and_create_csr', # REMOVED v2.5
     # Profiles
     'list_client_ssl_profiles', '_list_client_ssl_profiles',
     'list_client_ssl_profiles_bulk',

@@ -707,99 +707,11 @@ def delete_certificate_from_f5(hostname: str, username: str, password: str, cert
     
     return {"status": "success", "message": f"Deletion process for {cert_name} completed."}
 
-def export_key_and_create_csr(hostname: str, username: str, password: str, db_cert: Certificate):
-    """
-    Exporta la clave privada de un certificado existente y genera un nuevo CSR
-    usando los datos del certificado guardados en nuestra base de datos.
-    """
-    mgmt = _connect_to_f5(hostname, username, password)
-    
-    # Extraemos el nombre y la partición del certificado desde el objeto db_cert
-    cert_name = db_cert.name
-    partition = db_cert.partition if hasattr(db_cert, 'partition') else 'Common'
-    
-    try:
-        cert_obj = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=cert_name, partition=partition)
-        
-        # Obtenemos el path completo de la clave que el certificado dice que usa
-        key_full_path = getattr(cert_obj, 'key', '')
-        
-        # Si por alguna razón no tiene el path, construimos el nombre sin la extensión .crt
-        if not key_full_path:
-            key_name_only = cert_name.rsplit('.crt', 1)[0]
-            key_full_path = f'/{partition}/{key_name_only}'
-        
-        # Extraemos el nombre y la partición del path completo
-        key_partition, key_name = key_full_path.strip('/').split('/')
 
-    except Exception as e:
-        raise ValueError(f"Could not find certificate or its associated key '{cert_name}' on F5. Error: {e}")
+# NOTE: export_key_and_create_csr was REMOVED in v2.5 (Dec 2025)
+# F5 does not allow private key export by design. 
+# Use /api/v1/csr/generate endpoint which generates keys locally instead.
 
-    # --- MÉTODO DEFINITIVO DE EXTRACCIÓN DE CLAVE ---
-    try:
-        logger.info(f"Downloading key '{key_name}' from partition '{key_partition}'")
-        
-        # 1. Obtenemos el objeto de la clave sin cargarlo por completo
-        key_obj = mgmt.tm.sys.file.ssl_keys.ssl_key.get_collection(
-            params={'filter': f'name eq {key_name} and partition eq {key_partition}'}
-        )[0]
-
-        # 2. Usamos el método de descarga de bajo nivel
-        # Esto devuelve un objeto de respuesta de la librería 'requests'
-        response = mgmt.shared.file_transfer.downloads.download_file(
-            key_obj.selfLink.replace('https://localhost', ''),
-            'temp_key.key' # Nombre temporal, no se usa
-        )
-        
-        # 3. Leemos el contenido de la respuesta
-        key_pem_content = response.text
-        
-        if "-----BEGIN" not in key_pem_content:
-             raise ValueError("Downloaded content does not appear to be a valid PEM key.")
-
-        logger.info("Private key downloaded successfully")
-
-    except Exception as e:
-        logger.error(f"Failed to download key '{key_name}': {e}")
-        raise ValueError(f"Could not extract private key content for '{key_name}'. This may require specific permissions or be due to F5 version incompatibility.")
-
-    # --- La generación del CSR se queda igual ---
-    try:
-        private_key = serialization.load_pem_private_key(key_pem_content.encode(), password=None)
-        
-        # --- LÓGICA DE CONSTRUCCIÓN DE CSR USANDO NUESTRA BBDD ---
-        
-        # 1. Creamos una lista para los atributos del "Subject"
-        subject_attrs = []
-        
-        # 2. Usamos el common_name que ya tenemos en nuestra base de datos
-        if db_cert.common_name:
-            subject_attrs.append(x509.NameAttribute(NameOID.COMMON_NAME, db_cert.common_name))
-        
-        # Opcional: Podríamos añadir más campos si los guardáramos en la BBDD en el futuro
-        # (ej. db_cert.organization, db_cert.locality, etc.)
-        
-        subject_name = x509.Name(subject_attrs)
-        
-        builder = x509.CertificateSigningRequestBuilder().subject_name(subject_name)
-
-        # 3. Opcional pero recomendado: Si el CN es un wildcard, añadirlo como SAN
-        if db_cert.common_name and db_cert.common_name.startswith('*.'):
-            # Añadimos el wildcard y el dominio base como SANs
-            sans = [
-                x509.DNSName(db_cert.common_name),
-                x509.DNSName(db_cert.common_name[2:]) # El dominio sin el '*.'
-            ]
-            builder = builder.add_extension(x509.SubjectAlternativeName(sans), critical=False)
-
-        # Firmamos y serializamos
-        csr = builder.sign(private_key, hashes.SHA256())
-        csr_pem = csr.public_bytes(serialization.Encoding.PEM).decode('utf-8')
-
-    except Exception as e:
-        raise ValueError(f"Failed to generate CSR with the exported key. Error: {e}")
-
-    return { "private_key": key_pem_content, "csr": csr_pem }
 
 def get_realtime_certs_from_f5(hostname: str, username: str, password: str, device_id: int):
     """

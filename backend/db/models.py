@@ -86,29 +86,58 @@ class Certificate(Base):
         return f"<Certificate(id={self.id}, name='{self.name}')>"
 
 # -------------------------------------------------------------------
-# MODELO RenewalRequest (Casi sin cambios)
+# MODELO RenewalRequest - Enhanced for CSR Generator (v2.5)
 # -------------------------------------------------------------------
 class RenewalStatus(enum.Enum):
-    CSR_GENERATED = "CSR_GENERATED"
-    COMPLETED = "COMPLETED"
+    CSR_GENERATED = "CSR_GENERATED"      # CSR created, awaiting CA signature
+    CERT_RECEIVED = "CERT_RECEIVED"      # Certificate received from CA
+    PFX_READY = "PFX_READY"              # PFX assembled, ready for deployment
+    DEPLOYED = "DEPLOYED"                 # Deployed to F5
+    COMPLETED = "COMPLETED"               # Cleanup done, old cert removed
     FAILED = "FAILED"
+    EXPIRED = "EXPIRED"                   # CSR expired without completion
 
 class RenewalRequest(Base):
     __tablename__ = "renewal_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    original_certificate_id = Column(Integer, ForeignKey("certificates.id"), nullable=False, index=True)
+    
+    # Link to existing certificate (nullable for new certs)
+    original_certificate_id = Column(Integer, ForeignKey("certificates.id"), nullable=True, index=True)
+    
+    # CSR details
+    common_name = Column(String, nullable=False, index=True)
+    san_names = Column(Text, nullable=True)  # JSON array of SAN entries
+    key_size = Column(Integer, default=2048)
+    
+    # Status tracking
     status = Column(Enum(RenewalStatus), nullable=False, default=RenewalStatus.CSR_GENERATED)
+    
+    # CSR and Key storage
     csr_content = Column(Text, nullable=False)
     encrypted_private_key = Column(Text, nullable=False)
+    
+    # Signed certificate (when received from CA)
+    signed_certificate_pem = Column(Text, nullable=True)
+    certificate_chain_pem = Column(Text, nullable=True)
+    
+    # PFX file (when assembled)
+    pfx_filename = Column(String, nullable=True)
+    
+    # Certificate details (extracted from signed cert)
+    cert_expiration_date = Column(DateTime, nullable=True)
+    cert_issuer = Column(String, nullable=True)
+    
+    # Audit info
+    created_by = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # La relación con Certificate está bien, no necesita cambios.
+    # Relationship with Certificate
     original_certificate = relationship("Certificate")
 
     def __repr__(self):
-        return f"<RenewalRequest(id={self.id}, status='{self.status.name}')>"
+        return f"<RenewalRequest(id={self.id}, cn='{self.common_name}', status='{self.status.name}')>"
     
 class UserRole(str, enum.Enum):
     ADMIN = "admin"

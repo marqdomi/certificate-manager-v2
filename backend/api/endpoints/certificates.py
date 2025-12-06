@@ -335,8 +335,18 @@ def get_batch_certificate_usage(
     )
 
 
-# 2. El endpoint corregido
-@router.post("/{cert_id}/initiate-renewal", summary="Initiate a certificate renewal")
+# ===========================================================================
+# DEPRECATED ENDPOINT - Scheduled for removal in v3.0
+# Use POST /api/v1/csr/generate instead (generates keys locally)
+# ===========================================================================
+@router.post(
+    "/{cert_id}/initiate-renewal", 
+    summary="[DEPRECATED] Initiate renewal with user-provided key",
+    deprecated=True,
+    description="**DEPRECATED**: Use POST /api/v1/csr/generate instead. "
+                "This endpoint requires users to provide a private key manually. "
+                "The new CSR Generator creates keys locally, solving the F5 key export limitation."
+)
 def initiate_certificate_renewal(
     cert_id: int, 
     request: RenewalInitiateRequest, 
