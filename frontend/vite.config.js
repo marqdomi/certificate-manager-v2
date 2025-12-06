@@ -7,16 +7,26 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // Resolve API base.
-  // If VITE_API_BASE_URL is unset OR points to localhost/127.0.0.1 (which breaks inside Docker),
-  // fall back to the docker service name "backend".
+  // In Docker (NODE_ENV !== 'development' locally), use 'backend' hostname.
+  // When running npm run dev locally (outside Docker), use localhost.
   const resolveApiBase = () => {
     const raw = env.VITE_API_BASE_URL || ''
-    const isLocalHost =
-      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(raw) ||
-      raw === 'localhost' ||
-      raw === '127.0.0.1'
-    if (!raw || isLocalHost) return 'http://backend:8000'
-    return raw
+    
+    // If explicitly set and not empty, use it directly
+    if (raw && raw !== 'backend') {
+      return raw
+    }
+    
+    // Check if we're running inside Docker (backend hostname works)
+    // or locally (need localhost)
+    const isInsideDocker = env.RUNNING_IN_DOCKER === 'true'
+    
+    if (isInsideDocker) {
+      return 'http://backend:8000'
+    }
+    
+    // Default to localhost for local development
+    return 'http://localhost:8000'
   }
   const apiBase = resolveApiBase()
 
