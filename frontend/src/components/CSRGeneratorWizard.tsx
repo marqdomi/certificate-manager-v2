@@ -45,6 +45,7 @@ import {
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { generateCSR, completeCSR, getCSRDownloadUrl } from '../services/api';
+import CertificateSearchAutocomplete, { CertificateOption } from './CertificateSearchAutocomplete';
 import type { 
   CSRFormData, 
   CSRGenerateResponse, 
@@ -89,6 +90,9 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Selected certificate from search (for renewals)
+  const [selectedCertificate, setSelectedCertificate] = useState<CertificateOption | null>(null);
+  
   // Generated CSR data (from step 1)
   const [csrData, setCsrData] = useState<CSRGenerateResponse | null>(null);
   
@@ -101,7 +105,22 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
   // Clipboard feedback
   const [copiedField, setCopiedField] = useState<CopiedField>(null);
 
-  // Pre-fill form when editing existing certificate
+  // Handle certificate selection from search autocomplete
+  const handleCertificateSelect = (cert: CertificateOption | null) => {
+    setSelectedCertificate(cert);
+    if (cert) {
+      // Pre-fill form with certificate data
+      const sanNames = cert.san_names || [];
+      setForm(prev => ({
+        ...prev,
+        common_name: cert.common_name || cert.name || '',
+        san_dns_names: sanNames.filter((s: string) => !s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+        san_ip_addresses: sanNames.filter((s: string) => s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+      }));
+    }
+  };
+
+  // Pre-fill form when editing existing certificate (from inventory)
   useEffect(() => {
     if (certificate && open) {
       const sanNames = certificate.san_names 
@@ -123,6 +142,7 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
   const handleClose = useCallback(() => {
     setActiveStep(0);
     setForm({ ...DEFAULT_FORM });
+    setSelectedCertificate(null);
     setSanInput('');
     setIpInput('');
     setCsrData(null);
@@ -204,6 +224,9 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
     setError(null);
     
     try {
+      // Use certificate from props (inventory) or from search autocomplete
+      const certId = certificate?.id || selectedCertificate?.id;
+      
       const payload = {
         common_name: form.common_name,
         organization: form.organization || undefined,
@@ -215,7 +238,7 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
         san_dns_names: form.san_dns_names.length > 0 ? form.san_dns_names : undefined,
         san_ip_addresses: form.san_ip_addresses.length > 0 ? form.san_ip_addresses : undefined,
         key_size: form.key_size,
-        certificate_id: certificate?.id,
+        certificate_id: certId,
       };
       
       const result = await generateCSR(payload);
@@ -260,10 +283,64 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
   // Render Step 0: Certificate Details Form
   const renderDetailsStep = (): JSX.Element => (
     <Box sx={{ mt: 2 }}>
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <strong>New CSR Generation</strong> — Enter certificate details below. 
-        A new private key will be generated locally (not on F5).
-      </Alert>
+      {/* Certificate Search - only show if no certificate was passed from inventory */}
+      {!certificate && (
+        <Paper 
+          variant="outlined" 
+          sx={{ 
+            p: 2, 
+            mb: 3, 
+            bgcolor: 'action.hover',
+            borderStyle: 'dashed'
+          }}
+        >
+          <Typography variant="subtitle2" gutterBottom color="primary">
+            🔄 Renewing an existing certificate?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Search and select a certificate to automatically fill in the details below.
+          </Typography>
+          <CertificateSearchAutocomplete
+            onSelect={handleCertificateSelect}
+            selectedCertificate={selectedCertificate}
+          />
+        </Paper>
+      )}
+
+      {certificate && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <strong>Renewing:</strong> {certificate.common_name || certificate.name}
+          <br />
+          <Typography variant="caption" color="text.secondary">
+            Certificate details have been pre-filled. Review and adjust if needed.
+          </Typography>
+        </Alert>
+      )}
+
+      {!certificate && !selectedCertificate && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <strong>New CSR Generation</strong> — Enter certificate details below. 
+          A new private key will be generated locally (not on F5).
+        </Alert>
+      )}
+
+      {selectedCertificate && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <strong>Renewing:</strong> {selectedCertificate.common_name}
+          {selectedCertificate.days_remaining !== undefined && selectedCertificate.days_remaining <= 60 && (
+            <Chip 
+              size="small" 
+              label={`${selectedCertificate.days_remaining}d remaining`} 
+              color={selectedCertificate.days_remaining <= 30 ? 'error' : 'warning'}
+              sx={{ ml: 1 }}
+            />
+          )}
+          <br />
+          <Typography variant="caption" color="text.secondary">
+            Certificate details have been pre-filled from the selected certificate.
+          </Typography>
+        </Alert>
+      )}
       
       <Grid container spacing={2}>
         <Grid item xs={12}>
