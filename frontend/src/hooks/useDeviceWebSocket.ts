@@ -71,8 +71,16 @@ export function useDeviceWebSocket(options: UseDeviceWebSocketOptions = {}): Use
   const mountedRef = useRef(true);
 
   const getWebSocketUrl = useCallback(() => {
+    // Check for runtime config first (production with cross-origin backend)
+    if (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.API_URL) {
+      const apiUrl = window.APP_CONFIG.API_URL;
+      // Convert https:// to wss:// or http:// to ws://
+      const wsUrl = apiUrl.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+      return `${wsUrl}/api/v1/ws/devices`;
+    }
+    
+    // Development or fallback - use same host
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // In development, connect directly to backend port
     const isDev = window.location.port === '5173';
     const host = isDev ? 'localhost:8000' : window.location.host;
     return `${protocol}//${host}/api/v1/ws/devices`;

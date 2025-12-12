@@ -25,19 +25,26 @@ const getApiBaseURL = () => {
   return '/api/v1';
 };
 
-// Axios instance
+// Axios instance - don't set baseURL at creation time, use interceptor instead
 const apiClient = axios.create({
-  baseURL: getApiBaseURL(),
   withCredentials: false, // Set to false for cross-origin requests
   timeout: 30000,
   headers: { Accept: 'application/json' },
 })
 
-if (DEBUG) console.log('[api] Using baseURL:', apiClient.defaults.baseURL);
+// Log the base URL that will be used
+if (DEBUG) {
+  console.log('[api] API will use baseURL:', getApiBaseURL());
+}
 
 // ---- Request interceptor: attach bearer token if present ----
 apiClient.interceptors.request.use(
   (config) => {
+    // Set baseURL dynamically on each request to ensure runtime config is used
+    if (!config.baseURL) {
+      config.baseURL = getApiBaseURL();
+    }
+    
     const token = authProvider.getToken?.()
     if (token) {
       config.headers = config.headers || {}
