@@ -4,14 +4,36 @@ import { authProvider } from '../pages/LoginPage'
 // Enable debug logging only in development mode
 const DEBUG = import.meta.env.DEV;
 
-// Axios instance pointing at Vite proxy. In dev, Vite forwards `/api` to backend.
-// In prod (static build behind the same origin), `/api` should be routed by the reverse proxy.
+// Determine API base URL
+// Priority:
+// 1. Runtime config (window.APP_CONFIG.API_URL) - for production
+// 2. Build-time env variable (VITE_API_URL) - for development
+// 3. Relative path /api/v1 - fallback
+const getApiBaseURL = () => {
+  // Check for runtime config first (production)
+  if (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.API_URL) {
+    return window.APP_CONFIG.API_URL + '/api/v1';
+  }
+  
+  // Check for build-time environment variable (development)
+  const viteApiUrl = import.meta.env.VITE_API_URL;
+  if (viteApiUrl && viteApiUrl !== '') {
+    return viteApiUrl + '/api/v1';
+  }
+  
+  // Fallback to relative path
+  return '/api/v1';
+};
+
+// Axios instance
 const apiClient = axios.create({
-  baseURL: '/api/v1',
-  withCredentials: true,
+  baseURL: getApiBaseURL(),
+  withCredentials: false, // Set to false for cross-origin requests
   timeout: 30000,
   headers: { Accept: 'application/json' },
 })
+
+if (DEBUG) console.log('[api] Using baseURL:', apiClient.defaults.baseURL);
 
 // ---- Request interceptor: attach bearer token if present ----
 apiClient.interceptors.request.use(

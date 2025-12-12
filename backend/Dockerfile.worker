@@ -1,0 +1,38 @@
+# backend/Dockerfile.worker
+# Optimizado para Celery Worker en Azure Container Apps
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    C_FORCE_ROOT=true
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar dependencias Python
+COPY requirements.txt .
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Crear usuario no-root
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+# Copiar código
+COPY --chown=appuser:appuser . .
+
+USER appuser
+
+# Healthcheck para Celery worker
+HEALTHCHECK --interval=60s --timeout=10s --start-period=40s --retries=3 \
+  CMD celery -A core.celery_worker inspect ping -d celery@$HOSTNAME || exit 1
+
+# Ejecutar Celery worker
+CMD ["celery", "-A", "core.celery_worker", "worker", "--loglevel=info", "--concurrency=2"]
