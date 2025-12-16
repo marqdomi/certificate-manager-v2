@@ -79,8 +79,96 @@ celery_app.conf.beat_schedule = {
     "maintenance-mark-stale-running-scans-5min": {
         "task": "maintenance.mark_stale_running_scans",
         "schedule": crontab(minute="*/5"),
-    }
+    },
+    # Notification system tasks
+    "notifications-cleanup-expired-daily-04:00": {
+        "task": "notifications.cleanup_expired",
+        "schedule": crontab(hour=4, minute=0),
+    },
+    "notifications-check-expiring-certs-daily-06:00": {
+        "task": "notifications.check_expiring_certificates",
+        "schedule": crontab(hour=6, minute=0),
+    },
 }
+
+
+# --- Register notification tasks ---
+@celery_app.task(name="notifications.cleanup_expired")
+def cleanup_expired_notifications():
+    """Remove expired notifications from database."""
+    from db.base import SessionLocal
+    from services.notification_service import NotificationService
+    
+    db = SessionLocal()
+    try:
+        service = NotificationService(db)
+        deleted_count = service.cleanup_expired_notifications()
+        return {"deleted": deleted_count}
+    finally:
+        db.close()
+
+
+@celery_app.task(name="notifications.check_expiring_certificates")
+def check_expiring_certificates():
+    """
+    Check for expiring certificates and create notifications.
+    Runs daily to alert users about certificates expiring soon.
+    """
+    from db.base import SessionLocal
+    from db.models import Certificate, User, UserRole
+    from datetime import datetime, timedelta
+    import asyncio
+    
+    db = SessionLocal()
+    try:
+        # Get certificates expiring in the next 30 days
+        cutoff_30d = datetime.utcnow() + timedelta(days=30)
+        cutoff_14d = datetime.utcnow() + timedelta(days=14)
+        cutoff_7d = datetime.utcnow() + timedelta(days=7)
+        
+        expiring_certs = db.query(Certificate).filter(
+            Certificate.expiration_date.isnot(None),
+            Certificate.expiration_date <= cutoff_30d,
+            Certificate.expiration_date > datetime.utcnow()
+        ).all()
+        
+        if not expiring_certs:
+            return {"checked": 0, "notifications": 0}
+        
+        # Import notification helpers
+        from services.notification_service import notify_cert_expiring
+        
+        notifications_created = 0
+        
+        for cert in expiring_certs:
+            days_until_expiry = (cert.expiration_date - datetime.utcnow()).days
+            
+            # Only notify for specific thresholds (7, 14, 30 days)
+            # to avoid daily spam
+            if days_until_expiry not in [7, 14, 30]:
+                continue
+            
+            # Get device hostname
+            device_hostname = cert.device.hostname if cert.device else cert.f5_device_hostname
+            
+            # Create broadcast notification (all users)
+            asyncio.run(notify_cert_expiring(
+                db=db,
+                cert_name=cert.name,
+                device_hostname=device_hostname,
+                expiration_date=cert.expiration_date,
+                days_until_expiry=days_until_expiry,
+                cert_id=cert.id,
+                user_id=None  # Broadcast to all
+            ))
+            notifications_created += 1
+        
+        return {
+            "checked": len(expiring_certs),
+            "notifications": notifications_created
+        }
+    finally:
+        db.close()
 
 
 # Attempt to import and register cache refresh tasks (optional)

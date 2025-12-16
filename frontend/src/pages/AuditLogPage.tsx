@@ -20,15 +20,22 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Button,
+  Menu,
+  Snackbar,
 } from '@mui/material';
 import {
   Timeline as TimelineIcon,
   Error as ErrorIcon,
   CheckCircle as SuccessIcon,
   Warning as WarningIcon,
+  Download as DownloadIcon,
+  TableChart as CsvIcon,
+  GridOn as ExcelIcon,
 } from '@mui/icons-material';
 import AuditLogTable from '../components/AuditLogTable';
 import { fetchAuditStats } from '../api/audit';
+import { exportAuditCsv, exportAuditExcel, downloadBlob } from '../services/adminApi';
 import type { AuditStatsResponse } from '../types/audit';
 
 const StatCard: React.FC<{
@@ -69,6 +76,9 @@ const AuditLogPage: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [statsDays, setStatsDays] = useState(7);
+  const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -86,6 +96,35 @@ const AuditLogPage: React.FC = () => {
     loadStats();
   }, [statsDays]);
 
+  const handleExport = async (format: 'csv' | 'excel') => {
+    setExportAnchor(null);
+    setExporting(true);
+    setExportError(null);
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - statsDays);
+      
+      const params = {
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: today,
+      };
+      
+      if (format === 'csv') {
+        const response = await exportAuditCsv(params);
+        downloadBlob(response.data, `audit_log_${today}.csv`);
+      } else {
+        const response = await exportAuditExcel(params);
+        downloadBlob(response.data, `audit_log_${today}.xlsx`);
+      }
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const successCount = stats?.by_result?.success || 0;
   const failureCount = (stats?.by_result?.failure || 0) + (stats?.by_result?.partial || 0);
 
@@ -101,19 +140,43 @@ const AuditLogPage: React.FC = () => {
             Track all certificate operations, deployments, and user activity for compliance.
           </Typography>
         </Box>
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>Period</InputLabel>
-          <Select
-            value={statsDays}
-            label="Period"
-            onChange={(e) => setStatsDays(Number(e.target.value))}
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Button
+            variant="outlined"
+            startIcon={exporting ? <CircularProgress size={18} /> : <DownloadIcon />}
+            onClick={(e) => setExportAnchor(e.currentTarget)}
+            disabled={exporting}
           >
-            <MenuItem value={1}>Last 24h</MenuItem>
-            <MenuItem value={7}>Last 7 days</MenuItem>
-            <MenuItem value={30}>Last 30 days</MenuItem>
-            <MenuItem value={90}>Last 90 days</MenuItem>
-          </Select>
-        </FormControl>
+            Export
+          </Button>
+          <Menu
+            anchorEl={exportAnchor}
+            open={Boolean(exportAnchor)}
+            onClose={() => setExportAnchor(null)}
+          >
+            <MenuItem onClick={() => handleExport('csv')}>
+              <CsvIcon sx={{ mr: 1 }} fontSize="small" />
+              Export as CSV
+            </MenuItem>
+            <MenuItem onClick={() => handleExport('excel')}>
+              <ExcelIcon sx={{ mr: 1 }} fontSize="small" />
+              Export as Excel
+            </MenuItem>
+          </Menu>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Period</InputLabel>
+            <Select
+              value={statsDays}
+              label="Period"
+              onChange={(e) => setStatsDays(Number(e.target.value))}
+            >
+              <MenuItem value={1}>Last 24h</MenuItem>
+              <MenuItem value={7}>Last 7 days</MenuItem>
+              <MenuItem value={30}>Last 30 days</MenuItem>
+              <MenuItem value={90}>Last 90 days</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
       </Box>
 
       {/* Stats Cards */}
@@ -196,6 +259,22 @@ const AuditLogPage: React.FC = () => {
 
       {/* Audit Log Table */}
       <AuditLogTable />
+
+      {/* Export Error Snackbar */}
+      <Snackbar
+        open={!!exportError}
+        autoHideDuration={6000}
+        onClose={() => setExportError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setExportError(null)}
+          severity="error"
+          variant="filled"
+        >
+          {exportError}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

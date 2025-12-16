@@ -63,6 +63,10 @@ import {
   NetworkCheck as NetworkIcon,
   History as HistoryIcon,
   Warning as WarningIcon,
+  VpnKey as VpnKeyIcon,
+  FolderSpecial as FolderSpecialIcon,
+  Edit as EditIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { authProvider } from './LoginPage';
 import api from '../services/api';
@@ -82,6 +86,16 @@ interface CredentialSet {
   username: string;
   password: string;
   name: string;
+}
+
+interface CredentialTemplate {
+  id: number;
+  name: string;
+  description: string | null;
+  username: string;
+  environment: string;
+  is_default: boolean;
+  usage_count: number;
 }
 
 interface DiscoveryJob {
@@ -178,6 +192,12 @@ export default function DiscoveryPage() {
   const [customSubnets, setCustomSubnets] = useState('');
   const [jobName, setJobName] = useState('');
   
+  // Credential Templates
+  const [credentialMode, setCredentialMode] = useState<'template' | 'manual'>('template');
+  const [credentialTemplates, setCredentialTemplates] = useState<CredentialTemplate[]>([]);
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<number[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  
   // Results Dialog
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<DiscoveryJob | null>(null);
@@ -188,7 +208,9 @@ export default function DiscoveryPage() {
   
   // Computed
   const hasRunningJobs = jobs.some(j => j.status === 'running' || j.status === 'pending');
-  const hasValidCredentials = credentials.some(c => c.username.trim() && c.password.trim());
+  const hasValidManualCredentials = credentials.some(c => c.username.trim() && c.password.trim());
+  const hasValidTemplateCredentials = selectedTemplateIds.length > 0;
+  const hasValidCredentials = credentialMode === 'template' ? hasValidTemplateCredentials : hasValidManualCredentials;
   const hasValidTarget = scanMode === 'preset' ? !!selectedPreset : !!customSubnets.trim();
   const canStartScan = hasValidCredentials && hasValidTarget && !loading;
   
@@ -199,6 +221,7 @@ export default function DiscoveryPage() {
   useEffect(() => {
     fetchPresets();
     fetchJobs();
+    fetchCredentialTemplates();
   }, []);
   
   // Auto-refresh when jobs are running
@@ -267,21 +290,47 @@ export default function DiscoveryPage() {
     }
   };
   
+  const fetchCredentialTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const response = await api.get('/credentials/templates');
+      const templates = response.data.templates || [];
+      setCredentialTemplates(templates);
+      // Auto-select default template if available
+      const defaultTemplate = templates.find((t: CredentialTemplate) => t.is_default);
+      if (defaultTemplate) {
+        setSelectedTemplateIds([defaultTemplate.id]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch credential templates:', err);
+      setCredentialTemplates([]);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+  
   const startScan = async () => {
     setLoading(true);
     setError(null);
     
-    const validCredentials = credentials.filter(c => c.username.trim() && c.password.trim());
-    
     try {
       const payload: any = {
-        credentials: validCredentials.map(c => ({
+        save_credentials: saveCredentials,
+      };
+      
+      // Add credentials based on mode
+      if (credentialMode === 'template') {
+        // Get passwords from templates via API (they're encrypted)
+        // We'll pass template_ids and let backend handle it
+        payload.template_ids = selectedTemplateIds;
+      } else {
+        const validCredentials = credentials.filter(c => c.username.trim() && c.password.trim());
+        payload.credentials = validCredentials.map(c => ({
           username: c.username.trim(),
           password: c.password,
           name: c.name.trim() || c.username.trim(),
-        })),
-        save_credentials: saveCredentials,
-      };
+        }));
+      }
       
       if (scanMode === 'preset') {
         payload.preset = selectedPreset;
@@ -367,97 +416,247 @@ export default function DiscoveryPage() {
   
   const renderCredentialsStep = () => (
     <Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Enter F5 device credentials. Multiple credential sets can be added for environments with different admin accounts.
-      </Typography>
+      {/* Mode Selection Tabs */}
+      <Tabs
+        value={credentialMode}
+        onChange={(_, v) => setCredentialMode(v)}
+        sx={{ mb: 3 }}
+      >
+        <Tab 
+          value="template" 
+          label="Use Templates" 
+          icon={<FolderSpecialIcon />} 
+          iconPosition="start"
+          sx={{ minHeight: 48 }}
+        />
+        <Tab 
+          value="manual" 
+          label="Manual Entry" 
+          icon={<EditIcon />} 
+          iconPosition="start"
+          sx={{ minHeight: 48 }}
+        />
+      </Tabs>
       
-      <Stack spacing={2}>
-        {credentials.map((cred, index) => (
-          <Paper key={index} variant="outlined" sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Credential Set {index + 1}
-              </Typography>
-              {credentials.length > 1 && (
-                <IconButton
-                  size="small"
-                  onClick={() => setCredentials(prev => prev.filter((_, i) => i !== index))}
-                >
-                  <RemoveIcon fontSize="small" />
-                </IconButton>
-              )}
+      {credentialMode === 'template' ? (
+        // ═══════════════════════════════════════════════════════════════════
+        // TEMPLATE MODE
+        // ═══════════════════════════════════════════════════════════════════
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select one or more credential templates. Multiple templates allow discovery to try different credentials for different environments.
+          </Typography>
+          
+          {loadingTemplates ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={32} />
             </Box>
-            
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Username"
-                  placeholder="admin"
-                  value={cred.username}
-                  onChange={(e) => {
-                    const newCreds = [...credentials];
-                    newCreds[index].username = e.target.value;
-                    setCredentials(newCreds);
+          ) : credentialTemplates.length === 0 ? (
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 4, 
+                textAlign: 'center',
+                bgcolor: 'action.hover',
+                borderStyle: 'dashed'
+              }}
+            >
+              <VpnKeyIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+              <Typography color="text.secondary">
+                No credential templates available
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Switch to "Manual Entry" tab or create templates from the Devices page
+              </Typography>
+            </Paper>
+          ) : (
+            <Stack spacing={1}>
+              {credentialTemplates.map((template) => (
+                <Paper
+                  key={template.id}
+                  variant="outlined"
+                  onClick={() => {
+                    setSelectedTemplateIds(prev => 
+                      prev.includes(template.id)
+                        ? prev.filter(id => id !== template.id)
+                        : [...prev, template.id]
+                    );
                   }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Password"
-                  type={showPasswords[index] ? 'text' : 'password'}
-                  value={cred.password}
-                  onChange={(e) => {
-                    const newCreds = [...credentials];
-                    newCreds[index].password = e.target.value;
-                    setCredentials(newCreds);
+                  sx={{
+                    p: 2,
+                    cursor: 'pointer',
+                    border: selectedTemplateIds.includes(template.id) 
+                      ? '2px solid' 
+                      : '1px solid',
+                    borderColor: selectedTemplateIds.includes(template.id)
+                      ? 'primary.main'
+                      : 'divider',
+                    bgcolor: selectedTemplateIds.includes(template.id)
+                      ? 'primary.50'
+                      : 'background.paper',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: selectedTemplateIds.includes(template.id)
+                        ? 'primary.50'
+                        : 'action.hover',
+                    },
                   }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          edge="end"
-                          onClick={() => setShowPasswords(prev => ({ ...prev, [index]: !prev[index] }))}
-                        >
-                          {showPasswords[index] ? <VisibilityOffIcon fontSize="small" /> : <ViewIcon fontSize="small" />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Label (optional)"
-                  placeholder="e.g., DC01 Admin"
-                  value={cred.name}
-                  onChange={(e) => {
-                    const newCreds = [...credentials];
-                    newCreds[index].name = e.target.value;
-                    setCredentials(newCreds);
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
-        ))}
-      </Stack>
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Checkbox
+                        checked={selectedTemplateIds.includes(template.id)}
+                        size="small"
+                        sx={{ p: 0 }}
+                      />
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="subtitle2">{template.name}</Typography>
+                          {template.is_default && (
+                            <Chip
+                              size="small"
+                              icon={<StarIcon sx={{ fontSize: 14 }} />}
+                              label="Default"
+                              color="warning"
+                              sx={{ height: 20 }}
+                            />
+                          )}
+                          <Chip
+                            size="small"
+                            label={template.environment}
+                            color={template.environment === 'production' ? 'error' : 'info'}
+                            variant="outlined"
+                            sx={{ height: 20 }}
+                          />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          <VpnKeyIcon sx={{ fontSize: 12, mr: 0.5, verticalAlign: 'middle' }} />
+                          {template.username}
+                          {template.description && ` · ${template.description}`}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Chip
+                      size="small"
+                      label={`Used ${template.usage_count}x`}
+                      variant="outlined"
+                      sx={{ height: 22 }}
+                    />
+                  </Box>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+          
+          {selectedTemplateIds.length > 0 && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <strong>{selectedTemplateIds.length}</strong> template(s) selected. 
+              Discovery will try each credential set when scanning devices.
+            </Alert>
+          )}
+        </Box>
+      ) : (
+        // ═══════════════════════════════════════════════════════════════════
+        // MANUAL MODE
+        // ═══════════════════════════════════════════════════════════════════
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enter F5 device credentials manually. Multiple credential sets can be added for environments with different admin accounts.
+          </Typography>
+          
+          <Stack spacing={2}>
+            {credentials.map((cred, index) => (
+              <Paper key={index} variant="outlined" sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Credential Set {index + 1}
+                  </Typography>
+                  {credentials.length > 1 && (
+                    <IconButton
+                      size="small"
+                      onClick={() => setCredentials(prev => prev.filter((_, i) => i !== index))}
+                    >
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Username"
+                      placeholder="admin"
+                      value={cred.username}
+                      onChange={(e) => {
+                        const newCreds = [...credentials];
+                        newCreds[index].username = e.target.value;
+                        setCredentials(newCreds);
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Password"
+                      type={showPasswords[index] ? 'text' : 'password'}
+                      value={cred.password}
+                      onChange={(e) => {
+                        const newCreds = [...credentials];
+                        newCreds[index].password = e.target.value;
+                        setCredentials(newCreds);
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              size="small"
+                              edge="end"
+                              onClick={() => setShowPasswords(prev => ({ ...prev, [index]: !prev[index] }))}
+                            >
+                              {showPasswords[index] ? <VisibilityOffIcon fontSize="small" /> : <ViewIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Label (optional)"
+                      placeholder="e.g., DC01 Admin"
+                      value={cred.name}
+                      onChange={(e) => {
+                        const newCreds = [...credentials];
+                        newCreds[index].name = e.target.value;
+                        setCredentials(newCreds);
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+            ))}
+          </Stack>
+          
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => setCredentials(prev => [...prev, { username: '', password: '', name: '' }])}
+            >
+              Add Credential Set
+            </Button>
+          </Box>
+        </Box>
+      )}
       
-      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button
-          size="small"
-          startIcon={<AddIcon />}
-          onClick={() => setCredentials(prev => [...prev, { username: '', password: '', name: '' }])}
-        >
-          Add Credential Set
-        </Button>
-        
+      {/* Common options */}
+      <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
         <FormControlLabel
           control={
             <Checkbox
@@ -550,7 +749,20 @@ export default function DiscoveryPage() {
     </Box>
   );
   
-  const renderNewScanTab = () => (
+  const renderNewScanTab = () => {
+    // Helper to get credential summary text
+    const getCredentialSummary = () => {
+      if (credentialMode === 'template') {
+        const selectedNames = credentialTemplates
+          .filter(t => selectedTemplateIds.includes(t.id))
+          .map(t => t.name);
+        return `${selectedTemplateIds.length} template(s): ${selectedNames.join(', ')}`;
+      } else {
+        return `${credentials.filter(c => c.username && c.password).length} manual credential set(s)`;
+      }
+    };
+    
+    return (
     <Box sx={{ p: 3 }}>
       <Stepper activeStep={activeStep} orientation="vertical">
         <Step>
@@ -558,7 +770,9 @@ export default function DiscoveryPage() {
             optional={
               hasValidCredentials && (
                 <Typography variant="caption" color="success.main">
-                  ✓ {credentials.filter(c => c.username && c.password).length} credential set(s) configured
+                  ✓ {credentialMode === 'template' 
+                    ? `${selectedTemplateIds.length} template(s) selected`
+                    : `${credentials.filter(c => c.username && c.password).length} credential set(s) configured`}
                 </Typography>
               )
             }
@@ -620,8 +834,18 @@ export default function DiscoveryPage() {
                 <Grid item xs={12} sm={6}>
                   <Typography variant="caption" color="text.secondary">Credentials</Typography>
                   <Typography variant="body2">
-                    {credentials.filter(c => c.username && c.password).length} credential set(s)
+                    {credentialMode === 'template' 
+                      ? `${selectedTemplateIds.length} template(s)`
+                      : `${credentials.filter(c => c.username && c.password).length} manual credential set(s)`}
                   </Typography>
+                  {credentialMode === 'template' && selectedTemplateIds.length > 0 && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      {credentialTemplates
+                        .filter(t => selectedTemplateIds.includes(t.id))
+                        .map(t => t.name)
+                        .join(', ')}
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="caption" color="text.secondary">Target</Typography>
@@ -666,6 +890,7 @@ export default function DiscoveryPage() {
       </Stepper>
     </Box>
   );
+  };
   
   const renderHistoryTab = () => (
     <Box sx={{ p: 2 }}>

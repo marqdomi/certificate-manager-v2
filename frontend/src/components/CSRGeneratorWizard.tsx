@@ -45,6 +45,7 @@ import {
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { generateCSR, completeCSR, getCSRDownloadUrl } from '../services/api';
+import apiClient from '../services/api';
 import CertificateSearchAutocomplete, { CertificateOption } from './CertificateSearchAutocomplete';
 import type { 
   CSRFormData, 
@@ -104,37 +105,121 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
   
   // Clipboard feedback
   const [copiedField, setCopiedField] = useState<CopiedField>(null);
+  
+  // Loading state for fetching certificate details
+  const [fetchingSANs, setFetchingSANs] = useState<boolean>(false);
 
   // Handle certificate selection from search autocomplete
-  const handleCertificateSelect = (cert: CertificateOption | null) => {
+  const handleCertificateSelect = async (cert: CertificateOption | null) => {
     setSelectedCertificate(cert);
     if (cert) {
-      // Pre-fill form with certificate data
-      const sanNames = cert.san_names || [];
+      // Pre-fill form with certificate data (CN is always available)
       setForm(prev => ({
         ...prev,
         common_name: cert.common_name || cert.name || '',
-        san_dns_names: sanNames.filter((s: string) => !s.match(/^\d+\.\d+\.\d+\.\d+$/)),
-        san_ip_addresses: sanNames.filter((s: string) => s.match(/^\d+\.\d+\.\d+\.\d+$/)),
       }));
+      
+      // If we have device_id and cert name, fetch full details from F5
+      if (cert.device_id && cert.name) {
+        setFetchingSANs(true);
+        try {
+          const response = await apiClient.get(`/certificates/devices/${cert.device_id}/verify/${encodeURIComponent(cert.name)}`);
+          const sanList = response.data?.san || [];
+          const subject = response.data?.subject || '';
+          
+          // Parse subject string: "CN=*.example.com, O=Company, OU=IT, L=City, ST=State, C=US"
+          const parseSubject = (subjectStr: string): Record<string, string> => {
+            const result: Record<string, string> = {};
+            // Handle both ", " and "," as separators, and "=" for key-value
+            const parts = subjectStr.split(/,\s*/);
+            for (const part of parts) {
+              const [key, ...valueParts] = part.split('=');
+              if (key && valueParts.length > 0) {
+                result[key.trim()] = valueParts.join('=').trim();
+              }
+            }
+            return result;
+          };
+          
+          const subjectFields = parseSubject(subject);
+          
+          setForm(prev => ({
+            ...prev,
+            san_dns_names: sanList.filter((s: string) => !s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+            san_ip_addresses: sanList.filter((s: string) => s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+            // Fill organization fields from subject
+            organization: subjectFields['O'] || prev.organization,
+            organizational_unit: subjectFields['OU'] || prev.organizational_unit,
+            locality: subjectFields['L'] || prev.locality,
+            state: subjectFields['ST'] || subjectFields['S'] || prev.state,
+            country: subjectFields['C'] || prev.country,
+          }));
+        } catch (error) {
+          console.warn('Could not fetch details from certificate:', error);
+          // Continue without details - user can add them manually
+        } finally {
+          setFetchingSANs(false);
+        }
+      }
     }
   };
 
-  // Pre-fill form when editing existing certificate (from inventory)
-  useEffect(() => {
-    if (certificate && open) {
-      const sanNames = certificate.san_names 
-        ? (typeof certificate.san_names === 'string' 
-            ? JSON.parse(certificate.san_names) 
-            : certificate.san_names)
-        : [];
+  // Helper function to fetch certificate details from F5
+  const fetchCertificateDetails = async (deviceId: number, certName: string) => {
+    setFetchingSANs(true);
+    try {
+      const response = await apiClient.get(`/certificates/devices/${deviceId}/verify/${encodeURIComponent(certName)}`);
+      const sanList = response.data?.san || [];
+      const subject = response.data?.subject || '';
+      
+      // Parse subject string: "CN=*.example.com, O=Company, OU=IT, L=City, ST=State, C=US"
+      const parseSubject = (subjectStr: string): Record<string, string> => {
+        const result: Record<string, string> = {};
+        const parts = subjectStr.split(/,\s*/);
+        for (const part of parts) {
+          const [key, ...valueParts] = part.split('=');
+          if (key && valueParts.length > 0) {
+            result[key.trim()] = valueParts.join('=').trim();
+          }
+        }
+        return result;
+      };
+      
+      const subjectFields = parseSubject(subject);
       
       setForm(prev => ({
         ...prev,
-        common_name: certificate.common_name || certificate.name || '',
-        san_dns_names: sanNames.filter((s: string) => !s.match(/^\d+\.\d+\.\d+\.\d+$/)),
-        san_ip_addresses: sanNames.filter((s: string) => s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+        san_dns_names: sanList.filter((s: string) => !s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+        san_ip_addresses: sanList.filter((s: string) => s.match(/^\d+\.\d+\.\d+\.\d+$/)),
+        organization: subjectFields['O'] || prev.organization,
+        organizational_unit: subjectFields['OU'] || prev.organizational_unit,
+        locality: subjectFields['L'] || prev.locality,
+        state: subjectFields['ST'] || subjectFields['S'] || prev.state,
+        country: subjectFields['C'] || prev.country,
       }));
+    } catch (error) {
+      console.warn('Could not fetch details from certificate:', error);
+    } finally {
+      setFetchingSANs(false);
+    }
+  };
+
+  // Pre-fill form when editing existing certificate (from inventory or navigation)
+  useEffect(() => {
+    if (certificate && open) {
+      // Set basic info immediately
+      setForm(prev => ({
+        ...prev,
+        common_name: certificate.common_name || certificate.name || '',
+      }));
+      
+      // Fetch full details from F5 if we have device_id
+      const deviceId = certificate.device_id;
+      const certName = certificate.name || certificate.common_name;
+      
+      if (deviceId && certName) {
+        fetchCertificateDetails(deviceId, certName);
+      }
     }
   }, [certificate, open]);
 
@@ -326,18 +411,24 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
 
       {selectedCertificate && (
         <Alert severity="success" sx={{ mb: 3 }}>
-          <strong>Renewing:</strong> {selectedCertificate.common_name}
-          {selectedCertificate.days_remaining !== undefined && selectedCertificate.days_remaining <= 60 && (
-            <Chip 
-              size="small" 
-              label={`${selectedCertificate.days_remaining}d remaining`} 
-              color={selectedCertificate.days_remaining <= 30 ? 'error' : 'warning'}
-              sx={{ ml: 1 }}
-            />
-          )}
-          <br />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CheckIcon fontSize="small" />
+            <strong>Renewing:</strong> {selectedCertificate.common_name}
+            {selectedCertificate.days_remaining !== undefined && selectedCertificate.days_remaining <= 60 && (
+              <Chip 
+                size="small" 
+                label={`${selectedCertificate.days_remaining}d remaining`} 
+                color={selectedCertificate.days_remaining <= 30 ? 'error' : 'warning'}
+              />
+            )}
+            {fetchingSANs && (
+              <CircularProgress size={16} sx={{ ml: 1 }} />
+            )}
+          </Box>
           <Typography variant="caption" color="text.secondary">
-            Certificate details have been pre-filled from the selected certificate.
+            {fetchingSANs 
+              ? 'Loading certificate details from F5...' 
+              : 'Certificate details have been pre-filled from the selected certificate.'}
           </Typography>
         </Alert>
       )}

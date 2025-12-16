@@ -27,6 +27,7 @@ export interface CertificateOption {
   name: string;
   common_name: string;
   san_names?: string[];
+  device_id?: number;
   device_hostname?: string;
   expiration_date?: string;
   days_remaining?: number;
@@ -74,6 +75,7 @@ const CertificateSearchAutocomplete: React.FC<CertificateSearchAutocompleteProps
           san_names: cert.san_names ? 
             (typeof cert.san_names === 'string' ? JSON.parse(cert.san_names) : cert.san_names) 
             : [],
+          device_id: cert.device_id,
           device_hostname: cert.device_hostname,
           expiration_date: cert.expiration_date,
           days_remaining: cert.days_remaining,

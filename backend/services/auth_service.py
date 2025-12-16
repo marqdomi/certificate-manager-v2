@@ -137,3 +137,17 @@ def require_role(required_roles: List[UserRole]):
             )
         return current_user
     return role_checker
+
+
+# Pre-built role dependencies for convenience
+require_admin = require_role([UserRole.ADMIN])
+require_operator = require_role([UserRole.ADMIN, UserRole.OPERATOR])
+require_viewer = require_role([UserRole.ADMIN, UserRole.OPERATOR, UserRole.VIEWER])
+
+
+def get_password_hash(password: str) -> str:
+    """
+    Alias for hash_password for compatibility.
+    Generates bcrypt hash of a password.
+    """
+    return pwd_context.hash(password)

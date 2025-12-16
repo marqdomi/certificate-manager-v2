@@ -184,6 +184,10 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.VIEWER)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships for notification system
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    preferences = relationship("UserPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role.value}')>"
@@ -274,7 +278,142 @@ class AuditLog(Base):
 
     def __repr__(self):
         return f"<AuditLog(id={self.id}, action='{self.action.value}', user='{self.username}')>"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOTIFICATION SYSTEM MODELS - v2.5 (December 2025)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class NotificationType(str, enum.Enum):
+    """Types of notifications in CMT."""
+    # Certificate notifications
+    CERT_EXPIRING_SOON = "cert_expiring_soon"      # Certificate approaching expiration
+    CERT_EXPIRED = "cert_expired"                   # Certificate has expired
+    CERT_RENEWED = "cert_renewed"                   # Certificate renewal completed
+    CERT_RENEWAL_FAILED = "cert_renewal_failed"    # Certificate renewal failed
+    CERT_DEPLOYED = "cert_deployed"                 # Certificate deployed to device
+    CERT_DEPLOY_FAILED = "cert_deploy_failed"      # Certificate deployment failed
     
+    # Batch operation notifications
+    BATCH_RENEWAL_COMPLETE = "batch_renewal_complete"    # Batch renewal job finished
+    BATCH_RENEWAL_PARTIAL = "batch_renewal_partial"      # Batch renewal partially succeeded
+    BATCH_RENEWAL_FAILED = "batch_renewal_failed"        # Batch renewal job failed
+    
+    # Discovery notifications
+    DISCOVERY_COMPLETE = "discovery_complete"      # Network discovery finished
+    DISCOVERY_FAILED = "discovery_failed"          # Network discovery failed
+    NEW_DEVICES_FOUND = "new_devices_found"        # New devices discovered
+    
+    # Device notifications
+    DEVICE_UNREACHABLE = "device_unreachable"      # Device connection failed
+    DEVICE_RECOVERED = "device_recovered"          # Device back online
+    
+    # System notifications
+    SYSTEM_ALERT = "system_alert"                  # General system alert
+    SYSTEM_MAINTENANCE = "system_maintenance"      # Scheduled maintenance
+    
+    # User notifications
+    USER_CREATED = "user_created"                  # New user account created
+    PASSWORD_CHANGED = "password_changed"          # Password was changed
+    ROLE_CHANGED = "role_changed"                  # User role was modified
+
+
+class NotificationPriority(str, enum.Enum):
+    """Priority levels for notifications."""
+    LOW = "low"           # Informational, non-urgent
+    MEDIUM = "medium"     # Important but not critical
+    HIGH = "high"         # Requires attention soon
+    CRITICAL = "critical" # Requires immediate attention
+
+
+class Notification(Base):
+    """
+    User notification storage for CMT.
+    Supports both individual and broadcast notifications.
+    """
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Target user (null for broadcast to all)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    
+    # Notification content
+    type = Column(Enum(NotificationType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    priority = Column(Enum(NotificationPriority, values_callable=lambda x: [e.value for e in x]), 
+                      nullable=False, default=NotificationPriority.MEDIUM)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    
+    # Additional data (JSON) - e.g., certificate ID, device ID, etc.
+    data = Column(Text, nullable=True)
+    
+    # Action link (optional URL to navigate to)
+    action_url = Column(String(500), nullable=True)
+    action_label = Column(String(100), nullable=True)  # e.g., "View Certificate", "Open Device"
+    
+    # Status
+    is_read = Column(Boolean, default=False, index=True)
+    read_at = Column(DateTime, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=True)  # Auto-delete after this date
+    
+    # Relationships
+    user = relationship("User", back_populates="notifications")
+
+    def __repr__(self):
+        return f"<Notification(id={self.id}, type='{self.type.value}', user_id={self.user_id})>"
+
+
+class UserPreferences(Base):
+    """
+    User preferences storage for CMT.
+    Stores notification preferences, UI settings, and other user-specific configurations.
+    Persisted in DB for cross-device sync.
+    """
+    __tablename__ = "user_preferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    
+    # Notification preferences (JSON) - which notification types are enabled
+    # Format: {"cert_expiring_soon": true, "system_alert": true, ...}
+    notification_settings = Column(Text, nullable=True, default='{}')
+    
+    # Email notification preferences
+    email_notifications_enabled = Column(Boolean, default=True)
+    email_digest_frequency = Column(String(20), default="daily")  # "realtime", "daily", "weekly", "never"
+    
+    # UI preferences
+    theme = Column(String(20), default="light")  # "light", "dark", "system"
+    sidebar_collapsed = Column(Boolean, default=False)
+    default_page_size = Column(Integer, default=25)  # Items per page in tables
+    
+    # Dashboard preferences (JSON) - widget configuration
+    dashboard_layout = Column(Text, nullable=True, default='{}')
+    
+    # Table column preferences (JSON) - which columns are visible per table
+    table_preferences = Column(Text, nullable=True, default='{}')
+    
+    # Timezone preference
+    timezone = Column(String(50), default="UTC")
+    
+    # Date/time format preferences
+    date_format = Column(String(20), default="YYYY-MM-DD")
+    time_format = Column(String(10), default="24h")  # "12h" or "24h"
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = relationship("User", back_populates="preferences")
+
+    def __repr__(self):
+        return f"<UserPreferences(user_id={self.user_id})>"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ⚠️ DEPRECATED CACHE TABLES - v2.5 (December 2025)
@@ -430,3 +569,124 @@ class DiscoveredDevice(Base):
 
     def __repr__(self):
         return f"<DiscoveredDevice(ip='{self.ip_address}', hostname='{self.hostname}')>"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OPERATION SNAPSHOT / ROLLBACK SYSTEM - v2.5 (December 2025)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class OperationType(str, enum.Enum):
+    """Types of operations that can be rolled back."""
+    CERT_DELETE = "cert_delete"           # Certificate deletion
+    CERT_RENEW = "cert_renew"             # Certificate renewal/replacement
+    PROFILE_DISSOCIATE = "profile_dissociate"  # SSL profile dissociation
+    BULK_DELETE = "bulk_delete"           # Bulk certificate deletion
+    BULK_CLEANUP = "bulk_cleanup"         # Cleanup operation (dissociate + delete)
+
+
+class SnapshotStatus(str, enum.Enum):
+    """Status of an operation snapshot."""
+    PENDING = "pending"           # Snapshot created, operation not yet executed
+    APPLIED = "applied"           # Operation executed successfully
+    ROLLED_BACK = "rolled_back"   # Snapshot used to rollback
+    EXPIRED = "expired"           # Snapshot expired and purged
+    FAILED = "failed"             # Operation failed, rollback may be needed
+
+
+class OperationSnapshot(Base):
+    """
+    Stores snapshots of F5 objects before destructive operations.
+    Enables rollback of certificate deletions, profile modifications, etc.
+    """
+    __tablename__ = "operation_snapshots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Operation identification
+    operation_type = Column(
+        Enum(OperationType, values_callable=lambda x: [e.value for e in x]), 
+        nullable=False, 
+        index=True
+    )
+    operation_id = Column(String, nullable=False, unique=True, index=True)  # UUID for grouping related snapshots
+    
+    # Status tracking
+    status = Column(
+        Enum(SnapshotStatus, values_callable=lambda x: [e.value for e in x]), 
+        nullable=False, 
+        default=SnapshotStatus.PENDING
+    )
+    
+    # Target information
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False, index=True)
+    device_hostname = Column(String, nullable=False)  # Denormalized for quick reference
+    cert_name = Column(String, nullable=False, index=True)
+    partition = Column(String, nullable=False, default="Common")
+    
+    # Snapshot data (JSON)
+    # Contains: certificate PEM, private key (encrypted), ssl_profiles configurations
+    snapshot_data = Column(Text, nullable=False)  # JSON with all recoverable data
+    
+    # Affected SSL profiles (for quick reference)
+    affected_profiles = Column(Text, nullable=True)  # JSON array of profile names
+    
+    # Metadata
+    created_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)  # Auto-purge after this date
+    executed_at = Column(DateTime, nullable=True)  # When operation was executed
+    rolled_back_at = Column(DateTime, nullable=True)  # When rollback was performed
+    
+    # Error tracking
+    error_message = Column(Text, nullable=True)
+    
+    # Rollback result
+    rollback_result = Column(Text, nullable=True)  # JSON with rollback details
+    
+    # Relationships
+    device = relationship("Device", foreign_keys=[device_id])
+
+    def __repr__(self):
+        return f"<OperationSnapshot(id={self.id}, op='{self.operation_type.value}', cert='{self.cert_name}')>"
+
+
+# -------------------------------------------------------------------
+# CREDENTIAL TEMPLATE - v2.5 Enterprise Credential Management
+# -------------------------------------------------------------------
+class CredentialTemplate(Base):
+    """
+    Reusable credential templates for F5 device authentication.
+    Allows teams to manage device credentials more efficiently by
+    defining templates that can be applied to multiple devices.
+    """
+    __tablename__ = "credential_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Template identification
+    name = Column(String(100), nullable=False, unique=True, index=True)
+    description = Column(Text, nullable=True)
+    
+    # Credential data
+    username = Column(String(100), nullable=False, default="admin")
+    encrypted_password = Column(Text, nullable=False)  # Encrypted with Fernet
+    
+    # Categorization
+    environment = Column(String(50), nullable=True, index=True)  # prod, dev, staging, etc.
+    site_pattern = Column(String(200), nullable=True)  # Regex/glob pattern for auto-matching sites
+    
+    # Usage tracking
+    usage_count = Column(Integer, nullable=False, default=0)
+    last_used_at = Column(DateTime, nullable=True)
+    
+    # Status
+    is_active = Column(Boolean, nullable=False, default=True)
+    is_default = Column(Boolean, nullable=False, default=False)  # Default template for new devices
+    
+    # Audit
+    created_by = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<CredentialTemplate(id={self.id}, name='{self.name}')>"

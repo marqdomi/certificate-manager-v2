@@ -427,3 +427,74 @@ def log_audit(
     """Quick audit logging function."""
     service = AuditService(db)
     return service._create_entry(action, resource_type, **kwargs)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FastAPI Dependency for Audit Logging
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class AuditLogger:
+    """
+    FastAPI dependency for audit logging in endpoints.
+    
+    Usage:
+        @router.post("/users")
+        async def create_user(audit: AuditLogger = Depends()):
+            ...
+            await audit.log(
+                action=AuditAction.USER_CREATED,
+                resource_type="user",
+                resource_id=user.id,
+                resource_name=user.username,
+                description="User created"
+            )
+    """
+    
+    def __init__(self):
+        self._pending_logs = []
+    
+    async def log(
+        self,
+        action: AuditAction,
+        resource_type: str,
+        resource_id: Optional[int] = None,
+        resource_name: Optional[str] = None,
+        description: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        result: AuditResult = AuditResult.SUCCESS,
+        error_message: Optional[str] = None,
+    ):
+        """
+        Log an audit event. This is an async method for compatibility with FastAPI endpoints.
+        Note: In production, this should integrate with the database session from the request.
+        For now, it logs to the application logger.
+        """
+        log_msg = f"AUDIT: {action.value} - {resource_type}"
+        if resource_name:
+            log_msg += f" '{resource_name}'"
+        if resource_id:
+            log_msg += f" (ID: {resource_id})"
+        if description:
+            log_msg += f" - {description}"
+        if result != AuditResult.SUCCESS:
+            log_msg += f" [{result.value}]"
+        if error_message:
+            log_msg += f" ERROR: {error_message}"
+        
+        if result == AuditResult.SUCCESS:
+            logger.info(log_msg)
+        else:
+            logger.warning(log_msg)
+        
+        # Store for potential batch commit
+        self._pending_logs.append({
+            'action': action,
+            'resource_type': resource_type,
+            'resource_id': resource_id,
+            'resource_name': resource_name,
+            'description': description,
+            'details': details,
+            'result': result,
+            'error_message': error_message,
+        })
+

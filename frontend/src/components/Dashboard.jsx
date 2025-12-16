@@ -2,7 +2,8 @@
 // Enhanced Dashboard with detailed metrics
 
 import React from 'react';
-import { Grid, Paper, Typography, Box, useTheme, Divider } from '@mui/material';
+import { Grid, Paper, Typography, Box, useTheme, Divider, Button, Chip, LinearProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { 
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -13,6 +14,15 @@ import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DevicesIcon from '@mui/icons-material/Dns';
 import StorageIcon from '@mui/icons-material/Storage';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import HistoryIcon from '@mui/icons-material/History';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import SyncIcon from '@mui/icons-material/Sync';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const glassmorphicStyle = {
   p: { xs: 2, sm: 2.5 },
@@ -72,6 +82,7 @@ const MiniStatCard = ({ title, value, color }) => (
 
 const Dashboard = ({ stats, onFilterSelect }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   
   const safeStats = stats || {};
   const total = safeStats.total ?? 0;
@@ -81,6 +92,8 @@ const Dashboard = ({ stats, onFilterSelect }) => {
   const expirationBands = safeStats.expirationBands || {};
   const topDevices = safeStats.topDevices || [];
   const deviceStats = safeStats.deviceStats || {};
+  const pendingRenewals = safeStats.pendingRenewals || { total: 0, items: [] };
+  const auditStats = safeStats.auditStats || {};
 
   // Main health pie chart
   const healthPieData = [
@@ -289,6 +302,264 @@ const Dashboard = ({ stats, onFilterSelect }) => {
               <MiniStatCard title="OK (61-90d)" value={expirationBands.ok || 0} color={theme.palette.info.main} />
             </Grid>
           </Grid>
+        </Paper>
+      </Grid>
+
+      {/* Pending Renewals Widget */}
+      <Grid item xs={12} md={6}>
+        <Paper elevation={0} sx={glassmorphicStyle}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <PendingActionsIcon sx={{ mr: 1, color: theme.palette.warning.main }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Pending Renewals
+              </Typography>
+            </Box>
+            {pendingRenewals.total > 0 && (
+              <Chip 
+                label={pendingRenewals.total} 
+                size="small" 
+                color="warning" 
+                sx={{ fontWeight: 'bold' }}
+              />
+            )}
+          </Box>
+          <Divider sx={{ mb: 2 }} />
+          {pendingRenewals.items.length > 0 ? (
+            <>
+              {pendingRenewals.items.map((item, idx) => (
+                <Box 
+                  key={idx} 
+                  sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    py: 1,
+                    px: 1,
+                    borderRadius: 1,
+                    '&:hover': { backgroundColor: 'action.hover' },
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => navigate('/generate-csr')}
+                >
+                  <Box>
+                    <Typography variant="body2" fontWeight="medium" noWrap sx={{ maxWidth: 200 }}>
+                      {item.commonName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {item.status?.replace(/_/g, ' ')}
+                    </Typography>
+                  </Box>
+                  <ArrowForwardIcon fontSize="small" color="action" />
+                </Box>
+              ))}
+              <Button 
+                fullWidth 
+                variant="text" 
+                size="small" 
+                sx={{ mt: 1 }}
+                onClick={() => navigate('/generate-csr')}
+              >
+                View All Pending CSRs
+              </Button>
+            </>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <CheckCircleIcon sx={{ fontSize: 40, color: theme.palette.success.main, mb: 1 }} />
+              <Typography variant="body2" color="text.secondary">
+                No pending renewals
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+
+      {/* Quick Actions Widget */}
+      <Grid item xs={12} md={6}>
+        <Paper elevation={0} sx={glassmorphicStyle}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Quick Actions
+            </Typography>
+          </Box>
+          <Divider sx={{ mb: 2 }} />
+          <Grid container spacing={1.5}>
+            <Grid item xs={6}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={() => navigate('/generate-csr')}
+                sx={{ 
+                  py: 1.5, 
+                  justifyContent: 'flex-start',
+                  borderColor: 'divider',
+                  '&:hover': { borderColor: 'primary.main' }
+                }}
+              >
+                Generate CSR
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<UploadFileIcon />}
+                onClick={() => navigate('/pfx-generator')}
+                sx={{ 
+                  py: 1.5, 
+                  justifyContent: 'flex-start',
+                  borderColor: 'divider',
+                  '&:hover': { borderColor: 'primary.main' }
+                }}
+              >
+                Upload PFX
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<SyncIcon />}
+                onClick={() => navigate('/batch-renewal')}
+                sx={{ 
+                  py: 1.5, 
+                  justifyContent: 'flex-start',
+                  borderColor: 'divider',
+                  '&:hover': { borderColor: 'primary.main' }
+                }}
+              >
+                Batch Renewal
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<HistoryIcon />}
+                onClick={() => navigate('/audit-log')}
+                sx={{ 
+                  py: 1.5, 
+                  justifyContent: 'flex-start',
+                  borderColor: 'divider',
+                  '&:hover': { borderColor: 'primary.main' }
+                }}
+              >
+                Audit Log
+              </Button>
+            </Grid>
+          </Grid>
+          
+          {/* Activity Summary */}
+          {auditStats?.total_entries > 0 && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <HistoryIcon sx={{ mr: 1, fontSize: 18, color: theme.palette.info.main }} />
+                <Typography variant="body2" color="text.secondary">
+                  Last 7 days activity
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2">
+                  Total operations: <strong>{auditStats.total_entries}</strong>
+                </Typography>
+                {auditStats.recent_failures > 0 && (
+                  <Chip 
+                    label={`${auditStats.recent_failures} failures`}
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                  />
+                )}
+              </Box>
+            </>
+          )}
+        </Paper>
+      </Grid>
+
+      {/* Device HA Status */}
+      <Grid item xs={12}>
+        <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Device HA Status
+            </Typography>
+          </Box>
+          <Grid container spacing={2} justifyContent="center">
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center', p: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                  <PlayArrowIcon sx={{ color: theme.palette.success.main, mr: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">Active</Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.success.main }}>
+                  {deviceStats.active || 0}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center', p: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                  <PauseIcon sx={{ color: theme.palette.grey[500], mr: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">Standby</Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.grey[500] }}>
+                  {deviceStats.standby || 0}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center', p: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                  <CheckCircleIcon sx={{ color: theme.palette.success.main, mr: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">With Credentials</Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.success.main }}>
+                  {deviceStats.withCreds || 0}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Box sx={{ textAlign: 'center', p: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                  <WarningAmberIcon sx={{ color: theme.palette.warning.main, mr: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">No Credentials</Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.warning.main }}>
+                  {deviceStats.withoutCreds || 0}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+          {/* Progress bar showing credential coverage */}
+          {deviceStats.total > 0 && (
+            <Box sx={{ px: 3, mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Credential Coverage
+                </Typography>
+                <Typography variant="caption" fontWeight="bold">
+                  {Math.round((deviceStats.withCreds / deviceStats.total) * 100)}%
+                </Typography>
+              </Box>
+              <LinearProgress 
+                variant="determinate" 
+                value={(deviceStats.withCreds / deviceStats.total) * 100}
+                sx={{ 
+                  height: 8, 
+                  borderRadius: 4,
+                  backgroundColor: theme.palette.grey[300],
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: theme.palette.success.main,
+                    borderRadius: 4,
+                  }
+                }}
+              />
+            </Box>
+          )}
         </Paper>
       </Grid>
     </Grid>

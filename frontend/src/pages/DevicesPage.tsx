@@ -672,6 +672,19 @@ const DevicesPage: React.FC = () => {
 
   const handleSaveCredentials = (credentials: DeviceCredentials): void => {
     if (!selectedDevice) return;
+    
+    // If credentials come from a template, they're already applied by the template endpoint
+    if ((credentials as any).fromTemplate) {
+      setNotification({ 
+        open: true, 
+        message: `Credentials applied from template "${(credentials as any).templateName}"`, 
+        severity: 'success' 
+      });
+      setCredentialModalOpen(false);
+      forceTableRefresh();
+      return;
+    }
+    
     updateDeviceCredentials(selectedDevice.id, credentials)
       .then(() => {
         setNotification({ open: true, message: `Credentials updated.`, severity: 'success' });

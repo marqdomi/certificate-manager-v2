@@ -7,16 +7,23 @@ const DEBUG = import.meta.env.DEV;
 // Determine API base URL
 // Priority:
 // 1. Runtime config (window.APP_CONFIG.API_URL) - for production
-// 2. Build-time env variable (VITE_API_URL) - for development
-// 3. Relative path /api/v1 - fallback
+// 2. In development (DEV mode), use relative path so Vite proxy handles it
+// 3. Build-time env variable (VITE_API_BASE_URL or VITE_API_URL) - for other cases
+// 4. Relative path /api/v1 - fallback
 const getApiBaseURL = () => {
+  // In development mode, always use relative path so Vite proxy handles routing
+  // This works both when running inside Docker and locally
+  if (import.meta.env.DEV) {
+    return '/api/v1';
+  }
+  
   // Check for runtime config first (production)
   if (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.API_URL) {
     return window.APP_CONFIG.API_URL + '/api/v1';
   }
   
-  // Check for build-time environment variable (development)
-  const viteApiUrl = import.meta.env.VITE_API_URL;
+  // Check for build-time environment variable (production build without runtime config)
+  const viteApiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (viteApiUrl && viteApiUrl !== '') {
     return viteApiUrl + '/api/v1';
   }

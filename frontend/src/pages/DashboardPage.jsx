@@ -15,15 +15,19 @@ function DashboardPage() {
 
     async function load() {
       try {
-        // Fetch certificates and devices in parallel
-        const [certsRes, devicesRes] = await Promise.all([
+        // Fetch all data in parallel
+        const [certsRes, devicesRes, csrRes, auditRes] = await Promise.all([
           apiClient.get('/certificates/'),
-          apiClient.get('/devices/')
+          apiClient.get('/devices/'),
+          apiClient.get('/csr/pending').catch(() => ({ data: { pending_requests: [] } })),
+          apiClient.get('/audit/stats?days=7').catch(() => ({ data: null })),
         ]);
         if (!active) return;
 
         const certs = certsRes.data || [];
         const devices = devicesRes.data || [];
+        const pendingCSRs = csrRes.data?.pending_requests || [];
+        const auditStats = auditRes.data;
 
         // Basic stats
         const total = certs.length;
@@ -57,8 +61,21 @@ function DashboardPage() {
         // Device summary
         const deviceStats = {
           total: devices.length,
-          withCreds: devices.filter(d => d?.has_credential).length,
-          withoutCreds: devices.filter(d => !d?.has_credential).length,
+          withCreds: devices.filter(d => d?.has_credential || d?.username).length,
+          withoutCreds: devices.filter(d => !d?.has_credential && !d?.username).length,
+          active: devices.filter(d => d?.ha_state === 'ACTIVE').length,
+          standby: devices.filter(d => d?.ha_state === 'STANDBY').length,
+        };
+
+        // Pending renewals summary
+        const pendingRenewals = {
+          total: pendingCSRs.length,
+          items: pendingCSRs.slice(0, 5).map(csr => ({
+            id: csr.id,
+            commonName: csr.common_name,
+            status: csr.status,
+            createdAt: csr.created_at,
+          })),
         };
 
         setStats({ 
@@ -69,7 +86,9 @@ function DashboardPage() {
           expirationBands,
           topDevices,
           deviceStats,
-          certificates: certs, // For renewal history calculation
+          pendingRenewals,
+          auditStats,
+          certificates: certs,
         });
       } catch (err) {
         if (import.meta.env.DEV) console.error('Error fetching data for dashboard:', err);

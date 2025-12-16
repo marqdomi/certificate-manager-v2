@@ -25,7 +25,7 @@ import re
 import math
 import time
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from base64 import b64encode
 from typing import Tuple, Optional, List, Dict, Any
 
@@ -1189,3 +1189,287 @@ def get_certificate_ssl_profiles_simple(hostname: str, username: str, password: 
     except Exception as e:
         logger.error(f"Failed to get SSL profiles for cert '{cert_name}' on {hostname}: {e}")
         return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CERTIFICATE CLEANUP / DISSOCIATION FUNCTIONS - v2.5 (December 2025)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def dissociate_cert_from_profile(
+    hostname: str,
+    username: str,
+    password: str,
+    profile_name: str,
+    partition: str = "Common",
+    profile_type: str = "clientssl"
+) -> Dict[str, Any]:
+    """
+    Remove certificate association from an SSL profile.
+    
+    This modifies the SSL profile to have an empty certKeyChain, effectively
+    dissociating the certificate without deleting the profile itself.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username
+        password: F5 password
+        profile_name: Name of the SSL profile (without partition)
+        partition: F5 partition
+        profile_type: 'clientssl' or 'serverssl'
+        
+    Returns:
+        Dict with operation result
+    """
+    mgmt = _connect_to_f5(hostname, username, password)
+    
+    result = {
+        "success": False,
+        "profile_name": profile_name,
+        "partition": partition,
+        "profile_type": profile_type,
+        "previous_cert_chain": [],
+        "message": ""
+    }
+    
+    try:
+        # Load the profile
+        if profile_type == "clientssl":
+            profile = mgmt.tm.ltm.profile.client_ssls.client_ssl.load(
+                name=profile_name,
+                partition=partition
+            )
+        else:
+            profile = mgmt.tm.ltm.profile.server_ssls.server_ssl.load(
+                name=profile_name,
+                partition=partition
+            )
+        
+        # Store current certKeyChain for logging/rollback
+        current_chain = getattr(profile, 'certKeyChain', [])
+        result["previous_cert_chain"] = current_chain
+        
+        # Remove the certKeyChain (set to empty)
+        # Note: Some profiles may not allow empty certKeyChain, in which case
+        # the profile will inherit from parent or use defaults
+        profile.modify(certKeyChain=[])
+        
+        result["success"] = True
+        result["message"] = f"Successfully dissociated certificate from profile {profile_name}"
+        logger.info(f"Dissociated cert from profile {profile_name} on {hostname}")
+        
+    except F5SDKError as e:
+        error_msg = str(e)
+        if "01070734" in error_msg:  # Common error for required cert
+            result["message"] = f"Cannot remove certificate: Profile requires a certificate"
+        else:
+            result["message"] = f"F5 API error: {error_msg}"
+        logger.error(f"Failed to dissociate cert from {profile_name}: {error_msg}")
+    except Exception as e:
+        result["message"] = f"Unexpected error: {str(e)}"
+        logger.error(f"Failed to dissociate cert from {profile_name}: {e}")
+    
+    return result
+
+
+def batch_dissociate_profiles(
+    hostname: str,
+    username: str,
+    password: str,
+    profiles: List[Dict[str, str]],
+    partition: str = "Common"
+) -> Dict[str, Any]:
+    """
+    Dissociate certificate from multiple SSL profiles.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username
+        password: F5 password
+        profiles: List of dicts with 'name' and 'type' (clientssl/serverssl)
+        partition: F5 partition
+        
+    Returns:
+        Dict with batch operation results
+    """
+    result = {
+        "total": len(profiles),
+        "successful": 0,
+        "failed": 0,
+        "results": [],
+        "errors": []
+    }
+    
+    for profile_info in profiles:
+        profile_name = profile_info.get("name", "").split("/")[-1]  # Handle full paths
+        profile_type = profile_info.get("type", profile_info.get("context", "clientssl"))
+        
+        # Normalize type
+        if profile_type in ["clientside", "client"]:
+            profile_type = "clientssl"
+        elif profile_type in ["serverside", "server"]:
+            profile_type = "serverssl"
+        
+        try:
+            dissoc_result = dissociate_cert_from_profile(
+                hostname=hostname,
+                username=username,
+                password=password,
+                profile_name=profile_name,
+                partition=partition,
+                profile_type=profile_type
+            )
+            
+            result["results"].append(dissoc_result)
+            
+            if dissoc_result["success"]:
+                result["successful"] += 1
+            else:
+                result["failed"] += 1
+                result["errors"].append(f"{profile_name}: {dissoc_result['message']}")
+                
+        except Exception as e:
+            result["failed"] += 1
+            result["errors"].append(f"{profile_name}: {str(e)}")
+    
+    return result
+
+
+def get_expired_certificates_from_f5(
+    hostname: str,
+    username: str,
+    password: str,
+    days_threshold: int = 0
+) -> List[Dict[str, Any]]:
+    """
+    Get list of expired certificates from F5.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username  
+        password: F5 password
+        days_threshold: Only return certs expired more than this many days ago
+                       (0 = all expired, 30 = expired > 30 days ago)
+        
+    Returns:
+        List of expired certificate info dicts
+    """
+    mgmt = _connect_to_f5(hostname, username, password)
+    
+    expired_certs = []
+    now = datetime.utcnow()
+    threshold_date = now - timedelta(days=days_threshold)
+    
+    try:
+        all_certs = mgmt.tm.sys.file.ssl_certs.get_collection()
+        
+        for cert_stub in all_certs:
+            try:
+                cert = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(
+                    name=cert_stub.name,
+                    partition=cert_stub.partition
+                )
+                
+                exp_str = getattr(cert, 'expirationString', None)
+                if not exp_str:
+                    continue
+                
+                try:
+                    expiration_dt = datetime.strptime(exp_str, '%b %d %H:%M:%S %Y %Z')
+                except ValueError:
+                    continue
+                
+                # Check if expired and past threshold
+                if expiration_dt < threshold_date:
+                    days_expired = (now - expiration_dt).days
+                    
+                    cert_info = {
+                        "name": cert.name,
+                        "partition": cert.partition,
+                        "common_name": getattr(cert, 'commonName', None),
+                        "issuer": getattr(cert, 'issuer', None),
+                        "expiration_date": expiration_dt.isoformat(),
+                        "days_expired": days_expired
+                    }
+                    expired_certs.append(cert_info)
+                    
+            except Exception as e:
+                logger.warning(f"Error processing cert {cert_stub.name}: {e}")
+                continue
+                
+    except Exception as e:
+        logger.error(f"Failed to get expired certs from {hostname}: {e}")
+        raise
+    
+    return expired_certs
+
+
+def get_certificate_deletion_safety(
+    hostname: str,
+    username: str,
+    password: str,
+    cert_name: str,
+    partition: str = "Common"
+) -> Dict[str, Any]:
+    """
+    Check if a certificate can be safely deleted.
+    
+    Returns info about SSL profiles and VIPs using this certificate.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username
+        password: F5 password
+        cert_name: Certificate name
+        partition: F5 partition
+        
+    Returns:
+        Dict with safety analysis
+    """
+    result = {
+        "cert_name": cert_name,
+        "partition": partition,
+        "is_safe_to_delete": True,
+        "ssl_profiles": [],
+        "ssl_profiles_count": 0,
+        "vips_affected": [],
+        "vips_count": 0,
+        "blocking_reason": None
+    }
+    
+    try:
+        # Get SSL profiles using this cert
+        profiles = get_certificate_ssl_profiles_simple(
+            hostname=hostname,
+            username=username,
+            password=password,
+            cert_name=cert_name,
+            partition=partition
+        )
+        
+        result["ssl_profiles"] = profiles
+        result["ssl_profiles_count"] = len(profiles)
+        
+        if profiles:
+            result["is_safe_to_delete"] = False
+            result["blocking_reason"] = f"Certificate is used by {len(profiles)} SSL profile(s)"
+            
+            # Get VIPs using these profiles
+            try:
+                usage_data = get_certificate_usage(
+                    hostname=hostname,
+                    username=username,
+                    password=password,
+                    cert_name=cert_name,
+                    partition=partition
+                )
+                result["vips_affected"] = usage_data.get("virtual_servers", [])
+                result["vips_count"] = len(result["vips_affected"])
+            except:
+                pass
+        
+    except Exception as e:
+        logger.error(f"Error checking deletion safety for {cert_name}: {e}")
+        result["is_safe_to_delete"] = False
+        result["blocking_reason"] = f"Error checking certificate: {str(e)}"
+    
+    return result

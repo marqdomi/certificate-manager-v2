@@ -278,6 +278,20 @@ function InventoryPage() {
         setWizardOpen(false);
         fetchData(); 
     };
+
+  // Listen for CSR Generator event from RenewWizardDialog
+  useEffect(() => {
+    const handleOpenCSRGenerator = (event) => {
+      const { certificateId, certName, certificate, device } = event.detail || {};
+      if (certificate) {
+        setActiveCert(certificate);
+      }
+      navigate('/generate-csr', { state: { certificateToRenew: certificate || activeCert } });
+    };
+    
+    window.addEventListener('openCSRGenerator', handleOpenCSRGenerator);
+    return () => window.removeEventListener('openCSRGenerator', handleOpenCSRGenerator);
+  }, [navigate, activeCert]);
   
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -933,6 +947,7 @@ function InventoryPage() {
         device={activeCert ? { id: activeCert.device_id, hostname: activeCert.device_hostname || (activeCert.device && activeCert.device.hostname) || null } : null}
         certName={activeCert ? (activeCert.certificate_name || activeCert.name || '') : ''}
         certificateId={activeCert ? activeCert.id : null}
+        certificate={activeCert}
       />
       <Dialog open={usageModalOpen} onClose={() => setUsageModalOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>

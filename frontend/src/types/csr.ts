@@ -109,6 +109,10 @@ export interface CertificateToRenew {
   name?: string;
   common_name?: string;
   san_names?: string | string[];
+  device_id?: number;
+  device_hostname?: string;
+  expiration_date?: string;
+  days_remaining?: number;
 }
 
 /**

@@ -29,6 +29,11 @@ from api.endpoints import (
     csr,
     audit,
     batch,
+    users,
+    health,
+    notifications,
+    cleanup,
+    credentials,
 )
 
 app = FastAPI(
@@ -83,6 +88,11 @@ app.include_router(discovery.router,    prefix="/api/v1",              tags=["Di
 app.include_router(csr.router,          prefix="/api/v1",              tags=["CSR Generator"])
 app.include_router(audit.router,        prefix="/api/v1",              tags=["Audit Log"])
 app.include_router(batch.router,        prefix="/api/v1",              tags=["Batch Operations"])
+app.include_router(users.router,        prefix="/api/v1/users",        tags=["User Management"])
+app.include_router(health.router,       prefix="/api/v1/health",       tags=["Health"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
+app.include_router(cleanup.router,      prefix="/api/v1/cleanup",      tags=["Certificate Cleanup"])
+app.include_router(credentials.router,  prefix="/api/v1/credentials",  tags=["Credential Management"])
 
 # Optional: hashing self-test at startup to catch env/package drift early
 try:

@@ -96,6 +96,7 @@ const StatusIcon: FC<StatusIconProps> = ({ status, tooltipText, size = 20 }) => 
 
 // HA/Sync Combined Cell
 const HASyncCell: FC<HASyncCellProps> = ({ haState, syncStatus, syncColor }) => {
+  const defaultHa = { icon: HelpOutlineIcon, color: '#6b7280', bg: 'transparent' };
   const haConfig: Record<string, { icon: typeof PlayArrowIcon; color: string; bg: string }> = {
     ACTIVE: { icon: PlayArrowIcon, color: '#10b981', bg: alpha('#10b981', 0.1) },
     STANDBY: { icon: PauseIcon, color: '#6b7280', bg: alpha('#6b7280', 0.1) },
@@ -108,9 +109,10 @@ const HASyncCell: FC<HASyncCellProps> = ({ haState, syncStatus, syncColor }) => 
     red: '#ef4444',
   };
   
-  const ha = haState ? haConfig[haState] : { icon: HelpOutlineIcon, color: '#6b7280', bg: 'transparent' };
-  const HaIcon = ha?.icon || HelpOutlineIcon;
-  const syncColorValue = syncColor ? syncColorMap[syncColor] : '#6b7280';
+  // Safely get HA config, fallback to default if haState is not in config
+  const ha = (haState && haConfig[haState]) ? haConfig[haState] : defaultHa;
+  const HaIcon = ha.icon || HelpOutlineIcon;
+  const syncColorValue = (syncColor && syncColorMap[syncColor]) ? syncColorMap[syncColor] : '#6b7280';
   
   if (!haState && !syncStatus) {
     return <Typography color="text.disabled">—</Typography>;
@@ -159,7 +161,7 @@ const HASyncCell: FC<HASyncCellProps> = ({ haState, syncStatus, syncColor }) => 
               <SyncProblemIcon sx={{ fontSize: 14, color: syncColorValue }} />
             )}
             <Typography variant="caption" sx={{ fontWeight: 500, color: syncColorValue }}>
-              {syncStatus.length > 10 ? syncStatus.substring(0, 10) + '…' : syncStatus}
+              {syncStatus && syncStatus.length > 10 ? syncStatus.substring(0, 10) + '…' : (syncStatus || '—')}
             </Typography>
           </Box>
         </Tooltip>

@@ -5,13 +5,18 @@
 
 // Get API base URL with runtime config support (for production containers)
 function getApiBase(): string {
+  // In development mode, use empty string so relative URLs work with Vite proxy
+  const VITE_ENV: any = (import.meta as any).env || {};
+  if (VITE_ENV.DEV) {
+    return '';
+  }
+  
   // 1. Check runtime config first (injected by entrypoint.sh in production)
   if (typeof window !== 'undefined' && (window as any).APP_CONFIG && (window as any).APP_CONFIG.API_URL) {
     return String((window as any).APP_CONFIG.API_URL).replace(/\/+$/, '');
   }
   
-  // 2. Fall back to Vite env variables (development)
-  const VITE_ENV: any = (import.meta as any).env || {};
+  // 2. Fall back to Vite env variables (production build without runtime config)
   const envUrl = VITE_ENV.VITE_API_URL || VITE_ENV.VITE_API_BASE_URL || '';
   if (envUrl) {
     return String(envUrl).replace(/\/+$/, '');

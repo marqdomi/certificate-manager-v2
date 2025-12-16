@@ -17,6 +17,7 @@
     "@mui/x-data-grid": "^6.20.0",
     "@peculiar/x509": "^1.13.0",
     "axios": "^1.7.2",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.11",
     "jwt-decode": "^4.0.0",
     "react": "^18.3.1",

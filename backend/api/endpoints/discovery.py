@@ -19,12 +19,13 @@ from db.models import (
     DiscoveryJobStatus,
     DiscoveredDevice, 
     DiscoveredDeviceStatus,
+    CredentialTemplate,
     User
 )
 from services.auth_service import get_current_active_user
 from services.discovery_tasks import task_run_discovery_job, task_import_discovered_devices
 from services.network_discovery import DISCOVERY_PRESETS, expand_subnets
-from services.encryption_service import encrypt_data
+from services.encryption_service import encrypt_data, decrypt_data
 from core.logger import get_f5_logger
 
 logger = get_f5_logger()
@@ -56,7 +57,8 @@ class DiscoveryScanRequest(BaseModel):
     preset: Optional[str] = Field(None, description="Preset key (e.g., 'usdc01')")
     subnets: Optional[List[str]] = Field(None, description="Custom subnet list (CIDR or ranges)")
     name: Optional[str] = Field(None, description="Job name for identification")
-    credentials: List[CredentialSet] = Field(..., description="Credential sets to try during discovery")
+    credentials: Optional[List[CredentialSet]] = Field(None, description="Credential sets to try during discovery")
+    template_ids: Optional[List[int]] = Field(None, description="Credential template IDs to use")
     save_credentials: bool = Field(False, description="Save credentials for imported devices")
 
 
@@ -202,11 +204,46 @@ async def start_discovery_scan(
         )
     
     # Validate credentials provided
-    if not request.credentials or len(request.credentials) == 0:
+    if not request.credentials and not request.template_ids:
         raise HTTPException(
             status_code=400,
-            detail="At least one credential set is required for discovery"
+            detail="Must provide either 'credentials' or 'template_ids'"
         )
+    
+    # Prepare credentials for task
+    credentials_for_task = []
+    
+    # Process template-based credentials
+    if request.template_ids:
+        templates = db.query(CredentialTemplate).filter(
+            CredentialTemplate.id.in_(request.template_ids),
+            CredentialTemplate.is_active == True
+        ).all()
+        
+        if not templates:
+            raise HTTPException(
+                status_code=400,
+                detail="No valid active credential templates found"
+            )
+        
+        for template in templates:
+            # Template passwords are already encrypted
+            credentials_for_task.append({
+                "username": template.username,
+                "password_encrypted": template.encrypted_password,
+                "name": template.name
+            })
+            # Update usage count
+            template.usage_count += 1
+    
+    # Process manual credentials
+    if request.credentials:
+        for cred in request.credentials:
+            credentials_for_task.append({
+                "username": cred.username,
+                "password_encrypted": encrypt_data(cred.password),
+                "name": cred.name or cred.username
+            })
     
     # Create job record
     job = DiscoveryJob(
@@ -221,15 +258,6 @@ async def start_discovery_scan(
     db.refresh(job)
     
     logger.info(f"Created discovery job {job.id}: {job_name} ({total_ips} IPs) by {current_user.username}")
-    
-    # Prepare credentials for task (encrypt passwords)
-    credentials_for_task = []
-    for cred in request.credentials:
-        credentials_for_task.append({
-            "username": cred.username,
-            "password_encrypted": encrypt_data(cred.password),
-            "name": cred.name or cred.username
-        })
     
     # Queue the task with credentials
     task_run_discovery_job.delay(
