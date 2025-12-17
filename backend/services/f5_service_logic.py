@@ -1975,3 +1975,236 @@ def get_certificate_deletion_safety(
         result["blocking_reason"] = f"Error checking certificate: {str(e)}"
     
     return result
+
+
+# -------------------------------------------------------------------
+# HOST SEARCH - Search for hostnames across F5 configurations
+# -------------------------------------------------------------------
+
+def search_hosts_on_device(
+    hostname: str, 
+    username: str, 
+    password: str,
+    search_terms: List[str],
+    case_sensitive: bool = False
+) -> dict:
+    """
+    Search for hostnames/IPs in F5 device configuration.
+    Searches in: Virtual Servers, Pools, Pool Members, Nodes, iRules, Data Groups.
+    
+    Returns dict with matches found in each category.
+    """
+    results = {
+        "device": hostname,
+        "virtual_servers": [],
+        "pools": [],
+        "pool_members": [],
+        "nodes": [],
+        "irules": [],
+        "data_groups": [],
+        "error": None
+    }
+    
+    # Normalize search terms
+    if not case_sensitive:
+        search_terms_normalized = [term.lower().strip() for term in search_terms if term.strip()]
+    else:
+        search_terms_normalized = [term.strip() for term in search_terms if term.strip()]
+    
+    if not search_terms_normalized:
+        return results
+    
+    def matches_any(text: str) -> List[str]:
+        """Check if text matches any search term, return matching terms"""
+        if not text:
+            return []
+        check_text = text if case_sensitive else text.lower()
+        matched = []
+        for term in search_terms_normalized:
+            if term in check_text:
+                # Return original term (before normalization)
+                idx = search_terms_normalized.index(term)
+                matched.append(search_terms[idx].strip())
+        return matched
+    
+    try:
+        mgmt = _connect_to_f5(hostname, username, password)
+        
+        # 1. Search Virtual Servers
+        try:
+            for vs in mgmt.tm.ltm.virtuals.get_collection():
+                vs_matches = []
+                vs_name = getattr(vs, 'name', '')
+                vs_full_path = getattr(vs, 'fullPath', vs_name)
+                vs_destination = getattr(vs, 'destination', '')
+                vs_description = getattr(vs, 'description', '')
+                
+                # Check name
+                vs_matches.extend(matches_any(vs_name))
+                # Check destination (IP:port)
+                vs_matches.extend(matches_any(vs_destination))
+                # Check description
+                vs_matches.extend(matches_any(vs_description))
+                
+                if vs_matches:
+                    results["virtual_servers"].append({
+                        "name": vs_name,
+                        "fullPath": vs_full_path,
+                        "destination": vs_destination.split('/')[-1] if vs_destination else '',
+                        "description": vs_description[:100] if vs_description else '',
+                        "matched_terms": list(set(vs_matches))
+                    })
+        except Exception as e:
+            logger.warning(f"Error searching virtual servers on {hostname}: {e}")
+        
+        # 2. Search Pools and Pool Members
+        try:
+            for pool in mgmt.tm.ltm.pools.get_collection():
+                pool_matches = []
+                pool_name = getattr(pool, 'name', '')
+                pool_full_path = getattr(pool, 'fullPath', pool_name)
+                pool_description = getattr(pool, 'description', '')
+                
+                # Check pool name and description
+                pool_matches.extend(matches_any(pool_name))
+                pool_matches.extend(matches_any(pool_description))
+                
+                # Check pool members
+                member_results = []
+                try:
+                    members = pool.members_s.get_collection()
+                    for member in members:
+                        member_name = getattr(member, 'name', '')  # Usually "node:port"
+                        member_address = getattr(member, 'address', '')
+                        member_fqdn = getattr(member, 'fqdn', {})
+                        member_fqdn_name = member_fqdn.get('tmName', '') if isinstance(member_fqdn, dict) else ''
+                        member_description = getattr(member, 'description', '')
+                        
+                        member_matches = []
+                        member_matches.extend(matches_any(member_name))
+                        member_matches.extend(matches_any(member_address))
+                        member_matches.extend(matches_any(member_fqdn_name))
+                        member_matches.extend(matches_any(member_description))
+                        
+                        if member_matches:
+                            member_results.append({
+                                "name": member_name,
+                                "address": member_address,
+                                "fqdn": member_fqdn_name,
+                                "pool": pool_full_path,
+                                "matched_terms": list(set(member_matches))
+                            })
+                except Exception:
+                    pass
+                
+                if member_results:
+                    results["pool_members"].extend(member_results)
+                
+                if pool_matches:
+                    results["pools"].append({
+                        "name": pool_name,
+                        "fullPath": pool_full_path,
+                        "description": pool_description[:100] if pool_description else '',
+                        "matched_terms": list(set(pool_matches))
+                    })
+        except Exception as e:
+            logger.warning(f"Error searching pools on {hostname}: {e}")
+        
+        # 3. Search Nodes
+        try:
+            for node in mgmt.tm.ltm.nodes.get_collection():
+                node_matches = []
+                node_name = getattr(node, 'name', '')
+                node_full_path = getattr(node, 'fullPath', node_name)
+                node_address = getattr(node, 'address', '')
+                node_fqdn = getattr(node, 'fqdn', {})
+                node_fqdn_name = node_fqdn.get('tmName', '') if isinstance(node_fqdn, dict) else ''
+                node_description = getattr(node, 'description', '')
+                
+                node_matches.extend(matches_any(node_name))
+                node_matches.extend(matches_any(node_address))
+                node_matches.extend(matches_any(node_fqdn_name))
+                node_matches.extend(matches_any(node_description))
+                
+                if node_matches:
+                    results["nodes"].append({
+                        "name": node_name,
+                        "fullPath": node_full_path,
+                        "address": node_address,
+                        "fqdn": node_fqdn_name,
+                        "matched_terms": list(set(node_matches))
+                    })
+        except Exception as e:
+            logger.warning(f"Error searching nodes on {hostname}: {e}")
+        
+        # 4. Search iRules (content search)
+        try:
+            for irule in mgmt.tm.ltm.rules.get_collection():
+                irule_matches = []
+                irule_name = getattr(irule, 'name', '')
+                irule_full_path = getattr(irule, 'fullPath', irule_name)
+                irule_content = getattr(irule, 'apiAnonymous', '')  # iRule content
+                
+                irule_matches.extend(matches_any(irule_name))
+                irule_matches.extend(matches_any(irule_content))
+                
+                if irule_matches:
+                    # Find context around match
+                    snippet = ""
+                    if irule_content:
+                        for term in search_terms_normalized:
+                            check_content = irule_content if case_sensitive else irule_content.lower()
+                            pos = check_content.find(term)
+                            if pos >= 0:
+                                start = max(0, pos - 50)
+                                end = min(len(irule_content), pos + len(term) + 50)
+                                snippet = "..." + irule_content[start:end] + "..."
+                                break
+                    
+                    results["irules"].append({
+                        "name": irule_name,
+                        "fullPath": irule_full_path,
+                        "snippet": snippet[:200] if snippet else '',
+                        "matched_terms": list(set(irule_matches))
+                    })
+        except Exception as e:
+            logger.warning(f"Error searching iRules on {hostname}: {e}")
+        
+        # 5. Search Data Groups (internal)
+        try:
+            for dg in mgmt.tm.ltm.data_group.internals.get_collection():
+                dg_matches = []
+                dg_name = getattr(dg, 'name', '')
+                dg_full_path = getattr(dg, 'fullPath', dg_name)
+                dg_records = getattr(dg, 'records', []) or []
+                
+                dg_matches.extend(matches_any(dg_name))
+                
+                matched_records = []
+                for record in dg_records:
+                    record_name = record.get('name', '') if isinstance(record, dict) else str(record)
+                    record_data = record.get('data', '') if isinstance(record, dict) else ''
+                    
+                    rec_matches = matches_any(record_name) + matches_any(record_data)
+                    if rec_matches:
+                        matched_records.append({
+                            "name": record_name,
+                            "data": record_data[:100] if record_data else '',
+                            "matched_terms": list(set(rec_matches))
+                        })
+                
+                if dg_matches or matched_records:
+                    results["data_groups"].append({
+                        "name": dg_name,
+                        "fullPath": dg_full_path,
+                        "matched_records": matched_records[:10],  # Limit records shown
+                        "matched_terms": list(set(dg_matches))
+                    })
+        except Exception as e:
+            logger.warning(f"Error searching data groups on {hostname}: {e}")
+        
+    except Exception as e:
+        logger.error(f"Error connecting to {hostname} for host search: {e}")
+        results["error"] = str(e)
+    
+    return results

@@ -23,6 +23,8 @@ const ROUTE_CONFIG = {
   '/deploy': { label: 'Deploy Center', parent: '/dashboard' },
   '/batch-renewal': { label: 'Batch Renewal', parent: '/dashboard' },
   '/cert-cleanup': { label: 'Certificate Cleanup', parent: '/dashboard' },
+  '/certificate-cleanup': { label: 'Certificate Cleanup', parent: '/dashboard' },
+  '/host-search': { label: 'Host Search', parent: '/dashboard' },
   '/audit-log': { label: 'Audit Log', parent: '/dashboard' },
   '/notifications': { label: 'Notifications', parent: '/dashboard' },
   '/profile': { label: 'My Profile', parent: '/dashboard' },

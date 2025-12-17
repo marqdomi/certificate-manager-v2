@@ -192,3 +192,144 @@ def queue_scan_all(
         },
     )
     return {"queued": True, "task_id": async_result.id}
+
+
+# -------------------------------------------------------------------
+# HOST SEARCH - Search for hostnames across F5 devices
+# -------------------------------------------------------------------
+
+from pydantic import BaseModel
+
+class HostSearchRequest(BaseModel):
+    search_terms: List[str]
+    device_ids: Optional[List[int]] = None  # None = search all devices
+    case_sensitive: bool = False
+
+class HostSearchResultItem(BaseModel):
+    device_id: int
+    device_hostname: str
+    device_ip: str
+    site: Optional[str] = None
+    virtual_servers: List[dict] = []
+    pools: List[dict] = []
+    pool_members: List[dict] = []
+    nodes: List[dict] = []
+    irules: List[dict] = []
+    data_groups: List[dict] = []
+    total_matches: int = 0
+    error: Optional[str] = None
+
+class HostSearchResponse(BaseModel):
+    search_terms: List[str]
+    devices_searched: int
+    devices_with_matches: int
+    total_matches: int
+    results: List[HostSearchResultItem]
+
+
+@router.post("/host-search", response_model=HostSearchResponse)
+def search_hosts_across_devices(
+    request: HostSearchRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Search for hostnames/IPs across all or selected F5 devices.
+    Searches in Virtual Servers, Pools, Pool Members, Nodes, iRules, and Data Groups.
+    
+    Useful for decommissioning tasks where you need to find all references to specific servers.
+    """
+    from services.credential_resolver import resolve_credentials
+    
+    # Clean and validate search terms
+    search_terms = [term.strip() for term in request.search_terms if term.strip()]
+    if not search_terms:
+        raise HTTPException(status_code=400, detail="No valid search terms provided")
+    
+    if len(search_terms) > 100:
+        raise HTTPException(status_code=400, detail="Maximum 100 search terms allowed")
+    
+    # Get devices to search
+    query = db.query(Device)
+    if request.device_ids:
+        query = query.filter(Device.id.in_(request.device_ids))
+    
+    devices = query.all()
+    
+    if not devices:
+        raise HTTPException(status_code=404, detail="No devices found")
+    
+    results = []
+    devices_with_matches = 0
+    total_matches = 0
+    
+    for device in devices:
+        # Resolve credentials
+        credentials = resolve_credentials(device)
+        if not credentials:
+            results.append(HostSearchResultItem(
+                device_id=device.id,
+                device_hostname=device.hostname,
+                device_ip=device.ip_address,
+                site=device.site,
+                error="No credentials available"
+            ))
+            continue
+        
+        try:
+            # Search on this device
+            device_results = f5_service_logic.search_hosts_on_device(
+                hostname=device.ip_address,
+                username=credentials.username,
+                password=credentials.password,
+                search_terms=search_terms,
+                case_sensitive=request.case_sensitive
+            )
+            
+            # Count matches
+            device_match_count = (
+                len(device_results.get("virtual_servers", [])) +
+                len(device_results.get("pools", [])) +
+                len(device_results.get("pool_members", [])) +
+                len(device_results.get("nodes", [])) +
+                len(device_results.get("irules", [])) +
+                len(device_results.get("data_groups", []))
+            )
+            
+            if device_match_count > 0:
+                devices_with_matches += 1
+                total_matches += device_match_count
+            
+            results.append(HostSearchResultItem(
+                device_id=device.id,
+                device_hostname=device.hostname,
+                device_ip=device.ip_address,
+                site=device.site,
+                virtual_servers=device_results.get("virtual_servers", []),
+                pools=device_results.get("pools", []),
+                pool_members=device_results.get("pool_members", []),
+                nodes=device_results.get("nodes", []),
+                irules=device_results.get("irules", []),
+                data_groups=device_results.get("data_groups", []),
+                total_matches=device_match_count,
+                error=device_results.get("error")
+            ))
+            
+        except Exception as e:
+            results.append(HostSearchResultItem(
+                device_id=device.id,
+                device_hostname=device.hostname,
+                device_ip=device.ip_address,
+                site=device.site,
+                error=str(e)
+            ))
+    
+    # Sort results: devices with matches first, then by match count
+    results.sort(key=lambda x: (-x.total_matches, x.device_hostname))
+    
+    return HostSearchResponse(
+        search_terms=search_terms,
+        devices_searched=len(devices),
+        devices_with_matches=devices_with_matches,
+        total_matches=total_matches,
+        results=results
+    )

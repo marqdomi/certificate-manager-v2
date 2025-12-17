@@ -20,6 +20,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PeopleIcon from '@mui/icons-material/People';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
@@ -43,6 +44,7 @@ const navItems = [
   { text: 'Deploy Center', icon: <PublishIcon />, path: '/deploy' },
   { text: 'Batch Renewal', icon: <AutorenewIcon />, path: '/batch-renewal' },
   { text: 'Cert Cleanup', icon: <CleaningServicesIcon />, path: '/certificate-cleanup' },
+  { text: 'Host Search', icon: <TravelExploreIcon />, path: '/host-search' },
   { text: 'Audit Log', icon: <HistoryIcon />, path: '/audit-log' },
 ];
 

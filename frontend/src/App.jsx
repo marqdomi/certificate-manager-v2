@@ -19,6 +19,7 @@ import AuditLogPage from './pages/AuditLogPage';
 import BatchRenewalPage from './pages/BatchRenewalPage';
 import NotificationsPage from './pages/NotificationsPage';
 import CertificateCleanupPage from './pages/CertificateCleanupPage';
+import HostSearchPage from './pages/HostSearchPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -57,6 +58,7 @@ function App() {
                     <Route path="/deploy" element={<DeployCenterPage />} />
                     <Route path="/batch-renewal" element={<BatchRenewalPage />} />
                     <Route path="/certificate-cleanup" element={<CertificateCleanupPage />} />
+                    <Route path="/host-search" element={<HostSearchPage />} />
                     <Route path="/audit-log" element={<AuditLogPage />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
