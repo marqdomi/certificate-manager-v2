@@ -35,7 +35,7 @@ const getApiBaseURL = () => {
 // Axios instance - don't set baseURL at creation time, use interceptor instead
 const apiClient = axios.create({
   withCredentials: false, // Set to false for cross-origin requests
-  timeout: 30000,
+  timeout: 120000, // 2 minutes default timeout
   headers: { Accept: 'application/json' },
 })
 

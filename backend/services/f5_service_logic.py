@@ -2041,7 +2041,7 @@ def search_hosts_on_device(
     try:
         # 1. Virtual Servers - single call
         try:
-            resp = session.get(f"{base_url}/virtual?$select=name,fullPath,destination,description", timeout=15)
+            resp = session.get(f"{base_url}/virtual?$select=name,fullPath,destination,description", timeout=30)
             if resp.status_code == 200:
                 for vs in resp.json().get('items', []):
                     vs_matches = []
@@ -2067,7 +2067,7 @@ def search_hosts_on_device(
         
         # 2. Pools WITH members expanded - single call with expandSubcollections
         try:
-            resp = session.get(f"{base_url}/pool?expandSubcollections=true", timeout=20)
+            resp = session.get(f"{base_url}/pool?expandSubcollections=true", timeout=45)
             if resp.status_code == 200:
                 for pool in resp.json().get('items', []):
                     pool_matches = []
@@ -2116,7 +2116,7 @@ def search_hosts_on_device(
         
         # 3. Nodes - single call
         try:
-            resp = session.get(f"{base_url}/node?$select=name,fullPath,address,fqdn,description", timeout=15)
+            resp = session.get(f"{base_url}/node?$select=name,fullPath,address,fqdn,description", timeout=30)
             if resp.status_code == 200:
                 for node in resp.json().get('items', []):
                     node_matches = []
@@ -2145,7 +2145,7 @@ def search_hosts_on_device(
         
         # 4. iRules - single call
         try:
-            resp = session.get(f"{base_url}/rule?$select=name,fullPath,apiAnonymous", timeout=15)
+            resp = session.get(f"{base_url}/rule?$select=name,fullPath,apiAnonymous", timeout=30)
             if resp.status_code == 200:
                 for irule in resp.json().get('items', []):
                     irule_matches = []
@@ -2179,7 +2179,7 @@ def search_hosts_on_device(
         
         # 5. Data Groups - single call
         try:
-            resp = session.get(f"{base_url}/data-group/internal?$select=name,fullPath,records", timeout=15)
+            resp = session.get(f"{base_url}/data-group/internal?$select=name,fullPath,records", timeout=30)
             if resp.status_code == 200:
                 for dg in resp.json().get('items', []):
                     dg_matches = []

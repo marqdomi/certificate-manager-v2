@@ -353,9 +353,9 @@ def search_hosts_across_devices(
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_device = {executor.submit(search_device, cfg): cfg for cfg in device_configs}
-        for future in as_completed(future_to_device, timeout=120):
+        for future in as_completed(future_to_device, timeout=300):  # 5 minutes total
             try:
-                result = future.result(timeout=60)
+                result = future.result(timeout=120)  # 2 minutes per device
                 results.append(result)
             except Exception as e:
                 cfg = future_to_device[future]
