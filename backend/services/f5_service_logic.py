@@ -47,6 +47,10 @@ from services.f5_facts import update_device_facts_from_mgmt
 # Setup logger for F5 operations
 logger = get_f5_logger()
 
+# REST API session for optimized F5 queries
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # ----------------------------
 # Security: Input sanitization for F5 commands
 # ----------------------------
@@ -1989,8 +1993,10 @@ def search_hosts_on_device(
     case_sensitive: bool = False
 ) -> dict:
     """
-    Search for hostnames/IPs in F5 device configuration.
+    Search for hostnames/IPs in F5 device configuration using optimized REST API.
     Searches in: Virtual Servers, Pools, Pool Members, Nodes, iRules, Data Groups.
+    
+    OPTIMIZED: Uses direct REST API calls with expandSubcollections to minimize round trips.
     
     Returns dict with matches found in each category.
     """
@@ -2020,65 +2026,68 @@ def search_hosts_on_device(
             return []
         check_text = text if case_sensitive else text.lower()
         matched = []
-        for term in search_terms_normalized:
+        for i, term in enumerate(search_terms_normalized):
             if term in check_text:
-                # Return original term (before normalization)
-                idx = search_terms_normalized.index(term)
-                matched.append(search_terms[idx].strip())
+                matched.append(search_terms[i].strip())
         return matched
     
+    # Setup REST API session
+    session = requests.Session()
+    session.auth = (username, password)
+    session.verify = False
+    session.headers.update({'Content-Type': 'application/json'})
+    base_url = f"https://{hostname}/mgmt/tm/ltm"
+    
     try:
-        mgmt = _connect_to_f5(hostname, username, password)
-        
-        # 1. Search Virtual Servers
+        # 1. Virtual Servers - single call
         try:
-            for vs in mgmt.tm.ltm.virtuals.get_collection():
-                vs_matches = []
-                vs_name = getattr(vs, 'name', '')
-                vs_full_path = getattr(vs, 'fullPath', vs_name)
-                vs_destination = getattr(vs, 'destination', '')
-                vs_description = getattr(vs, 'description', '')
-                
-                # Check name
-                vs_matches.extend(matches_any(vs_name))
-                # Check destination (IP:port)
-                vs_matches.extend(matches_any(vs_destination))
-                # Check description
-                vs_matches.extend(matches_any(vs_description))
-                
-                if vs_matches:
-                    results["virtual_servers"].append({
-                        "name": vs_name,
-                        "fullPath": vs_full_path,
-                        "destination": vs_destination.split('/')[-1] if vs_destination else '',
-                        "description": vs_description[:100] if vs_description else '',
-                        "matched_terms": list(set(vs_matches))
-                    })
+            resp = session.get(f"{base_url}/virtual?$select=name,fullPath,destination,description", timeout=15)
+            if resp.status_code == 200:
+                for vs in resp.json().get('items', []):
+                    vs_matches = []
+                    vs_name = vs.get('name', '')
+                    vs_full_path = vs.get('fullPath', vs_name)
+                    vs_destination = vs.get('destination', '')
+                    vs_description = vs.get('description', '')
+                    
+                    vs_matches.extend(matches_any(vs_name))
+                    vs_matches.extend(matches_any(vs_destination))
+                    vs_matches.extend(matches_any(vs_description))
+                    
+                    if vs_matches:
+                        results["virtual_servers"].append({
+                            "name": vs_name,
+                            "fullPath": vs_full_path,
+                            "destination": vs_destination.split('/')[-1] if vs_destination else '',
+                            "description": vs_description[:100] if vs_description else '',
+                            "matched_terms": list(set(vs_matches))
+                        })
         except Exception as e:
             logger.warning(f"Error searching virtual servers on {hostname}: {e}")
         
-        # 2. Search Pools and Pool Members
+        # 2. Pools WITH members expanded - single call with expandSubcollections
         try:
-            for pool in mgmt.tm.ltm.pools.get_collection():
-                pool_matches = []
-                pool_name = getattr(pool, 'name', '')
-                pool_full_path = getattr(pool, 'fullPath', pool_name)
-                pool_description = getattr(pool, 'description', '')
-                
-                # Check pool name and description
-                pool_matches.extend(matches_any(pool_name))
-                pool_matches.extend(matches_any(pool_description))
-                
-                # Check pool members
-                member_results = []
-                try:
-                    members = pool.members_s.get_collection()
+            resp = session.get(f"{base_url}/pool?expandSubcollections=true", timeout=20)
+            if resp.status_code == 200:
+                for pool in resp.json().get('items', []):
+                    pool_matches = []
+                    pool_name = pool.get('name', '')
+                    pool_full_path = pool.get('fullPath', pool_name)
+                    pool_description = pool.get('description', '')
+                    
+                    pool_matches.extend(matches_any(pool_name))
+                    pool_matches.extend(matches_any(pool_description))
+                    
+                    # Check members from expanded subcollection
+                    members_ref = pool.get('membersReference', {})
+                    members = members_ref.get('items', []) if isinstance(members_ref, dict) else []
+                    
                     for member in members:
-                        member_name = getattr(member, 'name', '')  # Usually "node:port"
-                        member_address = getattr(member, 'address', '')
-                        member_fqdn = getattr(member, 'fqdn', {})
+                        member_name = member.get('name', '')
+                        member_address = member.get('address', '')
+                        member_fqdn = member.get('fqdn', {})
                         member_fqdn_name = member_fqdn.get('tmName', '') if isinstance(member_fqdn, dict) else ''
-                        member_description = getattr(member, 'description', '')
+                        member_description = member.get('description', '')
                         
                         member_matches = []
                         member_matches.extend(matches_any(member_name))
@@ -2087,124 +2096,191 @@ def search_hosts_on_device(
                         member_matches.extend(matches_any(member_description))
                         
                         if member_matches:
-                            member_results.append({
+                            results["pool_members"].append({
                                 "name": member_name,
                                 "address": member_address,
                                 "fqdn": member_fqdn_name,
                                 "pool": pool_full_path,
                                 "matched_terms": list(set(member_matches))
                             })
-                except Exception:
-                    pass
-                
-                if member_results:
-                    results["pool_members"].extend(member_results)
-                
-                if pool_matches:
-                    results["pools"].append({
-                        "name": pool_name,
-                        "fullPath": pool_full_path,
-                        "description": pool_description[:100] if pool_description else '',
-                        "matched_terms": list(set(pool_matches))
-                    })
+                    
+                    if pool_matches:
+                        results["pools"].append({
+                            "name": pool_name,
+                            "fullPath": pool_full_path,
+                            "description": pool_description[:100] if pool_description else '',
+                            "matched_terms": list(set(pool_matches))
+                        })
         except Exception as e:
             logger.warning(f"Error searching pools on {hostname}: {e}")
         
-        # 3. Search Nodes
+        # 3. Nodes - single call
         try:
-            for node in mgmt.tm.ltm.nodes.get_collection():
-                node_matches = []
-                node_name = getattr(node, 'name', '')
-                node_full_path = getattr(node, 'fullPath', node_name)
-                node_address = getattr(node, 'address', '')
-                node_fqdn = getattr(node, 'fqdn', {})
-                node_fqdn_name = node_fqdn.get('tmName', '') if isinstance(node_fqdn, dict) else ''
-                node_description = getattr(node, 'description', '')
-                
-                node_matches.extend(matches_any(node_name))
-                node_matches.extend(matches_any(node_address))
-                node_matches.extend(matches_any(node_fqdn_name))
-                node_matches.extend(matches_any(node_description))
-                
-                if node_matches:
-                    results["nodes"].append({
-                        "name": node_name,
-                        "fullPath": node_full_path,
-                        "address": node_address,
-                        "fqdn": node_fqdn_name,
-                        "matched_terms": list(set(node_matches))
-                    })
+            resp = session.get(f"{base_url}/node?$select=name,fullPath,address,fqdn,description", timeout=15)
+            if resp.status_code == 200:
+                for node in resp.json().get('items', []):
+                    node_matches = []
+                    node_name = node.get('name', '')
+                    node_full_path = node.get('fullPath', node_name)
+                    node_address = node.get('address', '')
+                    node_fqdn = node.get('fqdn', {})
+                    node_fqdn_name = node_fqdn.get('tmName', '') if isinstance(node_fqdn, dict) else ''
+                    node_description = node.get('description', '')
+                    
+                    node_matches.extend(matches_any(node_name))
+                    node_matches.extend(matches_any(node_address))
+                    node_matches.extend(matches_any(node_fqdn_name))
+                    node_matches.extend(matches_any(node_description))
+                    
+                    if node_matches:
+                        results["nodes"].append({
+                            "name": node_name,
+                            "fullPath": node_full_path,
+                            "address": node_address,
+                            "fqdn": node_fqdn_name,
+                            "matched_terms": list(set(node_matches))
+                        })
         except Exception as e:
             logger.warning(f"Error searching nodes on {hostname}: {e}")
         
-        # 4. Search iRules (content search)
+        # 4. iRules - single call
         try:
-            for irule in mgmt.tm.ltm.rules.get_collection():
-                irule_matches = []
-                irule_name = getattr(irule, 'name', '')
-                irule_full_path = getattr(irule, 'fullPath', irule_name)
-                irule_content = getattr(irule, 'apiAnonymous', '')  # iRule content
-                
-                irule_matches.extend(matches_any(irule_name))
-                irule_matches.extend(matches_any(irule_content))
-                
-                if irule_matches:
-                    # Find context around match
-                    snippet = ""
-                    if irule_content:
-                        for term in search_terms_normalized:
-                            check_content = irule_content if case_sensitive else irule_content.lower()
-                            pos = check_content.find(term)
-                            if pos >= 0:
-                                start = max(0, pos - 50)
-                                end = min(len(irule_content), pos + len(term) + 50)
-                                snippet = "..." + irule_content[start:end] + "..."
-                                break
+            resp = session.get(f"{base_url}/rule?$select=name,fullPath,apiAnonymous", timeout=15)
+            if resp.status_code == 200:
+                for irule in resp.json().get('items', []):
+                    irule_matches = []
+                    irule_name = irule.get('name', '')
+                    irule_full_path = irule.get('fullPath', irule_name)
+                    irule_content = irule.get('apiAnonymous', '')
                     
-                    results["irules"].append({
-                        "name": irule_name,
-                        "fullPath": irule_full_path,
-                        "snippet": snippet[:200] if snippet else '',
-                        "matched_terms": list(set(irule_matches))
-                    })
+                    irule_matches.extend(matches_any(irule_name))
+                    irule_matches.extend(matches_any(irule_content))
+                    
+                    if irule_matches:
+                        snippet = ""
+                        if irule_content:
+                            for term in search_terms_normalized:
+                                check_content = irule_content if case_sensitive else irule_content.lower()
+                                pos = check_content.find(term)
+                                if pos >= 0:
+                                    start = max(0, pos - 50)
+                                    end = min(len(irule_content), pos + len(term) + 50)
+                                    snippet = "..." + irule_content[start:end] + "..."
+                                    break
+                        
+                        results["irules"].append({
+                            "name": irule_name,
+                            "fullPath": irule_full_path,
+                            "snippet": snippet[:200] if snippet else '',
+                            "matched_terms": list(set(irule_matches))
+                        })
         except Exception as e:
             logger.warning(f"Error searching iRules on {hostname}: {e}")
         
-        # 5. Search Data Groups (internal)
+        # 5. Data Groups - single call
         try:
-            for dg in mgmt.tm.ltm.data_group.internals.get_collection():
-                dg_matches = []
-                dg_name = getattr(dg, 'name', '')
-                dg_full_path = getattr(dg, 'fullPath', dg_name)
-                dg_records = getattr(dg, 'records', []) or []
-                
-                dg_matches.extend(matches_any(dg_name))
-                
-                matched_records = []
-                for record in dg_records:
-                    record_name = record.get('name', '') if isinstance(record, dict) else str(record)
-                    record_data = record.get('data', '') if isinstance(record, dict) else ''
+            resp = session.get(f"{base_url}/data-group/internal?$select=name,fullPath,records", timeout=15)
+            if resp.status_code == 200:
+                for dg in resp.json().get('items', []):
+                    dg_matches = []
+                    dg_name = dg.get('name', '')
+                    dg_full_path = dg.get('fullPath', dg_name)
+                    dg_records = dg.get('records', []) or []
                     
-                    rec_matches = matches_any(record_name) + matches_any(record_data)
-                    if rec_matches:
-                        matched_records.append({
-                            "name": record_name,
-                            "data": record_data[:100] if record_data else '',
-                            "matched_terms": list(set(rec_matches))
+                    dg_matches.extend(matches_any(dg_name))
+                    
+                    matched_records = []
+                    for record in dg_records:
+                        record_name = record.get('name', '') if isinstance(record, dict) else str(record)
+                        record_data = record.get('data', '') if isinstance(record, dict) else ''
+                        
+                        rec_matches = matches_any(record_name) + matches_any(record_data)
+                        if rec_matches:
+                            matched_records.append({
+                                "name": record_name,
+                                "data": record_data[:100] if record_data else '',
+                                "matched_terms": list(set(rec_matches))
+                            })
+                    
+                    if dg_matches or matched_records:
+                        results["data_groups"].append({
+                            "name": dg_name,
+                            "fullPath": dg_full_path,
+                            "matched_records": matched_records[:10],
+                            "matched_terms": list(set(dg_matches))
                         })
-                
-                if dg_matches or matched_records:
-                    results["data_groups"].append({
-                        "name": dg_name,
-                        "fullPath": dg_full_path,
-                        "matched_records": matched_records[:10],  # Limit records shown
-                        "matched_terms": list(set(dg_matches))
-                    })
         except Exception as e:
             logger.warning(f"Error searching data groups on {hostname}: {e}")
         
     except Exception as e:
-        logger.error(f"Error connecting to {hostname} for host search: {e}")
+        logger.error(f"Error in host search on {hostname}: {e}")
         results["error"] = str(e)
+    finally:
+        session.close()
     
     return results
+
+
+# Celery task for async host search on single device
+def search_hosts_on_device_task(
+    device_id: int,
+    device_hostname: str,
+    device_ip: str,
+    device_site: str,
+    username: str,
+    password: str,
+    search_terms: List[str],
+    case_sensitive: bool = False
+) -> dict:
+    """
+    Celery task wrapper for search_hosts_on_device.
+    Returns structured result with device info.
+    """
+    try:
+        device_results = search_hosts_on_device(
+            hostname=device_ip,
+            username=username,
+            password=password,
+            search_terms=search_terms,
+            case_sensitive=case_sensitive
+        )
+        
+        # Count matches
+        device_match_count = (
+            len(device_results.get("virtual_servers", [])) +
+            len(device_results.get("pools", [])) +
+            len(device_results.get("pool_members", [])) +
+            len(device_results.get("nodes", [])) +
+            len(device_results.get("irules", [])) +
+            len(device_results.get("data_groups", []))
+        )
+        
+        return {
+            "device_id": device_id,
+            "device_hostname": device_hostname,
+            "device_ip": device_ip,
+            "site": device_site,
+            "virtual_servers": device_results.get("virtual_servers", []),
+            "pools": device_results.get("pools", []),
+            "pool_members": device_results.get("pool_members", []),
+            "nodes": device_results.get("nodes", []),
+            "irules": device_results.get("irules", []),
+            "data_groups": device_results.get("data_groups", []),
+            "total_matches": device_match_count,
+            "error": device_results.get("error")
+        }
+    except Exception as e:
+        return {
+            "device_id": device_id,
+            "device_hostname": device_hostname,
+            "device_ip": device_ip,
+            "site": device_site,
+            "virtual_servers": [],
+            "pools": [],
+            "pool_members": [],
+            "nodes": [],
+            "irules": [],
+            "data_groups": [],
+            "total_matches": 0,
+            "error": str(e)
+        }

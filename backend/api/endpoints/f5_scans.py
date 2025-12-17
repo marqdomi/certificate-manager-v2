@@ -227,18 +227,28 @@ class HostSearchResponse(BaseModel):
     results: List[HostSearchResultItem]
 
 
+class HostSearchAsyncResponse(BaseModel):
+    """Response for async host search - returns task_id for polling"""
+    task_id: str
+    message: str
+    devices_to_search: int
+
+
 @router.post("/host-search", response_model=HostSearchResponse)
 def search_hosts_across_devices(
     request: HostSearchRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Search for hostnames/IPs across all or selected F5 devices.
+    Search for hostnames/IPs across all or selected F5 devices using parallel execution.
     Searches in Virtual Servers, Pools, Pool Members, Nodes, iRules, and Data Groups.
+    
+    OPTIMIZED: Uses Celery workers to search devices in parallel for faster results.
     
     Useful for decommissioning tasks where you need to find all references to specific servers.
     """
     from services.credential_resolver import resolve_credentials
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     
     # Clean and validate search terms
     search_terms = [term.strip() for term in request.search_terms if term.strip()]
@@ -258,15 +268,14 @@ def search_hosts_across_devices(
     if not devices:
         raise HTTPException(status_code=404, detail="No devices found")
     
-    results = []
-    devices_with_matches = 0
-    total_matches = 0
+    # Build device configs with credentials
+    device_configs = []
+    no_credential_results = []
     
     for device in devices:
-        # Resolve credentials
         credentials = resolve_credentials(device)
         if not credentials:
-            results.append(HostSearchResultItem(
+            no_credential_results.append(HostSearchResultItem(
                 device_id=device.id,
                 device_hostname=device.hostname,
                 device_ip=device.ip_address,
@@ -275,17 +284,36 @@ def search_hosts_across_devices(
             ))
             continue
         
+        device_configs.append({
+            'device_id': device.id,
+            'device_hostname': device.hostname,
+            'device_ip': device.ip_address,
+            'device_site': device.site,
+            'username': credentials.username,
+            'password': credentials.password
+        })
+    
+    # If no devices with credentials, return early
+    if not device_configs:
+        return HostSearchResponse(
+            search_terms=search_terms,
+            devices_searched=len(devices),
+            devices_with_matches=0,
+            total_matches=0,
+            results=no_credential_results
+        )
+    
+    # Function to search a single device
+    def search_device(config):
         try:
-            # Search on this device
             device_results = f5_service_logic.search_hosts_on_device(
-                hostname=device.ip_address,
-                username=credentials.username,
-                password=credentials.password,
+                hostname=config['device_ip'],
+                username=config['username'],
+                password=config['password'],
                 search_terms=search_terms,
                 case_sensitive=request.case_sensitive
             )
             
-            # Count matches
             device_match_count = (
                 len(device_results.get("virtual_servers", [])) +
                 len(device_results.get("pools", [])) +
@@ -295,15 +323,11 @@ def search_hosts_across_devices(
                 len(device_results.get("data_groups", []))
             )
             
-            if device_match_count > 0:
-                devices_with_matches += 1
-                total_matches += device_match_count
-            
-            results.append(HostSearchResultItem(
-                device_id=device.id,
-                device_hostname=device.hostname,
-                device_ip=device.ip_address,
-                site=device.site,
+            return HostSearchResultItem(
+                device_id=config['device_id'],
+                device_hostname=config['device_hostname'],
+                device_ip=config['device_ip'],
+                site=config['device_site'],
                 virtual_servers=device_results.get("virtual_servers", []),
                 pools=device_results.get("pools", []),
                 pool_members=device_results.get("pool_members", []),
@@ -312,16 +336,40 @@ def search_hosts_across_devices(
                 data_groups=device_results.get("data_groups", []),
                 total_matches=device_match_count,
                 error=device_results.get("error")
-            ))
-            
+            )
         except Exception as e:
-            results.append(HostSearchResultItem(
-                device_id=device.id,
-                device_hostname=device.hostname,
-                device_ip=device.ip_address,
-                site=device.site,
+            return HostSearchResultItem(
+                device_id=config['device_id'],
+                device_hostname=config['device_hostname'],
+                device_ip=config['device_ip'],
+                site=config['device_site'],
                 error=str(e)
-            ))
+            )
+    
+    # Execute searches in parallel using ThreadPoolExecutor
+    # Max 10 concurrent connections to avoid overwhelming F5 devices
+    results = list(no_credential_results)
+    max_workers = min(10, len(device_configs))
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_device = {executor.submit(search_device, cfg): cfg for cfg in device_configs}
+        for future in as_completed(future_to_device, timeout=120):
+            try:
+                result = future.result(timeout=60)
+                results.append(result)
+            except Exception as e:
+                cfg = future_to_device[future]
+                results.append(HostSearchResultItem(
+                    device_id=cfg['device_id'],
+                    device_hostname=cfg['device_hostname'],
+                    device_ip=cfg['device_ip'],
+                    site=cfg['device_site'],
+                    error=f"Timeout or error: {str(e)}"
+                ))
+    
+    # Calculate totals
+    devices_with_matches = sum(1 for r in results if r.total_matches > 0)
+    total_matches = sum(r.total_matches for r in results)
     
     # Sort results: devices with matches first, then by match count
     results.sort(key=lambda x: (-x.total_matches, x.device_hostname))
@@ -333,3 +381,88 @@ def search_hosts_across_devices(
         total_matches=total_matches,
         results=results
     )
+
+
+@router.post("/host-search/async", response_model=HostSearchAsyncResponse)
+def search_hosts_async(
+    request: HostSearchRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Start an async host search across F5 devices using Celery workers.
+    Returns a task_id that can be polled for results.
+    
+    Use this endpoint for large searches across many devices.
+    """
+    from services.credential_resolver import resolve_credentials
+    from core.celery_worker import hostsearch_search_bulk
+    
+    # Clean and validate search terms
+    search_terms = [term.strip() for term in request.search_terms if term.strip()]
+    if not search_terms:
+        raise HTTPException(status_code=400, detail="No valid search terms provided")
+    
+    if len(search_terms) > 100:
+        raise HTTPException(status_code=400, detail="Maximum 100 search terms allowed")
+    
+    # Get devices to search
+    query = db.query(Device)
+    if request.device_ids:
+        query = query.filter(Device.id.in_(request.device_ids))
+    
+    devices = query.all()
+    
+    if not devices:
+        raise HTTPException(status_code=404, detail="No devices found")
+    
+    # Build device configs with credentials
+    device_configs = []
+    for device in devices:
+        credentials = resolve_credentials(device)
+        if credentials:
+            device_configs.append({
+                'device_id': device.id,
+                'hostname': device.hostname,
+                'ip': device.ip_address,
+                'site': device.site,
+                'username': credentials.username,
+                'password': credentials.password
+            })
+    
+    if not device_configs:
+        raise HTTPException(status_code=400, detail="No devices with valid credentials found")
+    
+    # Submit to Celery
+    task = hostsearch_search_bulk.delay(
+        device_configs=device_configs,
+        search_terms=search_terms,
+        case_sensitive=request.case_sensitive
+    )
+    
+    return HostSearchAsyncResponse(
+        task_id=task.id,
+        message="Host search started in background",
+        devices_to_search=len(device_configs)
+    )
+
+
+@router.get("/host-search/status/{task_id}")
+def get_host_search_status(task_id: str):
+    """
+    Get the status and results of an async host search task.
+    """
+    from celery.result import AsyncResult
+    from core.celery_worker import celery_app
+    
+    result = AsyncResult(task_id, app=celery_app)
+    
+    if result.state == 'PENDING':
+        return {"status": "pending", "message": "Task is waiting to start"}
+    elif result.state == 'STARTED':
+        return {"status": "running", "message": "Task is running"}
+    elif result.state == 'SUCCESS':
+        return {"status": "completed", "results": result.result}
+    elif result.state == 'FAILURE':
+        return {"status": "failed", "error": str(result.info)}
+    else:
+        return {"status": result.state, "message": "Unknown state"}

@@ -171,6 +171,110 @@ def check_expiring_certificates():
         db.close()
 
 
+# --- Host Search Tasks (parallel search across F5 devices) ---
+@celery_app.task(name="hostsearch.search_single_device", soft_time_limit=60, time_limit=90)
+def hostsearch_search_single_device(
+    device_id: int,
+    device_hostname: str,
+    device_ip: str,
+    device_site: str,
+    username: str,
+    password: str,
+    search_terms: list,
+    case_sensitive: bool = False
+):
+    """
+    Search for hostnames on a single F5 device.
+    Called in parallel via Celery group for multiple devices.
+    """
+    from services.f5_service_logic import search_hosts_on_device_task
+    return search_hosts_on_device_task(
+        device_id=device_id,
+        device_hostname=device_hostname,
+        device_ip=device_ip,
+        device_site=device_site,
+        username=username,
+        password=password,
+        search_terms=search_terms,
+        case_sensitive=case_sensitive
+    )
+
+
+@celery_app.task(name="hostsearch.search_bulk", soft_time_limit=300, time_limit=360)
+def hostsearch_search_bulk(
+    device_configs: list,
+    search_terms: list,
+    case_sensitive: bool = False
+):
+    """
+    Orchestrate parallel host search across multiple devices using Celery group.
+    
+    Args:
+        device_configs: List of dicts with device_id, hostname, ip, site, username, password
+        search_terms: List of hostnames/IPs to search for
+        case_sensitive: Whether search should be case sensitive
+    
+    Returns:
+        Aggregated search results from all devices
+    """
+    from celery import group
+    
+    # Create tasks for each device
+    tasks = []
+    for cfg in device_configs:
+        tasks.append(hostsearch_search_single_device.s(
+            device_id=cfg['device_id'],
+            device_hostname=cfg['hostname'],
+            device_ip=cfg['ip'],
+            device_site=cfg.get('site', ''),
+            username=cfg['username'],
+            password=cfg['password'],
+            search_terms=search_terms,
+            case_sensitive=case_sensitive
+        ))
+    
+    # Execute in parallel
+    job = group(tasks)
+    result = job.apply_async()
+    
+    # Wait for all tasks to complete (with timeout)
+    try:
+        all_results = result.get(timeout=240)
+    except Exception as e:
+        # Return partial results if some failed
+        all_results = []
+        for r in result.results:
+            try:
+                if r.ready():
+                    all_results.append(r.get(timeout=1))
+            except Exception:
+                pass
+    
+    # Aggregate results
+    devices_with_matches = 0
+    total_matches = 0
+    
+    for res in all_results:
+        if res and res.get('total_matches', 0) > 0:
+            devices_with_matches += 1
+            total_matches += res['total_matches']
+    
+    # Sort: devices with matches first
+    sorted_results = sorted(
+        all_results,
+        key=lambda x: (x.get('total_matches', 0) if x else 0),
+        reverse=True
+    )
+    
+    return {
+        "search_terms": search_terms,
+        "devices_searched": len(device_configs),
+        "devices_with_matches": devices_with_matches,
+        "total_matches": total_matches,
+        "results": sorted_results
+    }
+
+
 # Attempt to import and register cache refresh tasks (optional)
 try:
     from services.cache_builder import (
