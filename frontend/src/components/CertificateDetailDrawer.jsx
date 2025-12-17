@@ -19,8 +19,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SecurityIcon from '@mui/icons-material/Security';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { authProvider } from '../pages/LoginPage';
 
 dayjs.extend(relativeTime);
 
@@ -53,8 +55,12 @@ const CertificateDetailDrawer = ({
   onToggleFavorite,
   onRenew,
   onShowUsage,
+  onDelete,
 }) => {
   if (!certificate) return null;
+
+  // Get user role from auth provider
+  const userRole = authProvider.getRole?.() || 'viewer';
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);

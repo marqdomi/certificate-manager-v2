@@ -153,7 +153,7 @@ const CertificateTable = ({
                 color: days <= 0 ? 'error.main' : 'text.primary',
               }}
             >
-              {days <= 0 ? 'Expired' : days}
+              {days}
             </Typography>
           </Box>
         );

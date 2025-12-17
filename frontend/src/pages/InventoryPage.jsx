@@ -831,7 +831,7 @@ function InventoryPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: statusColor }} />
                       <Typography variant="caption" fontWeight={500}>
-                        {daysRemaining <= 0 ? 'Expired' : daysRemaining}
+                        {daysRemaining}
                       </Typography>
                     </Box>
                   </Box>

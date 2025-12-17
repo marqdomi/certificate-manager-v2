@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
+from pydantic import BaseModel
 import uuid
 import json
 
@@ -76,8 +77,8 @@ def get_cleanup_analysis(
     now = datetime.utcnow()
     
     try:
-        # Get expired certificates from F5
-        expired_certs = f5_service_logic.get_expired_certificates_from_f5(
+        # OPTIMIZED: Get expired certificates WITH ssl profiles in single connection
+        expired_certs = f5_service_logic.get_expired_certificates_with_profiles(
             hostname=device.ip_address,
             username=device.username,
             password=f5_password,
@@ -95,20 +96,9 @@ def get_cleanup_analysis(
         cert_name = cert_info["name"]
         partition = cert_info.get("partition", "Common")
         
-        # Check if cert has SSL profiles
-        try:
-            ssl_profiles = f5_service_logic.get_certificate_ssl_profiles_simple(
-                hostname=device.ip_address,
-                username=device.username,
-                password=f5_password,
-                cert_name=cert_name,
-                partition=partition
-            )
-            profile_names = [p.get("full_path", p.get("name", "")) for p in ssl_profiles]
-        except Exception as e:
-            logger.warning(f"Could not get profiles for {cert_name}: {e}")
-            ssl_profiles = []
-            profile_names = []
+        # SSL profiles are now included in cert_info (pre-fetched)
+        ssl_profiles = cert_info.get("ssl_profiles", [])
+        profile_names = [p.get("full_path", p.get("name", "")) for p in ssl_profiles]
         
         # Categorize
         if len(ssl_profiles) == 0:
@@ -433,6 +423,298 @@ def assisted_delete_certificate(
             )
     
     raise HTTPException(status_code=400, detail=f"Invalid strategy: {request_obj.strategy}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DIRECT F5 CLEANUP (by name, not DB id) - for certs not in local database
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class DirectCleanupRequest(BaseModel):
+    """Request for deleting certificates directly by name from F5"""
+    device_id: int
+    cert_names: List[str]
+    partition: str = "Common"
+    create_snapshot: bool = True
+    strategy: CleanupStrategy = CleanupStrategy.FORCE
+
+class DirectCleanupResult(BaseModel):
+    """Result for a single certificate deletion"""
+    cert_name: str
+    success: bool
+    message: str
+    snapshot_id: Optional[int] = None
+
+class DirectCleanupResponse(BaseModel):
+    """Response for direct cleanup operation"""
+    success: bool
+    total: int
+    successful: int
+    failed: int
+    results: List[DirectCleanupResult]
+    message: str
+
+@router.post("/direct-cleanup", response_model=DirectCleanupResponse)
+@limiter.limit(SENSITIVE_RATE_LIMIT)
+def direct_cleanup_certificates(
+    request: Request,
+    request_obj: DirectCleanupRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_active_user)
+):
+    """
+    Delete certificates directly from F5 by name.
+    
+    This endpoint is for certificates that exist on F5 but may not be in the local database.
+    Used by the cleanup analysis tool.
+    """
+    # Require operator or admin role
+    if current_user.role not in [UserRole.ADMIN, UserRole.OPERATOR]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Get device
+    device = db.query(Device).filter(Device.id == request_obj.device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail=f"Device {request_obj.device_id} not found")
+    
+    if not device.encrypted_password:
+        raise HTTPException(status_code=400, detail=f"Device {device.hostname} has no stored credentials")
+    
+    try:
+        f5_password = encryption_service.decrypt_data(device.encrypted_password)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to decrypt credentials: {str(e)}")
+    
+    rollback_svc = RollbackService(db)
+    audit_svc = AuditService(db)
+    
+    results = []
+    successful = 0
+    failed = 0
+    
+    for cert_name in request_obj.cert_names:
+        try:
+            # Create snapshot if enabled
+            snapshot_id = None
+            if request_obj.create_snapshot:
+                try:
+                    snapshot = rollback_svc.create_snapshot_for_cert_by_name(
+                        device_id=device.id,
+                        cert_name=cert_name,
+                        partition=request_obj.partition,
+                        username=current_user.username
+                    )
+                    snapshot_id = snapshot.id if snapshot else None
+                except Exception as e:
+                    logger.warning(f"Could not create snapshot for {cert_name}: {e}")
+            
+            # Check for SSL profiles first
+            ssl_profiles = f5_service_logic.get_certificate_ssl_profiles_simple(
+                hostname=device.ip_address,
+                username=device.username,
+                password=f5_password,
+                cert_name=cert_name,
+                partition=request_obj.partition
+            )
+            
+            if ssl_profiles and request_obj.strategy == CleanupStrategy.FORCE:
+                results.append(DirectCleanupResult(
+                    cert_name=cert_name,
+                    success=False,
+                    message=f"Certificate has {len(ssl_profiles)} SSL profile(s) - use dissociate strategy",
+                    snapshot_id=snapshot_id
+                ))
+                failed += 1
+                continue
+            
+            # Dissociate if needed
+            cert_already_handled = False  # Flag to track if advanced cleanup processed this cert
+            
+            if ssl_profiles and request_obj.strategy == CleanupStrategy.DISSOCIATE:
+                for profile in ssl_profiles:
+                    try:
+                        dissociate_result = f5_service_logic.dissociate_cert_from_profile(
+                            hostname=device.ip_address,
+                            username=device.username,
+                            password=f5_password,
+                            profile_name=profile['name'],
+                            partition=profile.get('partition', request_obj.partition),
+                            profile_type='clientssl' if profile.get('context') == 'clientside' else 'serverssl',
+                            cert_name=cert_name  # NEW: pass the specific cert to remove
+                        )
+                        if not dissociate_result.get('success'):
+                            dissociate_failed_msg = dissociate_result.get('message', '')
+                            logger.warning(f"Dissociation warning for {cert_name} from {profile['name']}: {dissociate_failed_msg}")
+                            
+                            # If dissociation failed because profile requires a cert, try advanced cleanup
+                            if "requires a certificate" in dissociate_failed_msg or "01070734" in dissociate_failed_msg:
+                                logger.info(f"Profile {profile['name']} requires a cert - attempting advanced cleanup")
+                                try:
+                                    advanced_result = f5_service_logic.handle_cleanup_with_required_cert(
+                                        hostname=device.ip_address,
+                                        username=device.username,
+                                        password=f5_password,
+                                        cert_name=cert_name,
+                                        profile_name=profile['name'],
+                                        partition=profile.get('partition', request_obj.partition),
+                                        profile_type='clientssl' if profile.get('context') == 'clientside' else 'serverssl',
+                                        strategy='auto'
+                                    )
+                                    
+                                    if advanced_result.get('success'):
+                                        # Advanced cleanup handled it - skip normal deletion
+                                        audit_svc.log_action(
+                                            action=AuditAction.CLEANUP_DELETE,
+                                            resource_type="certificate",
+                                            resource_id=0,
+                                            resource_name=cert_name,
+                                            username=current_user.username,
+                                            device_hostname=device.hostname,
+                                            result=AuditResult.SUCCESS,
+                                            description=f"Advanced cleanup: {advanced_result.get('message')}"
+                                        )
+                                        results.append(DirectCleanupResult(
+                                            cert_name=cert_name,
+                                            success=True,
+                                            message=advanced_result.get('message', 'Cleaned up via profile deletion'),
+                                            snapshot_id=snapshot_id
+                                        ))
+                                        successful += 1
+                                        cert_already_handled = True
+                                        break  # Exit the profile loop
+                                    elif advanced_result.get('requires_manual_action'):
+                                        # Profile is in use - cannot auto-cleanup
+                                        audit_svc.log_action(
+                                            action=AuditAction.CLEANUP_DELETE,
+                                            resource_type="certificate",
+                                            resource_id=0,
+                                            resource_name=cert_name,
+                                            username=current_user.username,
+                                            device_hostname=device.hostname,
+                                            result=AuditResult.FAILURE,
+                                            description=f"Cannot cleanup: {advanced_result.get('message')}"
+                                        )
+                                        results.append(DirectCleanupResult(
+                                            cert_name=cert_name,
+                                            success=False,
+                                            message=advanced_result.get('message', 'Profile in use - manual action required'),
+                                            snapshot_id=snapshot_id
+                                        ))
+                                        failed += 1
+                                        cert_already_handled = True
+                                        break  # Exit the profile loop
+                                except Exception as adv_err:
+                                    logger.error(f"Advanced cleanup failed for {cert_name}: {adv_err}")
+                    except Exception as e:
+                        logger.warning(f"Could not dissociate {cert_name} from {profile['name']}: {e}")
+            
+            # Skip normal deletion if advanced cleanup already handled this cert
+            if cert_already_handled:
+                continue
+            
+            # Delete the certificate from F5
+            try:
+                f5_service_logic.delete_certificate_from_f5(
+                    hostname=device.ip_address,
+                    username=device.username,
+                    password=f5_password,
+                    cert_name=cert_name,
+                    partition=request_obj.partition
+                )
+            except Exception as delete_error:
+                # Parse F5 error message for better user feedback
+                error_msg = str(delete_error)
+                if "in use" in error_msg.lower() or "cannot be deleted" in error_msg.lower():
+                    # Extract the profile/chain name from error if possible
+                    if "CertKeyChain" in error_msg:
+                        error_msg = f"Certificate is in use by a CertKeyChain entry and cannot be deleted"
+                    else:
+                        error_msg = f"Certificate is still in use by F5 and cannot be deleted"
+                
+                logger.error(f"Failed to delete {cert_name}: {error_msg}")
+                audit_svc.log_action(
+                    action=AuditAction.CLEANUP_DELETE,
+                    resource_type="certificate",
+                    resource_id=0,
+                    resource_name=cert_name,
+                    username=current_user.username,
+                    device_hostname=device.hostname,
+                    result=AuditResult.FAILURE,
+                    description=f"Failed to delete: {error_msg}"
+                )
+                results.append(DirectCleanupResult(
+                    cert_name=cert_name,
+                    success=False,
+                    message=error_msg,
+                    snapshot_id=snapshot_id
+                ))
+                failed += 1
+                continue  # Continue with next certificate
+            
+            # Also delete from local database if exists
+            local_cert = db.query(Certificate).filter(
+                Certificate.device_id == device.id,
+                Certificate.name == cert_name
+            ).first()
+            
+            db_deleted = False
+            if local_cert:
+                try:
+                    db.delete(local_cert)
+                    db.commit()
+                    db_deleted = True
+                    logger.info(f"Deleted certificate {cert_name} from local database")
+                except Exception as db_error:
+                    logger.warning(f"Could not delete {cert_name} from local DB: {db_error}")
+                    db.rollback()
+            
+            # Log success
+            audit_svc.log_action(
+                action=AuditAction.CLEANUP_DELETE,
+                resource_type="certificate",
+                resource_id=local_cert.id if local_cert else 0,
+                resource_name=cert_name,
+                username=current_user.username,
+                device_hostname=device.hostname,
+                result=AuditResult.SUCCESS,
+                description=f"Deleted certificate {cert_name} from F5{' and local DB' if db_deleted else ''} via cleanup tool"
+            )
+            
+            results.append(DirectCleanupResult(
+                cert_name=cert_name,
+                success=True,
+                message=f"Deleted successfully{' (also removed from inventory)' if db_deleted else ''}",
+                snapshot_id=snapshot_id
+            ))
+            successful += 1
+            
+        except Exception as e:
+            logger.error(f"Failed to delete {cert_name}: {e}")
+            audit_svc.log_action(
+                action=AuditAction.CLEANUP_DELETE,
+                resource_type="certificate",
+                resource_id=0,
+                resource_name=cert_name,
+                username=current_user.username,
+                device_hostname=device.hostname,
+                result=AuditResult.FAILURE,
+                description=f"Failed to delete: {str(e)}"
+            )
+            results.append(DirectCleanupResult(
+                cert_name=cert_name,
+                success=False,
+                message=str(e),
+                snapshot_id=None
+            ))
+            failed += 1
+    
+    return DirectCleanupResponse(
+        success=failed == 0,
+        total=len(request_obj.cert_names),
+        successful=successful,
+        failed=failed,
+        results=results,
+        message=f"Cleanup completed: {successful} deleted, {failed} failed"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

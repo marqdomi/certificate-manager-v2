@@ -220,6 +220,10 @@ class AuditAction(str, enum.Enum):
     PROFILE_MODIFIED = "profile_modified"
     PROFILE_DELETED = "profile_deleted"
     
+    # Cleanup operations
+    CLEANUP_DELETE = "cleanup_delete"
+    CLEANUP_ANALYZE = "cleanup_analyze"
+    
     # User operations
     USER_LOGIN = "user_login"
     USER_LOGOUT = "user_logout"

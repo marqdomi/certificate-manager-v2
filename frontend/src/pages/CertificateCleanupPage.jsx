@@ -162,6 +162,8 @@ const CertificateCleanupPage = () => {
   // Analysis results
   const [analysisResult, setAnalysisResult] = useState(null);
   const [selectedCerts, setSelectedCerts] = useState([]);
+  const [selectedSafeCerts, setSelectedSafeCerts] = useState([]);
+  const [selectedBlockedCerts, setSelectedBlockedCerts] = useState([]);
 
   // Tabs
   const [activeTab, setActiveTab] = useState(0);
@@ -194,7 +196,7 @@ const CertificateCleanupPage = () => {
     }
   };
 
-  const runAnalysis = async () => {
+  const runAnalysis = async (preserveSuccess = false) => {
     if (!selectedDeviceId) {
       setError('Please select a device');
       return;
@@ -202,17 +204,22 @@ const CertificateCleanupPage = () => {
 
     setAnalyzing(true);
     setError(null);
-    setSuccess(null);
+    if (!preserveSuccess) {
+      setSuccess(null);
+    }
     setAnalysisResult(null);
     setSelectedCerts([]);
+    setSelectedSafeCerts([]);
+    setSelectedBlockedCerts([]);
 
     try {
       const response = await apiClient.get(`/cleanup/devices/${selectedDeviceId}/cleanup-analysis`, {
-        params: { days_threshold: daysThreshold }
+        params: { days_threshold: daysThreshold },
+        timeout: 120000 // 2 minutes for F5 device analysis
       });
       setAnalysisResult(response.data);
       
-      if (response.data.total_expired === 0) {
+      if (response.data.total_expired === 0 && !preserveSuccess) {
         setSuccess('No expired certificates found matching the criteria');
       }
     } catch (err) {
@@ -262,6 +269,103 @@ const CertificateCleanupPage = () => {
     } finally {
       setLoading(false);
       setConfirmDialog({ open: false, type: '', data: null });
+    }
+  };
+
+  // NEW: Direct cleanup by certificate names (for certs from F5 not in local DB)
+  const handleDirectCleanup = async (certs, strategy) => {
+    if (!certs || certs.length === 0) {
+      setError('No certificates to delete');
+      return;
+    }
+
+    const totalCerts = certs.length;
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const certNames = certs.map(c => c.name);
+      const response = await apiClient.post('/cleanup/direct-cleanup', {
+        device_id: selectedDeviceId,
+        cert_names: certNames,
+        partition: 'Common',
+        create_snapshot: createSnapshots,
+        strategy: strategy
+      }, {
+        timeout: 600000 // 10 minutes for bulk operations (30 seconds per cert max)
+      });
+
+      const { successful, failed, results, message } = response.data;
+      
+      // Build detailed success message
+      let successMsg = `✅ Cleanup completed!\n\n`;
+      successMsg += `• ${successful} certificate(s) deleted successfully\n`;
+      
+      if (failed > 0) {
+        successMsg += `• ${failed} certificate(s) failed\n\n`;
+        // Show failed certificates (limit to first 10 to avoid huge messages)
+        const failedCerts = results.filter(r => !r.success);
+        if (failedCerts.length > 0) {
+          successMsg += `Failed certificates:\n`;
+          failedCerts.slice(0, 10).forEach(f => {
+            successMsg += `  ❌ ${f.cert_name}: ${f.message}\n`;
+          });
+          if (failedCerts.length > 10) {
+            successMsg += `  ... and ${failedCerts.length - 10} more\n`;
+          }
+        }
+      }
+      
+      // Show appropriate alert based on results
+      if (failed > 0 && successful === 0) {
+        // All failed
+        setError(`All ${failed} certificate(s) failed to delete. See details below.`);
+        setSuccess(successMsg);
+      } else if (failed > 0) {
+        // Partial success - show warning but also success message
+        setSuccess(successMsg);
+        // Don't show separate error - it's included in the success message
+      } else {
+        // All successful
+        setSuccess(successMsg);
+      }
+      
+      // Close dialog and clear selections
+      setConfirmDialog({ open: false, type: '', data: null });
+      setSelectedSafeCerts([]);
+      setSelectedBlockedCerts([]);
+      
+      // Wait a moment so user can see the message, then refresh (preserving success message)
+      setTimeout(() => {
+        runAnalysis(true);
+      }, 2500);
+      
+    } catch (err) {
+      console.error('Cleanup error:', err);
+      
+      // Handle different error types
+      let errorMsg = 'Cleanup failed';
+      
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMsg = `⏱️ Request timeout after ${totalCerts} certificates. The operation may still be processing on the server. Please wait and run analysis again to check results.`;
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || !err.response) {
+        errorMsg = `🔌 Connection lost during cleanup of ${totalCerts} certificates. The operation may have completed partially. Please run analysis again to verify which certificates were deleted.`;
+      } else if (err.response?.status === 502 || err.response?.status === 504) {
+        errorMsg = `⚠️ Server gateway timeout while processing ${totalCerts} certificates. Some certificates may have been deleted. Please run analysis again to check.`;
+      } else if (err.response?.data?.detail) {
+        errorMsg = err.response.data.detail;
+      }
+      
+      setError(errorMsg);
+      setConfirmDialog({ open: false, type: '', data: null });
+      
+      // Still refresh after a delay to show current state
+      setTimeout(() => {
+        runAnalysis(false);
+      }, 3000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -582,7 +686,7 @@ const CertificateCleanupPage = () => {
       {error && (
         <Alert 
           severity="error" 
-          sx={{ mb: 2, borderRadius: 2 }} 
+          sx={{ mb: 2, borderRadius: 2, whiteSpace: 'pre-line' }} 
           onClose={() => setError(null)}
         >
           {error}
@@ -590,8 +694,8 @@ const CertificateCleanupPage = () => {
       )}
       {success && (
         <Alert 
-          severity="success" 
-          sx={{ mb: 2, borderRadius: 2 }} 
+          severity={success.includes('❌') ? 'warning' : 'success'}
+          sx={{ mb: 2, borderRadius: 2, whiteSpace: 'pre-line' }} 
           onClose={() => setSuccess(null)}
         >
           {success}
@@ -839,20 +943,39 @@ const CertificateCleanupPage = () => {
                       <Alert severity="success" sx={{ flex: 1, mr: 2, borderRadius: 2 }}>
                         These certificates have no SSL profile associations and can be safely deleted.
                       </Alert>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        startIcon={<DeleteForeverIcon />}
-                        onClick={() => setConfirmDialog({
-                          open: true,
-                          type: 'bulk_safe',
-                          data: safeCerts
-                        })}
-                        disabled={loading}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-                      >
-                        Delete All ({safeCerts.length})
-                      </Button>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => {
+                            const selected = safeCerts.filter(c => selectedSafeCerts.includes(c.id || c.name));
+                            setConfirmDialog({
+                              open: true,
+                              type: 'bulk_safe',
+                              data: selected
+                            });
+                          }}
+                          disabled={loading || selectedSafeCerts.length === 0}
+                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Delete Selected ({selectedSafeCerts.length})
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          startIcon={<DeleteForeverIcon />}
+                          onClick={() => setConfirmDialog({
+                            open: true,
+                            type: 'bulk_safe',
+                            data: safeCerts
+                          })}
+                          disabled={loading}
+                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Delete All ({safeCerts.length})
+                        </Button>
+                      </Stack>
                     </Box>
                     <DataGrid
                       rows={safeCerts}
@@ -860,7 +983,9 @@ const CertificateCleanupPage = () => {
                       autoHeight
                       pageSize={10}
                       rowsPerPageOptions={[10, 25, 50]}
-                      disableSelectionOnClick
+                      checkboxSelection
+                      onRowSelectionModelChange={(ids) => setSelectedSafeCerts(ids)}
+                      rowSelectionModel={selectedSafeCerts}
                       getRowId={(row) => row.id || row.name}
                       sx={{
                         border: 'none',
@@ -883,20 +1008,39 @@ const CertificateCleanupPage = () => {
                       <Alert severity="warning" sx={{ flex: 1, mr: 2, borderRadius: 2 }}>
                         These certificates are associated with SSL profiles. Deleting will dissociate them first.
                       </Alert>
-                      <Button
-                        variant="contained"
-                        color="warning"
-                        startIcon={<LinkOffIcon />}
-                        onClick={() => setConfirmDialog({
-                          open: true,
-                          type: 'bulk_dissociate',
-                          data: blockedCerts
-                        })}
-                        disabled={loading}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, color: 'white' }}
-                      >
-                        Dissociate & Delete All ({blockedCerts.length})
-                      </Button>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          startIcon={<LinkOffIcon />}
+                          onClick={() => {
+                            const selected = blockedCerts.filter(c => selectedBlockedCerts.includes(c.id || c.name));
+                            setConfirmDialog({
+                              open: true,
+                              type: 'bulk_dissociate',
+                              data: selected
+                            });
+                          }}
+                          disabled={loading || selectedBlockedCerts.length === 0}
+                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Dissociate & Delete Selected ({selectedBlockedCerts.length})
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          startIcon={<LinkOffIcon />}
+                          onClick={() => setConfirmDialog({
+                            open: true,
+                            type: 'bulk_dissociate',
+                            data: blockedCerts
+                          })}
+                          disabled={loading}
+                          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, color: 'white' }}
+                        >
+                          Dissociate & Delete All ({blockedCerts.length})
+                        </Button>
+                      </Stack>
                     </Box>
                     <DataGrid
                       rows={blockedCerts}
@@ -904,7 +1048,9 @@ const CertificateCleanupPage = () => {
                       autoHeight
                       pageSize={10}
                       rowsPerPageOptions={[10, 25, 50]}
-                      disableSelectionOnClick
+                      checkboxSelection
+                      onRowSelectionModelChange={(ids) => setSelectedBlockedCerts(ids)}
+                      rowSelectionModel={selectedBlockedCerts}
                       getRowId={(row) => row.id || row.name}
                       sx={{
                         border: 'none',
@@ -958,8 +1104,8 @@ const CertificateCleanupPage = () => {
                   pageSize={10}
                   rowsPerPageOptions={[10, 25, 50]}
                   checkboxSelection
-                  onSelectionModelChange={(ids) => setSelectedCerts(ids)}
-                  selectionModel={selectedCerts}
+                  onRowSelectionModelChange={(ids) => setSelectedCerts(ids)}
+                  rowSelectionModel={selectedCerts}
                   getRowId={(row) => row.id || row.name}
                   sx={{
                     border: 'none',
@@ -1049,15 +1195,13 @@ const CertificateCleanupPage = () => {
               } else if (confirmDialog.type === 'single_dissociate') {
                 handleDeleteSingle(confirmDialog.data, 'dissociate');
               } else if (confirmDialog.type === 'bulk_safe') {
-                const ids = confirmDialog.data.map(c => c.id).filter(id => id > 0);
-                setSelectedCerts(ids);
-                handleBulkDelete('force');
+                // Use direct cleanup by name for certs from F5
+                handleDirectCleanup(confirmDialog.data, 'force');
               } else if (confirmDialog.type === 'bulk_dissociate' || confirmDialog.type === 'bulk_selected') {
-                const ids = Array.isArray(confirmDialog.data) 
-                  ? confirmDialog.data.map(c => typeof c === 'object' ? c.id : c).filter(id => id > 0)
-                  : confirmDialog.data;
-                setSelectedCerts(ids);
-                handleBulkDelete('dissociate');
+                handleDirectCleanup(
+                  Array.isArray(confirmDialog.data) ? confirmDialog.data : [],
+                  'dissociate'
+                );
               }
             }}
             disabled={loading}

@@ -70,6 +70,12 @@ export function useWebSocketNotifications(onNotification) {
 
       ws.onmessage = (event) => {
         try {
+          // Handle plain text ping messages from server
+          if (event.data === 'ping') {
+            ws.send('pong');
+            return;
+          }
+          
           const data = JSON.parse(event.data);
           
           // Handle different message types
@@ -78,7 +84,7 @@ export function useWebSocketNotifications(onNotification) {
           } else if (data.type === 'connected') {
             console.log('[WS] Server acknowledged connection:', data.user_id);
           } else if (data.type === 'ping') {
-            // Respond to server ping
+            // Respond to server ping (JSON format)
             ws.send(JSON.stringify({ type: 'pong' }));
           }
         } catch (err) {

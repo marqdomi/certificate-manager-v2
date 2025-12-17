@@ -89,13 +89,18 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
     setPlan(null);
 
     try {
+      // Only send selectedProfiles if there are actual profiles to filter by
+      // Empty array should be treated as "no filter" (null), not "filter by nothing"
+      const profiles = previewData?.profiles;
+      const selectedProfiles = (profiles && profiles.length > 0) ? profiles : null;
+      
       const payload: Record<string, unknown> = {
         deviceId: device?.id,
         oldCertName: certName,
         mode: uploadPayload?.mode,
         chainName: useExistingChain ? chainName : undefined,
         updateProfiles,
-        selectedProfiles: previewData?.profiles || null,
+        selectedProfiles,
         dryRun
       };
 

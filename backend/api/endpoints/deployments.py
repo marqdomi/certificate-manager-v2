@@ -431,8 +431,11 @@ async def execute_deployment(
             if not update_profiles:
                 result["updated_profiles"] = []
             else:
-                # If specific selection is provided, call a second pass to limit updates
-                if profiles_list is not None and old_cert_name:
+                # If specific selection is provided (non-empty list), call a second pass to limit updates
+                # Note: We check 'profiles_list' (truthy) not 'is not None' because:
+                # - Empty list [] means "no specific selection" -> use result from initial deploy
+                # - Non-empty list means "only update these specific profiles"
+                if profiles_list and old_cert_name:
                     ups = f5_service_logic.update_profiles_with_new_cert(
                         hostname=device.ip_address,
                         username=username,
@@ -469,7 +472,8 @@ async def execute_deployment(
             if not update_profiles:
                 result["updated_profiles"] = []
             else:
-                if profiles_list is not None and old_cert_name:
+                # Same fix as PFX: only call second pass if profiles_list has actual entries
+                if profiles_list and old_cert_name:
                     ups = f5_service_logic.update_profiles_with_new_cert(
                         hostname=device.ip_address,
                         username=username,

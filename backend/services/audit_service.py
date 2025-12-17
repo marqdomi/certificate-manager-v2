@@ -93,6 +93,39 @@ class AuditService:
         
         return entry
     
+    def log_action(
+        self,
+        action: AuditAction,
+        resource_type: str,
+        resource_id: Optional[int] = None,
+        resource_name: Optional[str] = None,
+        username: Optional[str] = None,
+        device_hostname: Optional[str] = None,
+        result: AuditResult = AuditResult.SUCCESS,
+        description: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        error_message: Optional[str] = None,
+        **kwargs
+    ) -> AuditLog:
+        """
+        Generic method to log any action.
+        
+        This is the main entry point for audit logging from endpoints.
+        """
+        return self._create_entry(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            resource_name=resource_name,
+            username=username,
+            device_hostname=device_hostname,
+            result=result,
+            description=description,
+            details=details,
+            error_message=error_message,
+            **kwargs
+        )
+    
     # --------------------------------------------------------------------------
     # Certificate Operations
     # --------------------------------------------------------------------------

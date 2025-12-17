@@ -39,6 +39,7 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: apiBase,
           changeOrigin: true,
+          timeout: 120000, // 2 minutes for long operations like cleanup analysis
         },
         '/docs': {
           target: apiBase,

@@ -35,6 +35,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.serialization import pkcs12
 from f5.bigip import ManagementRoot
 from f5.sdk_exception import F5SDKError
+from icontrol.exceptions import iControlUnexpectedHTTPError
 from sqlalchemy.orm import Session
 
 from core.config import DEFAULT_CHAIN_NAME
@@ -348,6 +349,10 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
     
     Also updates device facts (version, HA state, sync status, etc.)
     in the same connection to avoid duplicate authentication overhead.
+    
+    IMPORTANT: This is a FULL SYNC - certificates that exist in the local DB
+    but NOT on the F5 device will be DELETED from the local DB.
+    The F5 device is the source of truth.
     """
     try:
         mgmt = _connect_to_f5(device.ip_address, username, password)
@@ -363,6 +368,9 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
 
         f5_certs_stubs = mgmt.tm.sys.file.ssl_certs.get_collection()
         
+        # Track which cert names exist on F5 for cleanup later
+        f5_cert_names = set()
+        
         new_certs_count = 0
         updated_certs_count = 0
 
@@ -374,6 +382,7 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
                 )
                 
                 cert_name = getattr(cert, 'name', 'N/A')
+                f5_cert_names.add(cert_name)  # Track this cert exists on F5
                 
                 # Lógica para extraer el Common Name del 'subject'
                 subject_str = getattr(cert, 'subject', '') or getattr(cert, 'issuer', '')
@@ -432,11 +441,34 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
             except Exception as e_inner:
                 logger.error(f"Failed to process cert '{getattr(cert_stub, 'name', 'UNKNOWN')}': {e_inner}")
         
+        # ─────────────────────────────────────────────────────────────
+        # CLEANUP: Remove certificates from DB that no longer exist on F5
+        # The F5 device is the source of truth
+        # ─────────────────────────────────────────────────────────────
+        deleted_certs_count = 0
+        try:
+            # Get all certificates in DB for this device
+            db_certs_for_device = db.query(Certificate).filter(
+                Certificate.device_id == device.id
+            ).all()
+            
+            for db_cert in db_certs_for_device:
+                if db_cert.name not in f5_cert_names:
+                    logger.info(f"Removing orphan certificate '{db_cert.name}' from DB (no longer exists on F5)")
+                    db.delete(db_cert)
+                    deleted_certs_count += 1
+            
+            if deleted_certs_count > 0:
+                logger.info(f"Removed {deleted_certs_count} orphan certificates from DB for {device.hostname}")
+        except Exception as cleanup_error:
+            logger.warning(f"Error during orphan certificate cleanup for {device.hostname}: {cleanup_error}")
+        # ─────────────────────────────────────────────────────────────
+        
         # Build result message including facts update info
         facts_count = len(facts_result.get('facts_updated', {}))
-        result_message = f"Scan complete for {device.hostname}. Certs - New: {new_certs_count}, Updated: {updated_certs_count}. Facts refreshed: {facts_count} field(s)."
+        result_message = f"Scan complete for {device.hostname}. Certs - New: {new_certs_count}, Updated: {updated_certs_count}, Removed: {deleted_certs_count}. Facts refreshed: {facts_count} field(s)."
         logger.info(result_message)
-        return {"status": "success", "message": result_message, "facts": facts_result}
+        return {"status": "success", "message": result_message, "facts": facts_result, "deleted": deleted_certs_count}
 
     except Exception as e_outer:
         import traceback
@@ -667,6 +699,9 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
 def delete_certificate_from_f5(hostname: str, username: str, password: str, cert_name: str, partition: str):
     mgmt = _connect_to_f5(hostname, username, password)
     
+    cert_deleted = False
+    key_deleted = False
+    
     # CAMBIO 3: Corregimos la lógica para obtener el nombre de la clave
     try:
         cert_obj = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=cert_name, partition=partition)
@@ -676,36 +711,46 @@ def delete_certificate_from_f5(hostname: str, username: str, password: str, cert
             key_name = key_name_only
         else:
             key_name = key_full_path.strip('/').split('/')[-1]
-    except F5SDKError as e:
-        if e.response.status_code == 404:
+    except (F5SDKError, iControlUnexpectedHTTPError) as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
+        if status_code == 404:
             logger.warning(f"Certificate '{cert_name}' not found on {hostname} for key lookup")
             key_name = cert_name.rsplit('.crt', 1)[0]
         else:
             raise ValueError(f"F5 API Error: {e}")
 
-    # Ahora procedemos a borrar
+    # Ahora procedemos a borrar el certificado
     try:
-        # Re-cargamos el objeto por si acaso, y lo borramos
         cert_obj_to_delete = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=cert_name, partition=partition)
         cert_obj_to_delete.delete()
         logger.info(f"Deleted certificate '{cert_name}' from {hostname}")
-    except F5SDKError as e:
-        if e.response.status_code == 404:
-            logger.warning(f"Certificate '{cert_name}' not found on {hostname} during deletion")
+        cert_deleted = True
+    except (F5SDKError, iControlUnexpectedHTTPError) as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
+        if status_code == 404:
+            logger.warning(f"Certificate '{cert_name}' not found on {hostname} during deletion (already deleted)")
+            cert_deleted = True  # Certificate not found = it's gone = success
         else:
             raise ValueError(f"F5 API Error during certificate deletion: {e}")
 
+    # Ahora intentamos borrar la llave (no es crítico si no existe)
     try:
         key_obj = mgmt.tm.sys.file.ssl_keys.ssl_key.load(name=key_name, partition=partition)
         key_obj.delete()
         logger.info(f"Deleted key '{key_name}' from {hostname}")
-    except F5SDKError as e:
-        if e.response.status_code == 404:
-            logger.warning(f"Key '{key_name}' not found on {hostname} during deletion")
+        key_deleted = True
+    except (F5SDKError, iControlUnexpectedHTTPError) as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
+        if status_code == 404:
+            # Key not found is OK - maybe it was shared or doesn't exist
+            logger.info(f"Key '{key_name}' not found on {hostname} (this is OK - may be shared or not exist)")
+            key_deleted = True  # Consider it success - no key to delete
         else:
-            raise ValueError(f"F5 API Error during key deletion: {e}")
+            # Log warning but don't fail - the cert is deleted which is the main goal
+            logger.warning(f"Could not delete key '{key_name}': {e}")
+            key_deleted = False
     
-    return {"status": "success", "message": f"Deletion process for {cert_name} completed."}
+    return {"status": "success", "message": f"Deletion process for {cert_name} completed.", "cert_deleted": cert_deleted, "key_deleted": key_deleted}
 
 
 # NOTE: export_key_and_create_csr was REMOVED in v2.5 (Dec 2025)
@@ -1201,13 +1246,15 @@ def dissociate_cert_from_profile(
     password: str,
     profile_name: str,
     partition: str = "Common",
-    profile_type: str = "clientssl"
+    profile_type: str = "clientssl",
+    cert_name: str = None  # NEW: específico cert a remover
 ) -> Dict[str, Any]:
     """
     Remove certificate association from an SSL profile.
     
-    This modifies the SSL profile to have an empty certKeyChain, effectively
-    dissociating the certificate without deleting the profile itself.
+    This modifies the SSL profile to remove the specific certificate from certKeyChain.
+    If cert_name is provided, only that certificate is removed from the chain.
+    If cert_name is None, the entire certKeyChain is cleared.
     
     Args:
         hostname: F5 hostname
@@ -1216,6 +1263,7 @@ def dissociate_cert_from_profile(
         profile_name: Name of the SSL profile (without partition)
         partition: F5 partition
         profile_type: 'clientssl' or 'serverssl'
+        cert_name: Optional - specific certificate name to remove from chain
         
     Returns:
         Dict with operation result
@@ -1245,16 +1293,50 @@ def dissociate_cert_from_profile(
             )
         
         # Store current certKeyChain for logging/rollback
-        current_chain = getattr(profile, 'certKeyChain', [])
+        current_chain = getattr(profile, 'certKeyChain', []) or []
         result["previous_cert_chain"] = current_chain
         
-        # Remove the certKeyChain (set to empty)
-        # Note: Some profiles may not allow empty certKeyChain, in which case
-        # the profile will inherit from parent or use defaults
-        profile.modify(certKeyChain=[])
+        if cert_name and current_chain:
+            # NEW: Remove only the specific certificate from the chain
+            new_chain = []
+            removed = False
+            for chain_item in current_chain:
+                cert_value = chain_item.get('cert', '')
+                # Check if this chain item contains the cert we want to remove
+                if cert_name in cert_value:
+                    removed = True
+                    logger.info(f"Removing cert '{cert_name}' from chain in profile {profile_name}")
+                else:
+                    new_chain.append(chain_item)
+            
+            if not removed:
+                result["message"] = f"Certificate '{cert_name}' not found in profile's certKeyChain"
+                result["success"] = True  # Not an error - cert wasn't in this profile
+                return result
+            
+            # Update with the new chain (minus the removed cert)
+            if new_chain:
+                # Profile still has other certs in chain
+                profile.modify(certKeyChain=new_chain)
+                result["message"] = f"Removed '{cert_name}' from certKeyChain, {len(new_chain)} cert(s) remain"
+            else:
+                # Chain is now empty - try to clear it
+                try:
+                    profile.modify(certKeyChain=[])
+                    result["message"] = f"Removed '{cert_name}' and cleared certKeyChain"
+                except F5SDKError as e:
+                    if "01070734" in str(e):
+                        # Profile requires a cert - can't clear completely
+                        result["success"] = False
+                        result["message"] = f"Cannot clear certKeyChain: Profile requires a certificate. Manual intervention needed."
+                        return result
+                    raise
+        else:
+            # Original behavior: Clear entire certKeyChain
+            profile.modify(certKeyChain=[])
+            result["message"] = f"Successfully cleared certKeyChain from profile {profile_name}"
         
         result["success"] = True
-        result["message"] = f"Successfully dissociated certificate from profile {profile_name}"
         logger.info(f"Dissociated cert from profile {profile_name} on {hostname}")
         
     except F5SDKError as e:
@@ -1332,6 +1414,426 @@ def batch_dissociate_profiles(
             result["errors"].append(f"{profile_name}: {str(e)}")
     
     return result
+
+
+def check_profile_in_use_by_vips(
+    hostname: str,
+    username: str,
+    password: str,
+    profile_name: str,
+    partition: str = "Common"
+) -> Dict[str, Any]:
+    """
+    Check if an SSL profile is associated with any Virtual Servers.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username
+        password: F5 password
+        profile_name: Name of the SSL profile
+        partition: F5 partition
+        
+    Returns:
+        Dict with:
+        - in_use: bool - whether profile is used by any VIP
+        - vips: list of VIP names using this profile
+        - count: number of VIPs using this profile
+    """
+    mgmt = _connect_to_f5(hostname, username, password)
+    
+    result = {
+        "in_use": False,
+        "vips": [],
+        "count": 0
+    }
+    
+    profile_full_path = f"/{partition}/{profile_name}"
+    
+    try:
+        virtuals = mgmt.tm.ltm.virtuals.get_collection()
+        for vs in virtuals:
+            try:
+                vs_profiles = vs.profiles_s.get_collection()
+                for p in vs_profiles:
+                    if hasattr(p, 'fullPath') and p.fullPath == profile_full_path:
+                        result["vips"].append({
+                            "name": vs.name,
+                            "fullPath": getattr(vs, 'fullPath', vs.name),
+                            "destination": getattr(vs, 'destination', 'unknown')
+                        })
+                        break
+            except Exception as e:
+                logger.debug(f"Could not get profiles for VS {vs.name}: {e}")
+                continue
+        
+        result["count"] = len(result["vips"])
+        result["in_use"] = result["count"] > 0
+        
+    except Exception as e:
+        logger.error(f"Error checking profile {profile_name} usage: {e}")
+        # Assume in use if we can't check (safer)
+        result["in_use"] = True
+        result["error"] = str(e)
+    
+    return result
+
+
+def delete_ssl_profile(
+    hostname: str,
+    username: str,
+    password: str,
+    profile_name: str,
+    partition: str = "Common",
+    profile_type: str = "clientssl",
+    force: bool = False
+) -> Dict[str, Any]:
+    """
+    Delete an SSL profile from F5.
+    
+    Will check if profile is in use unless force=True.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username
+        password: F5 password
+        profile_name: Name of the SSL profile
+        partition: F5 partition
+        profile_type: 'clientssl' or 'serverssl'
+        force: Skip the VIP usage check
+        
+    Returns:
+        Dict with operation result
+    """
+    result = {
+        "success": False,
+        "profile_name": profile_name,
+        "message": ""
+    }
+    
+    # Check if in use (unless force)
+    if not force:
+        usage = check_profile_in_use_by_vips(hostname, username, password, profile_name, partition)
+        if usage["in_use"]:
+            vip_names = ", ".join([v["name"] for v in usage["vips"][:5]])
+            if usage["count"] > 5:
+                vip_names += f" (+{usage['count'] - 5} more)"
+            result["message"] = f"Profile is in use by {usage['count']} VIP(s): {vip_names}"
+            result["vips_using"] = usage["vips"]
+            return result
+    
+    mgmt = _connect_to_f5(hostname, username, password)
+    
+    try:
+        if profile_type == "clientssl":
+            profile = mgmt.tm.ltm.profile.client_ssls.client_ssl.load(
+                name=profile_name,
+                partition=partition
+            )
+        else:
+            profile = mgmt.tm.ltm.profile.server_ssls.server_ssl.load(
+                name=profile_name,
+                partition=partition
+            )
+        
+        profile.delete()
+        result["success"] = True
+        result["message"] = f"Successfully deleted profile {profile_name}"
+        logger.info(f"Deleted SSL profile {profile_name} from {hostname}")
+        
+    except F5SDKError as e:
+        error_msg = str(e)
+        if "is in use" in error_msg.lower():
+            result["message"] = f"Profile is in use and cannot be deleted"
+        elif "not found" in error_msg.lower() or "404" in error_msg:
+            result["success"] = True  # Already gone
+            result["message"] = f"Profile {profile_name} not found (already deleted)"
+        else:
+            result["message"] = f"F5 API error: {error_msg}"
+        logger.error(f"Failed to delete profile {profile_name}: {error_msg}")
+    except Exception as e:
+        result["message"] = f"Unexpected error: {str(e)}"
+        logger.error(f"Failed to delete profile {profile_name}: {e}")
+    
+    return result
+
+
+def handle_cleanup_with_required_cert(
+    hostname: str,
+    username: str,
+    password: str,
+    cert_name: str,
+    profile_name: str,
+    partition: str = "Common",
+    profile_type: str = "clientssl",
+    strategy: str = "auto"  # auto, delete_profile, placeholder
+) -> Dict[str, Any]:
+    """
+    Handle cleanup of a certificate when the SSL profile requires at least one cert.
+    
+    Strategies:
+    - auto: Check if profile is in use. If not, delete it. If yes, report manual action needed.
+    - delete_profile: Force delete the profile (will fail if VIPs use it)
+    - placeholder: Would need to create/use a placeholder cert (not implemented yet)
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username  
+        password: F5 password
+        cert_name: Certificate name to clean up
+        profile_name: SSL profile name that uses the cert
+        partition: F5 partition
+        profile_type: 'clientssl' or 'serverssl'
+        strategy: How to handle the situation
+        
+    Returns:
+        Dict with operation result and actions taken
+    """
+    result = {
+        "success": False,
+        "cert_name": cert_name,
+        "profile_name": profile_name,
+        "strategy_used": strategy,
+        "actions": [],
+        "message": ""
+    }
+    
+    # Check profile usage
+    usage = check_profile_in_use_by_vips(hostname, username, password, profile_name, partition)
+    result["profile_in_use"] = usage["in_use"]
+    result["vips_using_profile"] = usage["vips"]
+    
+    if strategy == "auto":
+        if not usage["in_use"]:
+            # Profile is not used - safe to delete entirely
+            logger.info(f"Profile {profile_name} is not in use by any VIP - will delete it")
+            delete_result = delete_ssl_profile(
+                hostname, username, password, profile_name, partition, profile_type, force=True
+            )
+            result["actions"].append(f"Deleted unused profile: {profile_name}")
+            
+            if delete_result["success"]:
+                # Now we can delete the certificate
+                from services.f5_service_logic import delete_certificate_from_f5
+                try:
+                    delete_certificate_from_f5(hostname, username, password, cert_name, partition)
+                    result["success"] = True
+                    result["message"] = f"Deleted unused profile '{profile_name}' and certificate '{cert_name}'"
+                    result["actions"].append(f"Deleted certificate: {cert_name}")
+                except Exception as e:
+                    result["message"] = f"Deleted profile but failed to delete cert: {e}"
+                    result["actions"].append(f"Failed to delete certificate: {e}")
+            else:
+                result["message"] = f"Could not delete profile: {delete_result['message']}"
+        else:
+            # Profile IS in use - cannot safely delete
+            vip_names = ", ".join([v["name"] for v in usage["vips"][:3]])
+            result["message"] = (
+                f"Profile '{profile_name}' is in use by {usage['count']} VIP(s) ({vip_names}). "
+                f"The expired certificate '{cert_name}' cannot be removed automatically. "
+                f"Options: 1) Deploy a new certificate to this profile, or 2) Manually remove the VIP associations first."
+            )
+            result["requires_manual_action"] = True
+            
+    elif strategy == "delete_profile":
+        # Force attempt to delete profile
+        delete_result = delete_ssl_profile(
+            hostname, username, password, profile_name, partition, profile_type, force=True
+        )
+        if delete_result["success"]:
+            result["actions"].append(f"Deleted profile: {profile_name}")
+            # Now delete cert
+            try:
+                delete_certificate_from_f5(hostname, username, password, cert_name, partition)
+                result["success"] = True
+                result["message"] = f"Deleted profile and certificate"
+                result["actions"].append(f"Deleted certificate: {cert_name}")
+            except Exception as e:
+                result["message"] = f"Deleted profile but cert deletion failed: {e}"
+        else:
+            result["message"] = delete_result["message"]
+    
+    return result
+
+
+def get_all_ssl_profiles_cert_mapping(mgmt) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Get a mapping of certificate names to SSL profiles that use them.
+    Single API call to get all profiles, then build mapping in memory.
+    
+    Also checks for CA certificates in the chain field.
+    
+    Returns:
+        Dict mapping cert_name -> list of profile info dicts
+    """
+    cert_to_profiles = {}
+    
+    def add_cert_mapping(cert_name: str, profile_info: dict):
+        """Helper to add cert to mapping, handling .crt extension"""
+        # Handle both with and without .crt extension
+        if cert_name not in cert_to_profiles:
+            cert_to_profiles[cert_name] = []
+        cert_to_profiles[cert_name].append(profile_info)
+    
+    # Fetch ALL client SSL profiles in one call
+    try:
+        client_profiles = mgmt.tm.ltm.profile.client_ssls.get_collection()
+        for profile in client_profiles:
+            profile_info_base = {
+                "name": profile.name,
+                "partition": getattr(profile, 'partition', 'Common'),
+                "full_path": profile.fullPath,
+                "context": "clientside"
+            }
+            
+            # Check certKeyChain for main certs and chains
+            cert_key_chain = getattr(profile, 'certKeyChain', [])
+            for chain_item in cert_key_chain:
+                # Main certificate
+                cert_value = chain_item.get('cert', '')
+                if cert_value:
+                    cert_name = cert_value.split('/')[-1]
+                    add_cert_mapping(cert_name, {**profile_info_base, "usage": "certificate"})
+                
+                # Chain/CA certificates (this is often where CA certs are used)
+                chain_value = chain_item.get('chain', '')
+                if chain_value:
+                    chain_name = chain_value.split('/')[-1]
+                    add_cert_mapping(chain_name, {**profile_info_base, "usage": "chain"})
+            
+            # Also check legacy cert/chain fields (older F5 configs)
+            legacy_cert = getattr(profile, 'cert', None)
+            if legacy_cert:
+                cert_name = legacy_cert.split('/')[-1]
+                add_cert_mapping(cert_name, {**profile_info_base, "usage": "certificate"})
+            
+            legacy_chain = getattr(profile, 'chain', None)
+            if legacy_chain:
+                chain_name = legacy_chain.split('/')[-1]
+                add_cert_mapping(chain_name, {**profile_info_base, "usage": "chain"})
+                
+    except Exception as e:
+        logger.warning(f"Error fetching client SSL profiles: {e}")
+    
+    # Fetch ALL server SSL profiles in one call
+    try:
+        server_profiles = mgmt.tm.ltm.profile.server_ssls.get_collection()
+        for profile in server_profiles:
+            profile_info_base = {
+                "name": profile.name,
+                "partition": getattr(profile, 'partition', 'Common'),
+                "full_path": profile.fullPath,
+                "context": "serverside"
+            }
+            
+            # Check certKeyChain for main certs and chains
+            cert_key_chain = getattr(profile, 'certKeyChain', [])
+            for chain_item in cert_key_chain:
+                cert_value = chain_item.get('cert', '')
+                if cert_value:
+                    cert_name = cert_value.split('/')[-1]
+                    add_cert_mapping(cert_name, {**profile_info_base, "usage": "certificate"})
+                
+                chain_value = chain_item.get('chain', '')
+                if chain_value:
+                    chain_name = chain_value.split('/')[-1]
+                    add_cert_mapping(chain_name, {**profile_info_base, "usage": "chain"})
+            
+            # Also check legacy cert/chain fields
+            legacy_cert = getattr(profile, 'cert', None)
+            if legacy_cert:
+                cert_name = legacy_cert.split('/')[-1]
+                add_cert_mapping(cert_name, {**profile_info_base, "usage": "certificate"})
+            
+            legacy_chain = getattr(profile, 'chain', None)
+            if legacy_chain:
+                chain_name = legacy_chain.split('/')[-1]
+                add_cert_mapping(chain_name, {**profile_info_base, "usage": "chain"})
+                
+    except Exception as e:
+        logger.warning(f"Error fetching server SSL profiles: {e}")
+    
+    return cert_to_profiles
+
+
+def get_expired_certificates_with_profiles(
+    hostname: str,
+    username: str,
+    password: str,
+    days_threshold: int = 0
+) -> List[Dict[str, Any]]:
+    """
+    OPTIMIZED: Get expired certificates with their SSL profile associations.
+    Uses single F5 connection for all operations.
+    
+    Args:
+        hostname: F5 hostname
+        username: F5 username  
+        password: F5 password
+        days_threshold: Only return certs expired more than this many days ago
+        
+    Returns:
+        List of expired certificate info with ssl_profiles field included
+    """
+    mgmt = _connect_to_f5(hostname, username, password)
+    
+    expired_certs = []
+    now = datetime.utcnow()
+    threshold_date = now - timedelta(days=days_threshold)
+    
+    # Step 1: Get ALL SSL profiles -> cert mapping in ONE call
+    logger.info(f"Building SSL profile mapping for {hostname}...")
+    cert_to_profiles = get_all_ssl_profiles_cert_mapping(mgmt)
+    logger.info(f"Found {len(cert_to_profiles)} certificates with SSL profiles")
+    
+    # Step 2: Get ALL certificates and filter expired ones
+    try:
+        all_certs = mgmt.tm.sys.file.ssl_certs.get_collection()
+        
+        for cert_stub in all_certs:
+            try:
+                cert = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(
+                    name=cert_stub.name,
+                    partition=cert_stub.partition
+                )
+                
+                exp_str = getattr(cert, 'expirationString', None)
+                if not exp_str:
+                    continue
+                
+                try:
+                    expiration_dt = datetime.strptime(exp_str, '%b %d %H:%M:%S %Y %Z')
+                except ValueError:
+                    continue
+                
+                # Check if expired and past threshold
+                if expiration_dt < threshold_date:
+                    days_expired = (now - expiration_dt).days
+                    
+                    # Look up SSL profiles from our pre-built mapping
+                    ssl_profiles = cert_to_profiles.get(cert.name, [])
+                    
+                    cert_info = {
+                        "name": cert.name,
+                        "partition": cert.partition,
+                        "common_name": getattr(cert, 'commonName', None),
+                        "issuer": getattr(cert, 'issuer', None),
+                        "expiration_date": expiration_dt.isoformat(),
+                        "days_expired": days_expired,
+                        "ssl_profiles": ssl_profiles,
+                        "ssl_profiles_count": len(ssl_profiles)
+                    }
+                    expired_certs.append(cert_info)
+                    
+            except Exception as e:
+                logger.warning(f"Error processing cert {cert_stub.name}: {e}")
+                continue
+                
+    except Exception as e:
+        logger.error(f"Failed to get certs from {hostname}: {e}")
+        raise
+    
+    logger.info(f"Found {len(expired_certs)} expired certificates on {hostname}")
+    return expired_certs
 
 
 def get_expired_certificates_from_f5(

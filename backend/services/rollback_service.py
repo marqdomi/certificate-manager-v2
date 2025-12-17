@@ -24,6 +24,7 @@ from db.models import (
 )
 from services import f5_service_logic
 from services.audit_service import AuditService
+from services.encryption_service import decrypt_data
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +53,30 @@ class RollbackService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.settings = get_settings()
         self.audit = AuditService(db)
+    
+    def create_snapshot_for_cert_by_name(
+        self,
+        device_id: int,
+        cert_name: str,
+        partition: str = "Common",
+        username: Optional[str] = None
+    ) -> Optional["OperationSnapshot"]:
+        """
+        Create a snapshot for a certificate by device_id and cert_name.
+        Convenience wrapper for create_snapshot_for_deletion.
+        """
+        from db.models import Device
+        device = self.db.query(Device).filter(Device.id == device_id).first()
+        if not device:
+            logger.warning(f"Device {device_id} not found for snapshot")
+            return None
+        return self.create_snapshot_for_deletion(
+            device=device,
+            cert_name=cert_name,
+            partition=partition,
+            created_by=username
+        )
     
     def create_snapshot_for_deletion(
         self,
