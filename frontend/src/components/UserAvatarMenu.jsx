@@ -74,7 +74,10 @@ const UserAvatarMenu = () => {
       const parts = user.full_name.split(' ');
       return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2);
     }
-    return user?.username?.slice(0, 2).toUpperCase() || 'U';
+    if (user?.username) {
+      return user.username.slice(0, 2).toUpperCase();
+    }
+    return 'U';
   };
 
   const open = Boolean(anchorEl);
@@ -132,22 +135,24 @@ const UserAvatarMenu = () => {
             </Avatar>
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Typography variant="subtitle1" fontWeight={600} noWrap>
-                {user?.full_name || user?.username}
+                {user?.full_name ? user.full_name : (user?.username || 'User')}
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap>
-                {user?.email || `@${user?.username}`}
+                {user?.email ? user.email : `@${user?.username || 'unknown'}`}
               </Typography>
-              <Chip
-                size="small"
-                label={user?.role || 'viewer'}
-                color={ROLE_COLORS[user?.role] || 'default'}
-                sx={{
-                  mt: 0.5,
-                  height: 20,
-                  textTransform: 'capitalize',
-                  '& .MuiChip-label': { px: 1, fontSize: '0.7rem' },
-                }}
-              />
+              {user?.role && (
+                <Chip
+                  size="small"
+                  label={user.role}
+                  color={ROLE_COLORS[user.role] || 'default'}
+                  sx={{
+                    mt: 0.5,
+                    height: 20,
+                    textTransform: 'capitalize',
+                    '& .MuiChip-label': { px: 1, fontSize: '0.7rem' },
+                  }}
+                />
+              )}
             </Box>
           </Box>
         </Box>

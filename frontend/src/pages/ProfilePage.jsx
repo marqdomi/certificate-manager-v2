@@ -36,7 +36,6 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/api';
 import { changeMyPassword } from '../services/adminApi';
@@ -74,24 +73,37 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        setProfileLoading(true);
         const { data } = await apiClient.get('/users/me');
         setProfileData({
-          full_name: data.full_name || '',
-          email: data.email || '',
-          username: data.username || '',
+          full_name: data.full_name || user?.full_name || '',
+          email: data.email || user?.email || '',
+          username: data.username || user?.username || '',
         });
       } catch (err) {
+        console.error('Error loading profile:', err);
+        // Fallback to user data from context if API fails
+        if (user) {
+          setProfileData({
+            full_name: user.full_name || '',
+            email: user.email || '',
+            username: user.username || '',
+          });
+        }
         setSnackbar({
           open: true,
-          message: 'Error al cargar el perfil',
+          message: 'Error loading profile',
           severity: 'error',
         });
       } finally {
         setProfileLoading(false);
       }
     };
-    fetchProfile();
-  }, []);
+    
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
 
   // Handle profile update
   const handleSaveProfile = async () => {
@@ -103,7 +115,7 @@ const ProfilePage = () => {
       });
       setSnackbar({
         open: true,
-        message: 'Perfil actualizado correctamente',
+        message: 'Profile updated successfully',
         severity: 'success',
       });
       setEditing(false);
@@ -111,7 +123,7 @@ const ProfilePage = () => {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.response?.data?.detail || 'Error al actualizar el perfil',
+        message: err.response?.data?.detail || 'Error updating profile',
         severity: 'error',
       });
     } finally {
@@ -125,7 +137,7 @@ const ProfilePage = () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setSnackbar({
         open: true,
-        message: 'Las contraseñas no coinciden',
+        message: 'Passwords do not match',
         severity: 'error',
       });
       return;
@@ -134,7 +146,7 @@ const ProfilePage = () => {
     if (passwordData.newPassword.length < 8) {
       setSnackbar({
         open: true,
-        message: 'La contraseña debe tener al menos 8 caracteres',
+        message: 'Password must be at least 8 characters long',
         severity: 'error',
       });
       return;
@@ -145,7 +157,7 @@ const ProfilePage = () => {
       await changeMyPassword(passwordData.currentPassword, passwordData.newPassword);
       setSnackbar({
         open: true,
-        message: 'Contraseña actualizada correctamente',
+        message: 'Password updated successfully',
         severity: 'success',
       });
       setPasswordData({
@@ -156,7 +168,7 @@ const ProfilePage = () => {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.response?.data?.detail || 'Error al cambiar la contraseña',
+        message: err.response?.data?.detail || 'Error changing password',
         severity: 'error',
       });
     } finally {
@@ -176,9 +188,9 @@ const ProfilePage = () => {
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
 
-    if (strength <= 2) return { strength: 33, label: 'Débil', color: 'error' };
-    if (strength <= 4) return { strength: 66, label: 'Media', color: 'warning' };
-    return { strength: 100, label: 'Fuerte', color: 'success' };
+    if (strength <= 2) return { strength: 33, label: 'Weak', color: 'error' };
+    if (strength <= 4) return { strength: 66, label: 'Medium', color: 'warning' };
+    return { strength: 100, label: 'Strong', color: 'success' };
   };
 
   const passwordStrength = getPasswordStrength(passwordData.newPassword);
@@ -186,9 +198,9 @@ const ProfilePage = () => {
   // Role chip
   const getRoleChip = (role) => {
     const config = {
-      admin: { color: 'error', label: 'Administrador' },
-      operator: { color: 'primary', label: 'Operador' },
-      viewer: { color: 'default', label: 'Visor' },
+      admin: { color: 'error', label: 'Administrator' },
+      operator: { color: 'primary', label: 'Operator' },
+      viewer: { color: 'default', label: 'Viewer' },
     };
     const { color, label } = config[role] || config.viewer;
     return <Chip size="small" color={color} label={label} />;
@@ -208,7 +220,7 @@ const ProfilePage = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
         <PersonIcon sx={{ fontSize: 32, color: 'primary.main' }} />
         <Typography variant="h4" fontWeight="bold">
-          Mi Perfil
+          My Profile
         </Typography>
       </Box>
 
@@ -217,7 +229,7 @@ const ProfilePage = () => {
         <Grid item xs={12} md={8}>
           <Card>
             <CardHeader
-              title="Información Personal"
+              title="Personal Information"
               action={
                 !editing ? (
                   <IconButton onClick={() => setEditing(true)}>
@@ -248,7 +260,7 @@ const ProfilePage = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Nombre Completo"
+                    label="Full Name"
                     value={profileData.full_name}
                     onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                     disabled={!editing}
@@ -281,10 +293,10 @@ const ProfilePage = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Nombre de Usuario"
+                    label="Username"
                     value={profileData.username}
                     disabled
-                    helperText="El nombre de usuario no se puede modificar"
+                    helperText="Username cannot be modified"
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -297,7 +309,7 @@ const ProfilePage = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Rol"
+                    label="Role"
                     value={user?.role || ''}
                     disabled
                     InputProps={{
@@ -331,10 +343,10 @@ const ProfilePage = () => {
                profileData.username?.charAt(0)?.toUpperCase() || 'U'}
             </Avatar>
             <Typography variant="h6" fontWeight="bold">
-              {profileData.full_name || profileData.username}
+              {profileData.full_name || profileData.username || 'User'}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              @{profileData.username}
+              @{profileData.username || 'unknown'}
             </Typography>
             <Box sx={{ mt: 2 }}>
               {getRoleChip(user?.role)}
@@ -343,7 +355,7 @@ const ProfilePage = () => {
               <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                 <HistoryIcon fontSize="small" color="action" />
                 <Typography variant="caption" color="text.secondary">
-                  Último acceso: {format(new Date(user.last_login), 'PPp', { locale: es })}
+                  Last login: {format(new Date(user.last_login), 'PPp')}
                 </Typography>
               </Box>
             )}
@@ -354,7 +366,7 @@ const ProfilePage = () => {
         <Grid item xs={12} md={8}>
           <Card>
             <CardHeader
-              title="Cambiar Contraseña"
+              title="Change Password"
               avatar={<LockIcon color="action" />}
             />
             <Divider />
@@ -363,7 +375,7 @@ const ProfilePage = () => {
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Contraseña Actual"
+                    label="Current Password"
                     type={showPasswords.current ? 'text' : 'password'}
                     value={passwordData.currentPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
@@ -384,14 +396,14 @@ const ProfilePage = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Nueva Contraseña"
+                    label="New Password"
                     type={showPasswords.new ? 'text' : 'password'}
                     value={passwordData.newPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                     helperText={
                       passwordData.newPassword && (
                         <Box component="span" sx={{ color: `${passwordStrength.color}.main` }}>
-                          Fortaleza: {passwordStrength.label}
+                          Strength: {passwordStrength.label}
                         </Box>
                       )
                     }
@@ -412,7 +424,7 @@ const ProfilePage = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Confirmar Contraseña"
+                    label="Confirm Password"
                     type={showPasswords.confirm ? 'text' : 'password'}
                     value={passwordData.confirmPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
@@ -423,7 +435,7 @@ const ProfilePage = () => {
                     helperText={
                       passwordData.confirmPassword && 
                       passwordData.newPassword !== passwordData.confirmPassword
-                        ? 'Las contraseñas no coinciden'
+                        ? 'Passwords do not match'
                         : ''
                     }
                     InputProps={{
@@ -457,7 +469,7 @@ const ProfilePage = () => {
                     }
                     startIcon={changingPassword ? <CircularProgress size={20} /> : <LockIcon />}
                   >
-                    {changingPassword ? 'Cambiando...' : 'Cambiar Contraseña'}
+                    {changingPassword ? 'Changing...' : 'Change Password'}
                   </Button>
                 </Grid>
               </Grid>
@@ -468,31 +480,31 @@ const ProfilePage = () => {
         {/* Security Info Card */}
         <Grid item xs={12} md={4}>
           <Card>
-            <CardHeader title="Seguridad" />
+            <CardHeader title="Security" />
             <Divider />
             <CardContent>
               <Typography variant="body2" color="text.secondary" paragraph>
-                <strong>Requisitos de contraseña:</strong>
+                <strong>Password Requirements:</strong>
               </Typography>
               <Box component="ul" sx={{ pl: 2, m: 0, '& li': { mb: 0.5 } }}>
                 <li>
                   <Typography variant="caption" color="text.secondary">
-                    Mínimo 8 caracteres
+                    Minimum 8 characters
                   </Typography>
                 </li>
                 <li>
                   <Typography variant="caption" color="text.secondary">
-                    Incluir mayúsculas y minúsculas
+                    Include uppercase and lowercase letters
                   </Typography>
                 </li>
                 <li>
                   <Typography variant="caption" color="text.secondary">
-                    Incluir números
+                    Include numbers
                   </Typography>
                 </li>
                 <li>
                   <Typography variant="caption" color="text.secondary">
-                    Incluir caracteres especiales (recomendado)
+                    Include special characters (recommended)
                   </Typography>
                 </li>
               </Box>
