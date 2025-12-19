@@ -86,6 +86,16 @@ const ServiceCard = ({ title, icon, status, details, latency }) => {
     }
   };
 
+  // Filter out undefined values from details
+  const filteredDetails = details 
+    ? Object.entries(details).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== 'unknown') {
+          acc[key] = value;
+        }
+        return acc;
+      }, {})
+    : {};
+
   return (
     <Card
       elevation={0}
@@ -116,7 +126,7 @@ const ServiceCard = ({ title, icon, status, details, latency }) => {
           <StatusChip status={status} />
         </Box>
 
-        {latency !== undefined && (
+        {latency !== undefined && latency !== null && (
           <Box sx={{ mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
               <AccessTimeIcon fontSize="small" color="action" />
@@ -130,10 +140,10 @@ const ServiceCard = ({ title, icon, status, details, latency }) => {
           </Box>
         )}
 
-        {details && Object.entries(details).length > 0 && (
+        {Object.keys(filteredDetails).length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Divider sx={{ mb: 1.5 }} />
-            {Object.entries(details).map(([key, value]) => (
+            {Object.entries(filteredDetails).map(([key, value]) => (
               <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
                   {key.replace(/_/g, ' ')}
@@ -186,7 +196,7 @@ const OverallHealthCard = ({ health, loading }) => {
     >
       <StatusIcon status={health?.status} size="large" />
       <Typography variant="h4" fontWeight={700} sx={{ mt: 2, textTransform: 'capitalize' }}>
-        System {health?.status || 'Unknown'}
+        System {health?.status ? health.status.charAt(0).toUpperCase() + health.status.slice(1) : 'Unknown'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         Last checked: {health?.timestamp ? new Date(health.timestamp).toLocaleString() : 'Never'}
@@ -198,6 +208,13 @@ const OverallHealthCard = ({ health, loading }) => {
           size="small"
           sx={{ mt: 2 }}
         />
+      )}
+      {health?.uptime_seconds !== undefined && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            Uptime: {Math.floor(health.uptime_seconds / 60)} minutes
+          </Typography>
+        </Box>
       )}
     </Paper>
   );
@@ -215,7 +232,54 @@ const SystemHealth = () => {
       setLoading(true);
       setError(null);
       const data = await getSystemHealth();
-      setHealth(data);
+      
+      // Map components array to individual objects
+      const mappedHealth = {
+        status: data.status,
+        timestamp: data.timestamp,
+        environment: data.environment,
+        version: data.version,
+        uptime_seconds: data.uptime_seconds,
+      };
+      
+      // Map components to named objects
+      data.components?.forEach(component => {
+        if (component.name === 'PostgreSQL') {
+          mappedHealth.database = {
+            status: component.status,
+            latency_ms: component.latency_ms,
+            version: component.details?.version || 'unknown',
+            pool_size: component.details?.pool_size || 'unknown',
+            message: component.message,
+          };
+        } else if (component.name === 'Redis') {
+          mappedHealth.redis = {
+            status: component.status,
+            latency_ms: component.latency_ms,
+            version: component.details?.version || 'unknown',
+            connected_clients: component.details?.connected_clients || 'unknown',
+            used_memory: component.details?.used_memory || 'unknown',
+            message: component.message,
+          };
+        } else if (component.name === 'Celery Workers') {
+          mappedHealth.celery = {
+            status: component.status,
+            latency_ms: component.latency_ms,
+            active_workers: component.details?.workers?.length || 0,
+            queued_tasks: component.details?.active_tasks || 0,
+            message: component.message,
+          };
+        } else if (component.name === 'Celery Beat') {
+          mappedHealth.celery_beat = {
+            status: component.status,
+            scheduled_tasks: component.details?.scheduled_tasks || 0,
+            last_heartbeat: new Date().toISOString(),
+            message: component.message,
+          };
+        }
+      });
+      
+      setHealth(mappedHealth);
       setLastRefresh(new Date());
     } catch (err) {
       setError(err.message);
@@ -331,9 +395,9 @@ const SystemHealth = () => {
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                    <SpeedIcon color="primary" />
+                    <SpeedIcon color="primary" fontSize="small" />
                     <Typography variant="h4" fontWeight={700} color="primary">
-                      {health?.database?.latency_ms || '-'}
+                      {health?.database?.latency_ms ? health.database.latency_ms.toFixed(1) : '-'}
                     </Typography>
                   </Box>
                   <Typography variant="caption" color="text.secondary">
@@ -344,9 +408,9 @@ const SystemHealth = () => {
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                    <SpeedIcon color="secondary" />
+                    <SpeedIcon color="secondary" fontSize="small" />
                     <Typography variant="h4" fontWeight={700} color="secondary">
-                      {health?.redis?.latency_ms || '-'}
+                      {health?.redis?.latency_ms ? health.redis.latency_ms.toFixed(1) : '-'}
                     </Typography>
                   </Box>
                   <Typography variant="caption" color="text.secondary">
@@ -357,7 +421,7 @@ const SystemHealth = () => {
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" fontWeight={700}>
-                    {health?.celery?.active_workers || '-'}
+                    {health?.celery?.active_workers ?? '-'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Active Workers
@@ -367,7 +431,7 @@ const SystemHealth = () => {
               <Grid item xs={6} sm={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" fontWeight={700}>
-                    {health?.celery?.queued_tasks || '-'}
+                    {health?.celery?.queued_tasks ?? '-'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Queued Tasks

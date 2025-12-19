@@ -46676,3 +46676,12 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='10.132.3.253', port=443)
 2025-12-19 05:18:01,818 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
 2025-12-19 05:18:01,939 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
 2025-12-19 05:18:04,788 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2025-12-19 05:40:12,845 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2025-12-19 05:40:12,868 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2025-12-19 05:40:12,890 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2025-12-19 05:40:12,891 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2025-12-19 05:40:14,223 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2025-12-19 05:40:14,263 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2025-12-19 05:40:14,265 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2025-12-19 05:40:14,272 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2025-12-19 05:40:17,209 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
