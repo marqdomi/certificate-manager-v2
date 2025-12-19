@@ -94,7 +94,7 @@ const SettingsPage = () => {
         console.error('Error loading settings:', err);
         setSnackbar({
           open: true,
-          message: 'Error al cargar las preferencias',
+          message: 'Error loading preferences',
           severity: 'error',
         });
       } finally {
@@ -115,13 +115,13 @@ const SettingsPage = () => {
       });
       setSnackbar({
         open: true,
-        message: 'Preferencias de notificaciones guardadas',
+        message: 'Notification preferences saved',
         severity: 'success',
       });
     } catch (err) {
       setSnackbar({
         open: true,
-        message: 'Error al guardar preferencias de notificaciones',
+        message: 'Error saving notification preferences',
         severity: 'error',
       });
     } finally {
@@ -134,7 +134,7 @@ const SettingsPage = () => {
     localStorage.setItem('displaySettings', JSON.stringify(displaySettings));
     setSnackbar({
       open: true,
-      message: 'Preferencias de visualización guardadas',
+      message: 'Display preferences saved',
       severity: 'success',
     });
   };
@@ -152,7 +152,7 @@ const SettingsPage = () => {
     localStorage.setItem('displaySettings', JSON.stringify(defaultSettings));
     setSnackbar({
       open: true,
-      message: 'Preferencias restablecidas',
+      message: 'Preferences reset',
       severity: 'info',
     });
   };
@@ -182,7 +182,7 @@ const SettingsPage = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
         <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
         <Typography variant="h4" fontWeight="bold">
-          Configuración
+          Settings
         </Typography>
       </Box>
 
@@ -191,15 +191,15 @@ const SettingsPage = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardHeader
-              title="Apariencia"
-              subheader="Personaliza el aspecto de la aplicación"
+              title="Appearance"
+              subheader="Customize the look and feel of the application"
               avatar={mode === 'dark' ? <DarkModeIcon /> : <LightModeIcon />}
             />
             <Divider />
             <CardContent>
               <FormGroup>
                 <Box sx={{ mb: 3 }}>
-                  <FormLabel component="legend" sx={{ mb: 1 }}>Tema</FormLabel>
+                  <FormLabel component="legend" sx={{ mb: 1 }}>Theme</FormLabel>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <LightModeIcon color={mode === 'light' ? 'primary' : 'disabled'} />
                     <Switch
@@ -210,7 +210,7 @@ const SettingsPage = () => {
                     <DarkModeIcon color={mode === 'dark' ? 'primary' : 'disabled'} />
                     <Chip 
                       size="small" 
-                      label={mode === 'dark' ? 'Oscuro' : 'Claro'} 
+                      label={mode === 'dark' ? 'Dark' : 'Light'} 
                       color="primary" 
                       variant="outlined"
                     />
@@ -224,10 +224,10 @@ const SettingsPage = () => {
                       onChange={(e) => setDisplaySettings({ ...displaySettings, compactMode: e.target.checked })}
                     />
                   }
-                  label="Modo compacto"
+                  label="Compact Mode"
                 />
                 <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mt: -1, mb: 2 }}>
-                  Reduce el espaciado para mostrar más contenido
+                  Reduce spacing to display more content
                 </Typography>
 
                 <FormControlLabel
@@ -237,10 +237,10 @@ const SettingsPage = () => {
                       onChange={(e) => setDisplaySettings({ ...displaySettings, animationsEnabled: e.target.checked })}
                     />
                   }
-                  label="Animaciones"
+                  label="Animations"
                 />
                 <Typography variant="caption" color="text.secondary" sx={{ ml: 4, mt: -1, mb: 2 }}>
-                  Habilita transiciones y animaciones suaves
+                  Enable smooth transitions and animations
                 </Typography>
 
                 <FormControlLabel
@@ -250,7 +250,7 @@ const SettingsPage = () => {
                       onChange={(e) => setDisplaySettings({ ...displaySettings, showTooltips: e.target.checked })}
                     />
                   }
-                  label="Mostrar tooltips"
+                  label="Show Tooltips"
                 />
               </FormGroup>
             </CardContent>
@@ -261,32 +261,32 @@ const SettingsPage = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardHeader
-              title="Visualización"
-              subheader="Configura tablas y actualización automática"
+              title="Display"
+              subheader="Configure tables and automatic updates"
               avatar={<FormatSizeIcon />}
             />
             <Divider />
             <CardContent>
               <Box sx={{ mb: 3 }}>
                 <Typography gutterBottom>
-                  Filas por página en tablas
+                  Rows per page in tables
                 </Typography>
                 <FormControl fullWidth size="small">
                   <Select
                     value={displaySettings.tableRowsPerPage}
                     onChange={(e) => setDisplaySettings({ ...displaySettings, tableRowsPerPage: e.target.value })}
                   >
-                    <MenuItem value={10}>10 filas</MenuItem>
-                    <MenuItem value={25}>25 filas</MenuItem>
-                    <MenuItem value={50}>50 filas</MenuItem>
-                    <MenuItem value={100}>100 filas</MenuItem>
+                    <MenuItem value={10}>10 rows</MenuItem>
+                    <MenuItem value={25}>25 rows</MenuItem>
+                    <MenuItem value={50}>50 rows</MenuItem>
+                    <MenuItem value={100}>100 rows</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
 
               <Box sx={{ mb: 3 }}>
                 <Typography gutterBottom>
-                  Intervalo de actualización automática: {displaySettings.autoRefreshInterval}s
+                  Auto-refresh interval: {displaySettings.autoRefreshInterval}s
                 </Typography>
                 <Slider
                   value={displaySettings.autoRefreshInterval}
@@ -310,14 +310,14 @@ const SettingsPage = () => {
                   startIcon={<SaveIcon />}
                   onClick={handleSaveDisplaySettings}
                 >
-                  Guardar
+                  Save
                 </Button>
                 <Button
                   variant="outlined"
                   startIcon={<ResetIcon />}
                   onClick={handleResetDisplaySettings}
                 >
-                  Restablecer
+                  Reset
                 </Button>
               </Stack>
             </CardContent>
@@ -328,8 +328,8 @@ const SettingsPage = () => {
         <Grid item xs={12}>
           <Card>
             <CardHeader
-              title="Notificaciones"
-              subheader="Configura qué notificaciones deseas recibir"
+              title="Notifications"
+              subheader="Configure which notifications you want to receive"
               avatar={<NotificationsIcon />}
               action={
                 <Button
@@ -338,7 +338,7 @@ const SettingsPage = () => {
                   onClick={handleSaveNotificationSettings}
                   disabled={saving}
                 >
-                  Guardar
+                  Save
                 </Button>
               }
             />
@@ -348,7 +348,7 @@ const SettingsPage = () => {
                 {/* Email Settings */}
                 <Grid item xs={12} md={4}>
                   <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    Notificaciones por Email
+                    Email Notifications
                   </Typography>
                   <FormGroup>
                     <FormControlLabel
@@ -361,14 +361,14 @@ const SettingsPage = () => {
                           })}
                         />
                       }
-                      label="Habilitar emails"
+                      label="Enable Email Notifications"
                     />
                   </FormGroup>
                   
                   {notificationSettings.email_notifications_enabled && (
                     <Box sx={{ mt: 2 }}>
                       <FormControl component="fieldset">
-                        <FormLabel component="legend">Frecuencia de resumen</FormLabel>
+                        <FormLabel component="legend">Digest Frequency</FormLabel>
                         <RadioGroup
                           value={notificationSettings.email_digest_frequency}
                           onChange={(e) => setNotificationSettings({
@@ -376,10 +376,10 @@ const SettingsPage = () => {
                             email_digest_frequency: e.target.value,
                           })}
                         >
-                          <FormControlLabel value="realtime" control={<Radio />} label="Tiempo real" />
-                          <FormControlLabel value="daily" control={<Radio />} label="Diario" />
-                          <FormControlLabel value="weekly" control={<Radio />} label="Semanal" />
-                          <FormControlLabel value="never" control={<Radio />} label="Nunca" />
+                          <FormControlLabel value="realtime" control={<Radio />} label="Real-time" />
+                          <FormControlLabel value="daily" control={<Radio />} label="Daily" />
+                          <FormControlLabel value="weekly" control={<Radio />} label="Weekly" />
+                          <FormControlLabel value="never" control={<Radio />} label="Never" />
                         </RadioGroup>
                       </FormControl>
                     </Box>
@@ -389,7 +389,7 @@ const SettingsPage = () => {
                 {/* In-App Notification Types */}
                 <Grid item xs={12} md={8}>
                   <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    Tipos de Notificación
+                    Notification Types
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
@@ -401,7 +401,7 @@ const SettingsPage = () => {
                               onChange={() => handleNotificationToggle('certificate_expiry')}
                             />
                           }
-                          label="Vencimiento de certificados"
+                          label="Certificate Expiry"
                         />
                         <FormControlLabel
                           control={
@@ -410,7 +410,7 @@ const SettingsPage = () => {
                               onChange={() => handleNotificationToggle('certificate_renewal')}
                             />
                           }
-                          label="Renovación de certificados"
+                          label="Certificate Renewal"
                         />
                         <FormControlLabel
                           control={
@@ -419,7 +419,7 @@ const SettingsPage = () => {
                               onChange={() => handleNotificationToggle('deployment_status')}
                             />
                           }
-                          label="Estado de despliegues"
+                          label="Deployment Status"
                         />
                       </FormGroup>
                     </Grid>
@@ -432,7 +432,7 @@ const SettingsPage = () => {
                               onChange={() => handleNotificationToggle('system_alerts')}
                             />
                           }
-                          label="Alertas del sistema"
+                          label="System Alerts"
                         />
                         <FormControlLabel
                           control={
@@ -441,7 +441,7 @@ const SettingsPage = () => {
                               onChange={() => handleNotificationToggle('batch_operations')}
                             />
                           }
-                          label="Operaciones por lotes"
+                          label="Batch Operations"
                         />
                         <FormControlLabel
                           control={
@@ -450,7 +450,7 @@ const SettingsPage = () => {
                               onChange={() => handleNotificationToggle('user_activity')}
                             />
                           }
-                          label="Actividad de usuarios"
+                          label="User Activity"
                         />
                       </FormGroup>
                     </Grid>
@@ -465,7 +465,7 @@ const SettingsPage = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardHeader
-              title="Información del Sistema"
+              title="System Information"
               avatar={<LanguageIcon />}
             />
             <Divider />
@@ -473,25 +473,25 @@ const SettingsPage = () => {
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
-                    Versión de la aplicación
+                    Application Version
                   </Typography>
                   <Typography variant="body1">v2.5.0</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
-                    Última actualización
+                    Last Update
                   </Typography>
-                  <Typography variant="body1">Junio 2025</Typography>
+                  <Typography variant="body1">June 2025</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
-                    Idioma
+                    Language
                   </Typography>
-                  <Typography variant="body1">Español</Typography>
+                  <Typography variant="body1">English</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
-                    Zona horaria
+                    Timezone
                   </Typography>
                   <Typography variant="body1">{Intl.DateTimeFormat().resolvedOptions().timeZone}</Typography>
                 </Grid>
@@ -503,16 +503,16 @@ const SettingsPage = () => {
         {/* Keyboard Shortcuts Card */}
         <Grid item xs={12} md={6}>
           <Card>
-            <CardHeader title="Atajos de Teclado" />
+            <CardHeader title="Keyboard Shortcuts" />
             <Divider />
             <CardContent>
               <Grid container spacing={1}>
                 {[
-                  { keys: 'Ctrl + K', action: 'Búsqueda rápida' },
-                  { keys: 'Ctrl + N', action: 'Nueva notificación' },
-                  { keys: 'Ctrl + R', action: 'Actualizar datos' },
-                  { keys: 'Ctrl + D', action: 'Ir al dashboard' },
-                  { keys: 'Escape', action: 'Cerrar diálogo' },
+                  { keys: 'Ctrl + K', action: 'Quick Search' },
+                  { keys: 'Ctrl + N', action: 'New Notification' },
+                  { keys: 'Ctrl + R', action: 'Refresh Data' },
+                  { keys: 'Ctrl + D', action: 'Go to Dashboard' },
+                  { keys: 'Escape', action: 'Close Dialog' },
                 ].map(({ keys, action }) => (
                   <Grid item xs={12} key={keys}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
