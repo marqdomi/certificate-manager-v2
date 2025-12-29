@@ -35,7 +35,6 @@ import {
   History as HistoryIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/api';
 import { changeMyPassword } from '../services/adminApi';
@@ -355,7 +354,7 @@ const ProfilePage = () => {
               <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                 <HistoryIcon fontSize="small" color="action" />
                 <Typography variant="caption" color="text.secondary">
-                  Last login: {format(new Date(user.last_login), 'PPp')}
+                  Last login: {new Date(user.last_login).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </Typography>
               </Box>
             )}

@@ -43,10 +43,24 @@ import {
   Circle as CircleIcon,
   ClearAll as ClearAllIcon,
 } from '@mui/icons-material';
-import { format, formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { getNotifications, markNotificationsRead, deleteNotifications } from '../services/adminApi';
 import useWebSocketNotifications from '../hooks/useWebSocketNotifications';
+
+// Helper function to calculate time difference in relative format
+const getRelativeTime = (dateString) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return 'hace unos segundos';
+  if (minutes < 60) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`;
+  if (hours < 24) return `hace ${hours} hora${hours > 1 ? 's' : ''}`;
+  if (days < 7) return `hace ${days} día${days > 1 ? 's' : ''}`;
+  return date.toLocaleDateString('es-ES');
+};
 
 // Priority chip component
 const PriorityChip = ({ priority }) => {
@@ -489,12 +503,9 @@ const NotificationsPage = () => {
                         <PriorityChip priority={notification.priority} />
                       </TableCell>
                       <TableCell>
-                        <Tooltip title={format(new Date(notification.created_at), 'PPpp', { locale: es })}>
+                        <Tooltip title={new Date(notification.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}>
                           <Typography variant="body2" color="text.secondary">
-                            {formatDistanceToNow(new Date(notification.created_at), {
-                              addSuffix: true,
-                              locale: es,
-                            })}
+                            {getRelativeTime(notification.created_at)}
                           </Typography>
                         </Tooltip>
                       </TableCell>
