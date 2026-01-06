@@ -335,11 +335,60 @@ def _connect_to_f5(hostname: str, username: str, password: str) -> ManagementRoo
         
     Raises:
         F5SDKError: If connection fails after all retry attempts
+        ConnectionError: If iControl REST is not available on the device
+        SSLError: If TLS handshake fails
     """
+    import ssl
+    from requests.exceptions import SSLError
+    
     logger.debug(f"Attempting connection to F5: {hostname}")
-    mgmt = ManagementRoot(hostname, username, password, token=True)
-    logger.info(f"Successfully connected to F5: {hostname}")
-    return mgmt
+    
+    try:
+        mgmt = ManagementRoot(hostname, username, password, token=True)
+        logger.info(f"Successfully connected to F5: {hostname}")
+        return mgmt
+        
+    except iControlUnexpectedHTTPError as e:
+        error_text = str(e)
+        # Check for "Public URI path not registered" which means iControl REST is not available
+        if "Public URI path not registered" in error_text or "404" in error_text:
+            error_msg = (
+                f"iControl REST API not available on {hostname}. "
+                "This device may be: (1) A vCMP guest without REST access, "
+                "(2) Running an older BIG-IP version (<11.6), or "
+                "(3) Has REST framework disabled. "
+                "Check 'tmsh list sys provision' for 'rest' module status."
+            )
+            logger.error(error_msg)
+            raise ConnectionError(error_msg) from e
+        # Re-raise other HTTP errors
+        raise
+        
+    except SSLError as e:
+        error_text = str(e).lower()
+        if "unexpected_eof" in error_text or "ssl" in error_text:
+            error_msg = (
+                f"SSL/TLS handshake failed with {hostname}. "
+                "This device may: (1) Only support older TLS versions (1.0/1.1), "
+                "(2) Have incompatible cipher suites, or "
+                "(3) Have certificate issues. "
+                "Try accessing via browser to verify HTTPS works."
+            )
+            logger.error(error_msg)
+            raise SSLError(error_msg) from e
+        raise
+        
+    except Exception as e:
+        error_text = str(e).lower()
+        # Catch SSL errors that come through different exception paths
+        if "ssl" in error_text or "eof" in error_text:
+            error_msg = (
+                f"Connection to {hostname} failed with SSL error: {e}. "
+                "The device may have TLS compatibility issues."
+            )
+            logger.error(error_msg)
+            raise ConnectionError(error_msg) from e
+        raise
 
     
 # -------------------------------------------------------------------
@@ -490,9 +539,36 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
 
     except Exception as e_outer:
         import traceback
-        error_message = f"Scan failed for {device.hostname}: {str(e_outer)}"
+        error_str = str(e_outer)
+        
+        # Provide more specific error messages for common issues
+        if "Public URI path not registered" in error_str or "iControl REST API not available" in error_str:
+            error_message = (
+                f"[SCAN SKIPPED] Device {device.hostname} ({device.ip_address}) does not support iControl REST API. "
+                "This may be a vCMP guest, old BIG-IP version (<11.6), or REST module is not provisioned. "
+                "Manual certificate management required for this device."
+            )
+        elif "ssl" in error_str.lower() or "eof" in error_str.lower() or "tls" in error_str.lower():
+            error_message = (
+                f"[SSL ERROR] Cannot connect to {device.hostname} ({device.ip_address}). "
+                "TLS/SSL handshake failed. The device may only support older TLS versions or have incompatible ciphers. "
+                "Verify HTTPS access works via web browser."
+            )
+        elif "401" in error_str or "authentication" in error_str.lower() or "unauthorized" in error_str.lower():
+            error_message = (
+                f"[AUTH ERROR] Authentication failed for {device.hostname} ({device.ip_address}). "
+                "Please verify credentials are correct for this device."
+            )
+        elif "timeout" in error_str.lower() or "timed out" in error_str.lower():
+            error_message = (
+                f"[TIMEOUT] Connection timed out for {device.hostname} ({device.ip_address}). "
+                "Device may be unreachable or overloaded."
+            )
+        else:
+            error_message = f"Scan failed for {device.hostname}: {error_str}"
+        
         logger.error(f"{error_message}\n{traceback.format_exc()}")
-        return {"status": "error", "message": str(e_outer)}
+        return {"status": "error", "message": error_message}
 
 
 
