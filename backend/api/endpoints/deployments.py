@@ -15,8 +15,9 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives import serialization
 
 from db.base import get_db
-from db.models import Device, User, UserRole
+from db.models import Device, User, UserRole, AuditAction, AuditResult
 from services import auth_service, pfx_service, f5_service_logic, encryption_service
+from services.audit_service import AuditService
 from core.config import DEFAULT_CHAIN_NAME
 from core.logger import get_api_logger
 
@@ -448,6 +449,23 @@ async def execute_deployment(
                     )
                     result["updated_profiles"] = ups
 
+            # Log successful deployment to audit
+            audit = AuditService(db)
+            audit.log_cert_deployed(
+                certificate_id=0,  # New cert, no DB ID yet
+                certificate_name=result.get("new_cert_object", "unknown"),
+                device=device,
+                user=current_user,
+                description=f"PFX deployment: replaced '{old_cert_name}' with '{result.get('new_cert_object')}'",
+                details={
+                    "mode": "pfx",
+                    "old_cert": old_cert_name,
+                    "new_cert": result.get("new_cert_object"),
+                    "profiles_updated": result.get("updated_profiles", []),
+                    "chain_installed": install_chain_from_pfx
+                }
+            )
+
             return {"dry_run": False, "result": result}
 
         elif mode.lower() == "pem":
@@ -486,6 +504,22 @@ async def execute_deployment(
                     )
                     result["updated_profiles"] = ups
 
+            # Log successful deployment to audit
+            audit = AuditService(db)
+            audit.log_cert_deployed(
+                certificate_id=0,  # New cert, no DB ID yet
+                certificate_name=result.get("new_cert_object", "unknown"),
+                device=device,
+                user=current_user,
+                description=f"PEM deployment: replaced '{old_cert_name}' with '{result.get('new_cert_object')}'",
+                details={
+                    "mode": "pem",
+                    "old_cert": old_cert_name,
+                    "new_cert": result.get("new_cert_object"),
+                    "profiles_updated": result.get("updated_profiles", [])
+                }
+            )
+
             return {"dry_run": False, "result": result}
 
         else:
@@ -493,4 +527,19 @@ async def execute_deployment(
     except HTTPException:
         raise
     except Exception as e:
+        # Log failed deployment to audit
+        try:
+            audit = AuditService(db)
+            audit.log_cert_deployed(
+                certificate_id=0,
+                certificate_name=old_cert_name or "unknown",
+                device=device,
+                user=current_user,
+                result=AuditResult.FAILURE,
+                description=f"Deployment failed for '{old_cert_name}' on {device.hostname}",
+                error_message=str(e),
+                details={"mode": mode, "old_cert": old_cert_name}
+            )
+        except Exception:
+            pass  # Don't fail if audit logging fails
         raise HTTPException(status_code=400, detail=str(e))
