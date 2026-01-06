@@ -22,6 +22,7 @@ import CertificateCleanupPage from './pages/CertificateCleanupPage';
 import HostSearchPage from './pages/HostSearchPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import CredentialTemplatesPage from './pages/CredentialTemplatesPage';
 
 // --- PÁGINAS DE ADMINISTRACIÓN ---
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -68,6 +69,7 @@ function App() {
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/health" element={<SystemHealth />} />
+                    <Route path="/admin/credentials" element={<CredentialTemplatesPage />} />
                     
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />

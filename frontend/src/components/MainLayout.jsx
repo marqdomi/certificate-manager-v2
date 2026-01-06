@@ -51,6 +51,7 @@ const navItems = [
 const adminItems = [
   { text: 'Admin Dashboard', icon: <AdminPanelSettingsIcon />, path: '/admin' },
   { text: 'User Management', icon: <PeopleIcon />, path: '/admin/users' },
+  { text: 'Credentials', icon: <VpnKeyIcon />, path: '/admin/credentials' },
   { text: 'System Health', icon: <MonitorHeartIcon />, path: '/admin/health' },
 ];
 

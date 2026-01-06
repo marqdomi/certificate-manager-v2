@@ -374,6 +374,8 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
         
         # Track which cert names exist on F5 for cleanup later
         f5_cert_names = set()
+        # Track certs processed in this session to avoid duplicates
+        processed_this_session = set()
         
         new_certs_count = 0
         updated_certs_count = 0
@@ -386,7 +388,14 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
                 )
                 
                 cert_name = getattr(cert, 'name', 'N/A')
+                
+                # Skip if we already processed this cert name in this session
+                if cert_name in processed_this_session:
+                    logger.debug(f"Skipping duplicate cert '{cert_name}' in same scan session")
+                    continue
+                    
                 f5_cert_names.add(cert_name)  # Track this cert exists on F5
+                processed_this_session.add(cert_name)  # Mark as processed
                 
                 # Lógica para extraer el Common Name del 'subject'
                 subject_str = getattr(cert, 'subject', '') or getattr(cert, 'issuer', '')
@@ -471,6 +480,11 @@ def _perform_scan(db: Session, device: Device, username: str, password: str):
         # Build result message including facts update info
         facts_count = len(facts_result.get('facts_updated', {}))
         result_message = f"Scan complete for {device.hostname}. Certs - New: {new_certs_count}, Updated: {updated_certs_count}, Removed: {deleted_certs_count}. Facts refreshed: {facts_count} field(s)."
+        
+        # Commit the changes (certificates added/updated/deleted)
+        db.commit()
+        logger.info(f"Database commit successful for {device.hostname}")
+        
         logger.info(result_message)
         return {"status": "success", "message": result_message, "facts": facts_result, "deleted": deleted_certs_count}
 

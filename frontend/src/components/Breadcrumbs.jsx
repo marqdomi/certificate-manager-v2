@@ -31,6 +31,7 @@ const ROUTE_CONFIG = {
   '/settings': { label: 'Settings', parent: '/dashboard' },
   '/admin': { label: 'Admin Dashboard', parent: '/dashboard' },
   '/admin/users': { label: 'User Management', parent: '/admin' },
+  '/admin/credentials': { label: 'Credential Templates', parent: '/admin' },
   '/admin/health': { label: 'System Health', parent: '/admin' },
   '/admin/notifications': { label: 'Notification Settings', parent: '/admin' },
 };

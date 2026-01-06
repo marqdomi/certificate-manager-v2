@@ -144,8 +144,7 @@ export async function confirmDeployment(
 }
 
 export async function verifyInstalledCert(deviceId, objectName) {
-  const params = { device_id: deviceId, cert_name: objectName };
-  const { data } = await apiClient.get('/certificates/verify', { params });
+  const { data } = await apiClient.get(`/certificates/devices/${deviceId}/verify/${encodeURIComponent(objectName)}`);
   return data;
 }
 

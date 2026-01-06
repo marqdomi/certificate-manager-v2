@@ -167,6 +167,10 @@ function ImpactPreviewStep({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  
+  // Store onResolved in ref to avoid infinite loop
+  const onResolvedRef = useRef(onResolved);
+  onResolvedRef.current = onResolved;
 
   const fetchProfiles = useCallback(async (forceLive = false) => {
     setError(null);
@@ -189,7 +193,7 @@ function ImpactPreviewStep({
         setProfiles(rows);
         setSource("cache");
         setLastUpdated(new Date());
-        onResolved?.({ profiles: rows, from: "cache", error: null });
+        onResolvedRef.current?.({ profiles: rows, from: "cache", error: null });
         return;
       }
 
@@ -207,7 +211,7 @@ function ImpactPreviewStep({
         setProfiles(rows);
         setSource("live");
         setLastUpdated(new Date());
-        onResolved?.({ profiles: rows, from: "live", error: null });
+        onResolvedRef.current?.({ profiles: rows, from: "live", error: null });
       }
     } catch (e) {
       const err = e as { response?: { data?: { detail?: string } }; message?: string };
@@ -216,12 +220,12 @@ function ImpactPreviewStep({
       if (!isCanceled) {
         const msg = err?.response?.data?.detail || err.message || "Failed to load SSL profiles";
         setError(msg);
-        onResolved?.({ profiles: [], from: "none", error: msg });
+        onResolvedRef.current?.({ profiles: [], from: "none", error: msg });
       }
     } finally {
       setLoading(false);
     }
-  }, [certificateId, device?.id, certName, timeoutSeconds, onResolved]);
+  }, [certificateId, device?.id, certName, timeoutSeconds]);
 
   useEffect(() => {
     fetchProfiles();
@@ -470,6 +474,11 @@ export default function RenewWizardDialog({
     setPendingCSR(pending);
   }, []);
 
+  // Memoized callback to prevent infinite loop in ImpactPreviewStep
+  const handlePreviewResolved = useCallback((payload: ImpactResolvedPayload) => {
+    setPreviewData(payload as PreviewData);
+  }, []);
+
   const reset = () => {
     setActiveStep(0);
     setRenewalMethod(null);
@@ -635,7 +644,7 @@ export default function RenewWizardDialog({
             certName={certName}
             certificateId={certificateId}
             timeoutSeconds={60}
-            onResolved={(payload) => setPreviewData(payload as PreviewData)}
+            onResolved={handlePreviewResolved}
           />
         )}
 
