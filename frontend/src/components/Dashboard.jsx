@@ -887,9 +887,14 @@ const InfoTooltip = ({ title, children }) => (
 // ============================================
 // MAIN DASHBOARD COMPONENT
 // ============================================
-const Dashboard = ({ stats, onFilterSelect }) => {
+const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  
+  // Phase 4: Widget visibility helper
+  const isWidgetVisible = (widgetKey) => {
+    return widgetConfig[widgetKey]?.visible !== false;
+  };
   
   const safeStats = stats || {};
   const total = safeStats.total ?? 0;
@@ -949,7 +954,7 @@ const Dashboard = ({ stats, onFilterSelect }) => {
 
   return (
     <Grid container spacing={3}>
-      {/* Top Stats Row - Phase 3: Added tooltips */}
+      {/* Top Stats Row - Phase 3: Added tooltips - Always visible */}
       <Grid item xs={6} sm={6} md={3}>
         <StatCard 
           title="Total Certificates" 
@@ -993,18 +998,23 @@ const Dashboard = ({ stats, onFilterSelect }) => {
         />
       </Grid>
 
-      {/* NEW: Health Score Gauge */}
-      <Grid item xs={12} md={4}>
-        <HealthScoreGauge score={healthScore} theme={theme} />
-      </Grid>
+      {/* NEW: Health Score Gauge - Phase 4: Conditional visibility */}
+      {isWidgetVisible('healthScore') && (
+        <Grid item xs={12} md={4}>
+          <HealthScoreGauge score={healthScore} theme={theme} />
+        </Grid>
+      )}
 
-      {/* NEW: Expiration Trend Chart (12 months) */}
-      <Grid item xs={12} md={8}>
-        <ExpirationTrendChart certificates={certificates} theme={theme} />
-      </Grid>
+      {/* NEW: Expiration Trend Chart (12 months) - Phase 4: Conditional visibility */}
+      {isWidgetVisible('expirationTrend') && (
+        <Grid item xs={12} md={isWidgetVisible('healthScore') ? 8 : 12}>
+          <ExpirationTrendChart certificates={certificates} theme={theme} />
+        </Grid>
+      )}
 
-      {/* Expiration Timeline (existing) - Phase 2: Responsive improvements */}
-      <Grid item xs={12} md={8}>
+      {/* Expiration Timeline (existing) - Phase 4: Conditional visibility */}
+      {isWidgetVisible('expirationTimeline') && (
+        <Grid item xs={12} md={8}>
         <Paper elevation={0} sx={glassmorphicStyle}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
             Expiration Timeline
@@ -1039,45 +1049,47 @@ const Dashboard = ({ stats, onFilterSelect }) => {
           </Box>
         </Paper>
       </Grid>
+      )}
 
-      {/* Device Stats (existing) - Phase 2: Added animations and responsive design */}
-      <Grid item xs={12} md={4}>
-        <Paper elevation={0} sx={glassmorphicStyle}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-            <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              F5 Devices
-            </Typography>
-          </Box>
-          <Divider sx={{ mb: 2 }} />
-          <Grid container>
-            <Grid item xs={4}>
-              <MiniStatCard title="Total" value={deviceStats.total || 0} color={theme.palette.text.primary} />
+      {/* Device Stats (existing) - Phase 4: Conditional visibility */}
+      {isWidgetVisible('deviceStats') && (
+        <Grid item xs={12} md={4}>
+          <Paper elevation={0} sx={glassmorphicStyle}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                F5 Devices
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            <Grid container>
+              <Grid item xs={4}>
+                <MiniStatCard title="Total" value={deviceStats.total || 0} color={theme.palette.text.primary} />
+              </Grid>
+              <Grid item xs={4}>
+                <MiniStatCard title="With Creds" value={deviceStats.withCreds || 0} color={theme.palette.success.main} />
+              </Grid>
+              <Grid item xs={4}>
+                <MiniStatCard title="No Creds" value={deviceStats.withoutCreds || 0} color={theme.palette.warning.main} />
+              </Grid>
             </Grid>
-            <Grid item xs={4}>
-              <MiniStatCard title="With Creds" value={deviceStats.withCreds || 0} color={theme.palette.success.main} />
-            </Grid>
-            <Grid item xs={4}>
-              <MiniStatCard title="No Creds" value={deviceStats.withoutCreds || 0} color={theme.palette.warning.main} />
-            </Grid>
-          </Grid>
-          <Divider sx={{ my: 2 }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <StorageIcon sx={{ mr: 1, fontSize: 18, color: theme.palette.info.main }} />
-            <Typography variant="body2" color="text.secondary">
-              Top devices by certificates
-            </Typography>
-          </Box>
-          {topDevices.slice(0, 5).map((device, idx) => (
-            <Box key={idx} sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              py: 0.5,
-              px: 1,
-              borderRadius: 1,
-              transition: 'background-color 0.2s ease',
-              '&:hover': {
-                backgroundColor: theme.palette.action.hover
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <StorageIcon sx={{ mr: 1, fontSize: 18, color: theme.palette.info.main }} />
+              <Typography variant="body2" color="text.secondary">
+                Top devices by certificates
+              </Typography>
+            </Box>
+            {topDevices.slice(0, 5).map((device, idx) => (
+              <Box key={idx} sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                py: 0.5,
+                px: 1,
+                borderRadius: 1,
+                transition: 'background-color 0.2s ease',
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover
               }
             }}>
               <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }}>
@@ -1090,32 +1102,40 @@ const Dashboard = ({ stats, onFilterSelect }) => {
           ))}
         </Paper>
       </Grid>
+      )}
 
-      {/* NEW: Critical Expired Certificates */}
-      <Grid item xs={12} md={6}>
-        <CriticalCertificates certificates={certificates} theme={theme} navigate={navigate} />
-      </Grid>
+      {/* Critical Expired Certificates - Phase 4: Conditional visibility */}
+      {isWidgetVisible('criticalCerts') && (
+        <Grid item xs={12} md={6}>
+          <CriticalCertificates certificates={certificates} theme={theme} navigate={navigate} />
+        </Grid>
+      )}
 
-      {/* NEW: Activity Timeline */}
-      <Grid item xs={12} md={6}>
-        <ActivityTimeline auditStats={auditStats} theme={theme} navigate={navigate} />
-      </Grid>
+      {/* Activity Timeline - Phase 4: Conditional visibility */}
+      {isWidgetVisible('activityTimeline') && (
+        <Grid item xs={12} md={6}>
+          <ActivityTimeline auditStats={auditStats} theme={theme} navigate={navigate} />
+        </Grid>
+      )}
 
-      {/* PHASE 3: Certificates by Site/Location */}
-      <Grid item xs={12} md={6}>
-        <CertificatesBySite certificates={certificates} devices={devices} theme={theme} navigate={navigate} />
-      </Grid>
+      {/* Certificates by Site/Location - Phase 4: Conditional visibility */}
+      {isWidgetVisible('certificatesBySite') && (
+        <Grid item xs={12} md={6}>
+          <CertificatesBySite certificates={certificates} devices={devices} theme={theme} navigate={navigate} />
+        </Grid>
+      )}
 
-      {/* Health Pie Chart (existing) - Phase 2: Responsive improvements */}
-      <Grid item xs={12} md={6}>
-        <Paper elevation={0} sx={glassmorphicStyle}>
-          <Typography variant="h6" align="center" sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            Certificate Health
-          </Typography>
-          <Box sx={{ width: '100%', height: { xs: 220, sm: 280 } }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie 
+      {/* Health Pie Chart - Phase 4: Conditional visibility */}
+      {isWidgetVisible('certificateHealth') && (
+        <Grid item xs={12} md={6}>
+          <Paper elevation={0} sx={glassmorphicStyle}>
+            <Typography variant="h6" align="center" sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+              Certificate Health
+            </Typography>
+            <Box sx={{ width: '100%', height: { xs: 220, sm: 280 } }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie 
                   data={healthPieData} 
                   dataKey="value" 
                   nameKey="name" 
@@ -1144,40 +1164,42 @@ const Dashboard = ({ stats, onFilterSelect }) => {
           </Box>
         </Paper>
       </Grid>
+      )}
 
-      {/* Quick Actions Widget (existing) - Phase 2: Responsive improvements */}
-      <Grid item xs={12} md={6}>
-        <Paper elevation={0} sx={glassmorphicStyle}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-            <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              Quick Actions
-            </Typography>
-          </Box>
-          <Divider sx={{ mb: 2 }} />
-          <Grid container spacing={1.5}>
-            <Grid item xs={6}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<AddCircleOutlineIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
-                onClick={() => navigate('/generate-csr')}
-                sx={{ 
-                  py: { xs: 1, sm: 1.5 }, 
-                  justifyContent: 'flex-start',
-                  borderColor: 'divider',
-                  fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                  '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Generate CSR
-              </Button>
-            </Grid>
-            <Grid item xs={6}>
-              <Button
-                fullWidth
-                variant="outlined"
+      {/* Quick Actions Widget - Phase 4: Conditional visibility */}
+      {isWidgetVisible('quickActions') && (
+        <Grid item xs={12} md={6}>
+          <Paper elevation={0} sx={glassmorphicStyle}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                Quick Actions
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            <Grid container spacing={1.5}>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<AddCircleOutlineIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
+                  onClick={() => navigate('/generate-csr')}
+                  sx={{ 
+                    py: { xs: 1, sm: 1.5 }, 
+                    justifyContent: 'flex-start',
+                    borderColor: 'divider',
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                    '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Generate CSR
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
                 startIcon={<UploadFileIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
                 onClick={() => navigate('/pfx-generator')}
                 sx={{ 
@@ -1231,31 +1253,35 @@ const Dashboard = ({ stats, onFilterSelect }) => {
           </Grid>
         </Paper>
       </Grid>
+      )}
 
-      {/* Quick Stats Row (existing) */}
-      <Grid item xs={12}>
-        <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
-          <Grid container spacing={2} justifyContent="center">
-            <Grid item xs={6} sm={4} md={3}>
-              <MiniStatCard title="Critical (< 7d)" value={expirationBands.critical || 0} color={theme.palette.error.main} />
+      {/* Quick Stats Row - Phase 4: Conditional visibility */}
+      {isWidgetVisible('quickStats') && (
+        <Grid item xs={12}>
+          <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
+            <Grid container spacing={2} justifyContent="center">
+              <Grid item xs={6} sm={4} md={3}>
+                <MiniStatCard title="Critical (< 7d)" value={expirationBands.critical || 0} color={theme.palette.error.main} />
+              </Grid>
+              <Grid item xs={6} sm={4} md={3}>
+                <MiniStatCard title="Urgent (8-30d)" value={expirationBands.urgent || 0} color={theme.palette.warning.main} />
+              </Grid>
+              <Grid item xs={6} sm={4} md={3}>
+                <MiniStatCard title="Soon (31-60d)" value={expirationBands.soon || 0} color={theme.palette.warning.light} />
+              </Grid>
+              <Grid item xs={6} sm={4} md={3}>
+                <MiniStatCard title="OK (61-90d)" value={expirationBands.ok || 0} color={theme.palette.info.main} />
+              </Grid>
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <MiniStatCard title="Urgent (8-30d)" value={expirationBands.urgent || 0} color={theme.palette.warning.main} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <MiniStatCard title="Soon (31-60d)" value={expirationBands.soon || 0} color={theme.palette.warning.light} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <MiniStatCard title="OK (61-90d)" value={expirationBands.ok || 0} color={theme.palette.info.main} />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Grid>
+          </Paper>
+        </Grid>
+      )}
 
-      {/* Device HA Status (existing) - Phase 2: Added animations */}
-      <Grid item xs={12}>
-        <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+      {/* Device HA Status - Phase 4: Conditional visibility */}
+      {isWidgetVisible('deviceHaStatus') && (
+        <Grid item xs={12}>
+          <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
             <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
             <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Device HA Status
@@ -1336,6 +1362,7 @@ const Dashboard = ({ stats, onFilterSelect }) => {
           )}
         </Paper>
       </Grid>
+      )}
     </Grid>
   );
 };

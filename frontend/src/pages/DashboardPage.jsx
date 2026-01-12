@@ -1,5 +1,6 @@
 // frontend/src/pages/DashboardPage.jsx
 // Phase 2: Auto-refresh, Skeleton Loading, Animations
+// Phase 4: Export Dashboard, Widget Customization
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Box, 
@@ -12,14 +13,35 @@ import {
   Chip,
   LinearProgress,
   alpha,
-  useTheme
+  useTheme,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
+  Switch,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import DownloadIcon from '@mui/icons-material/Download';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ImageIcon from '@mui/icons-material/Image';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import Dashboard from '../components/Dashboard';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Auto-refresh interval in milliseconds (60 seconds)
 const AUTO_REFRESH_INTERVAL = 60000;
@@ -101,6 +123,45 @@ const DashboardSkeleton = () => (
   </Grid>
 );
 
+// ============================================
+// PHASE 4 - Widget Configuration
+// ============================================
+const DEFAULT_WIDGET_CONFIG = {
+  healthScore: { visible: true, label: 'Health Score Gauge' },
+  expirationTrend: { visible: true, label: 'Expiration Forecast' },
+  expirationTimeline: { visible: true, label: 'Expiration Timeline' },
+  deviceStats: { visible: true, label: 'F5 Devices' },
+  criticalCerts: { visible: true, label: 'Critical Expired' },
+  activityTimeline: { visible: true, label: 'Recent Activity' },
+  certificatesBySite: { visible: true, label: 'Certificates by Site' },
+  certificateHealth: { visible: true, label: 'Certificate Health Pie' },
+  quickActions: { visible: true, label: 'Quick Actions' },
+  quickStats: { visible: true, label: 'Quick Stats Row' },
+  deviceHaStatus: { visible: true, label: 'Device HA Status' },
+};
+
+// Load widget config from localStorage
+const loadWidgetConfig = () => {
+  try {
+    const saved = localStorage.getItem('dashboard-widget-config');
+    if (saved) {
+      return { ...DEFAULT_WIDGET_CONFIG, ...JSON.parse(saved) };
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_WIDGET_CONFIG;
+};
+
+// Save widget config to localStorage
+const saveWidgetConfig = (config) => {
+  try {
+    localStorage.setItem('dashboard-widget-config', JSON.stringify(config));
+  } catch {
+    // ignore
+  }
+};
+
 function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -112,6 +173,100 @@ function DashboardPage() {
   const theme = useTheme();
   const intervalRef = useRef(null);
   const countdownRef = useRef(null);
+  const dashboardRef = useRef(null);
+  
+  // Phase 4: Export and Widget Config states
+  const [exportMenuAnchor, setExportMenuAnchor] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
+  const [widgetConfig, setWidgetConfig] = useState(loadWidgetConfig);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // Phase 4: Export functions
+  const handleExportMenuOpen = (event) => {
+    setExportMenuAnchor(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportMenuAnchor(null);
+  };
+
+  const exportToPNG = async () => {
+    handleExportMenuClose();
+    if (!dashboardRef.current) return;
+    
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(dashboardRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: theme.palette.background.default,
+        logging: false,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `CMT-Dashboard-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      setSnackbar({ open: true, message: 'Dashboard exported as PNG', severity: 'success' });
+    } catch (error) {
+      console.error('Export to PNG failed:', error);
+      setSnackbar({ open: true, message: 'Export failed', severity: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    handleExportMenuClose();
+    if (!dashboardRef.current) return;
+    
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(dashboardRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: theme.palette.background.default,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height],
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`CMT-Dashboard-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      setSnackbar({ open: true, message: 'Dashboard exported as PDF', severity: 'success' });
+    } catch (error) {
+      console.error('Export to PDF failed:', error);
+      setSnackbar({ open: true, message: 'Export failed', severity: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Phase 4: Widget config functions
+  const handleWidgetToggle = (widgetKey) => {
+    setWidgetConfig(prev => {
+      const newConfig = {
+        ...prev,
+        [widgetKey]: { ...prev[widgetKey], visible: !prev[widgetKey].visible }
+      };
+      saveWidgetConfig(newConfig);
+      return newConfig;
+    });
+  };
+
+  const handleResetWidgets = () => {
+    setWidgetConfig(DEFAULT_WIDGET_CONFIG);
+    saveWidgetConfig(DEFAULT_WIDGET_CONFIG);
+    setSnackbar({ open: true, message: 'Widget layout reset to default', severity: 'info' });
+  };
 
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -272,11 +427,11 @@ function DashboardPage() {
         flexWrap: 'wrap',
         gap: 2
       }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}>
           Dashboard Overview
         </Typography>
         
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           {/* Last refresh indicator */}
           <Chip
             size="small"
@@ -284,7 +439,8 @@ function DashboardPage() {
             sx={{ 
               bgcolor: alpha(theme.palette.info.main, 0.1),
               color: 'text.secondary',
-              fontSize: '0.75rem'
+              fontSize: '0.75rem',
+              display: { xs: 'none', sm: 'flex' }
             }}
           />
           
@@ -342,11 +498,142 @@ function DashboardPage() {
               />
             </IconButton>
           </Tooltip>
+
+          {/* Phase 4: Export button */}
+          <Tooltip title="Export Dashboard">
+            <IconButton 
+              size="small" 
+              onClick={handleExportMenuOpen}
+              disabled={exporting || loading}
+              sx={{ 
+                bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                }
+              }}
+            >
+              <DownloadIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {/* Phase 4: Widget config button */}
+          <Tooltip title="Configure Widgets">
+            <IconButton 
+              size="small" 
+              onClick={() => setWidgetConfigOpen(true)}
+              sx={{ 
+                bgcolor: alpha(theme.palette.grey[500], 0.1),
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.grey[500], 0.2),
+                }
+              }}
+            >
+              <ViewModuleIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
-      {/* Loading progress bar during refresh */}
-      {refreshing && (
+      {/* Export Menu */}
+      <Menu
+        anchorEl={exportMenuAnchor}
+        open={Boolean(exportMenuAnchor)}
+        onClose={handleExportMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={exportToPNG} disabled={exporting}>
+          <ListItemIcon>
+            <ImageIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Export as PNG" secondary="High-resolution image" />
+        </MenuItem>
+        <MenuItem onClick={exportToPDF} disabled={exporting}>
+          <ListItemIcon>
+            <PictureAsPdfIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Export as PDF" secondary="Printable document" />
+        </MenuItem>
+      </Menu>
+
+      {/* Widget Configuration Dialog */}
+      <Dialog 
+        open={widgetConfigOpen} 
+        onClose={() => setWidgetConfigOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ViewModuleIcon color="primary" />
+          Configure Dashboard Widgets
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Toggle widgets on or off to customize your dashboard view. Changes are saved automatically.
+          </Typography>
+          <Grid container spacing={1}>
+            {Object.entries(widgetConfig).map(([key, config]) => (
+              <Grid item xs={12} sm={6} key={key}>
+                <Paper 
+                  variant="outlined" 
+                  sx={{ 
+                    p: 1.5, 
+                    borderRadius: 2,
+                    borderColor: config.visible ? 'primary.main' : 'divider',
+                    bgcolor: config.visible ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={config.visible}
+                        onChange={() => handleWidgetToggle(key)}
+                        color="primary"
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" fontWeight={config.visible ? 500 : 400}>
+                        {config.label}
+                      </Typography>
+                    }
+                    sx={{ width: '100%', m: 0 }}
+                  />
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleResetWidgets} color="warning" size="small">
+            Reset to Default
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button onClick={() => setWidgetConfigOpen(false)} variant="contained">
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Loading progress bar during refresh or export */}
+      {(refreshing || exporting) && (
         <LinearProgress 
           sx={{ 
             mb: 2, 
@@ -357,11 +644,13 @@ function DashboardPage() {
       )}
 
       {/* Main content */}
-      {loading ? (
-        <DashboardSkeleton />
-      ) : (
-        <Dashboard stats={stats} onFilterSelect={handleDashboardFilter} />
-      )}
+      <Box ref={dashboardRef}>
+        {loading ? (
+          <DashboardSkeleton />
+        ) : (
+          <Dashboard stats={stats} onFilterSelect={handleDashboardFilter} widgetConfig={widgetConfig} />
+        )}
+      </Box>
     </Box>
   );
 }

@@ -8570,3 +8570,212 @@ requests.exceptions.ConnectTimeout: HTTPSConnectionPool(host='172.20.188.53', po
 2026-01-12 19:28:47,945 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
 2026-01-12 19:28:47,946 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
 2026-01-12 19:28:47,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:28:51,955 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:28:51,962 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:28:51,963 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:28:55,951 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:28:55,954 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:28:55,956 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:28:59,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:28:59,950 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:28:59,951 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:03,951 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:03,959 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:03,960 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:07,948 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:07,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:29:07,950 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:29:11,946 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:11,948 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:11,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:15,946 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:15,947 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:29:15,949 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:29:19,959 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:19,969 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:19,970 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:23,948 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:23,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:29:23,950 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:29:27,975 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:27,985 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:27,986 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:31,966 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:31,968 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:31,969 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:35,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:35,948 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:35,948 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:39,947 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:39,948 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:29:39,949 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:29:43,949 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:43,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:29:43,950 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:29:47,952 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:47,956 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:47,956 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:51,945 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:51,946 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:29:51,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:29:55,952 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:55,954 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:55,954 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:29:59,948 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:29:59,949 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:29:59,950 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:03,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:03,948 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:03,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:07,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:07,947 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:07,948 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:11,952 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:11,954 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:11,954 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:15,944 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:15,945 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:30:15,946 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:30:19,945 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:19,946 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:19,947 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:23,951 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:23,952 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:23,953 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:27,954 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:27,959 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:27,959 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:31,943 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:31,943 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:30:31,944 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:30:35,945 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:35,946 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:30:35,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:30:39,944 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:39,945 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:39,946 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:43,946 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:43,947 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:43,948 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:30:47,233 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:47,234 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:30:47,234 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:30:47,235 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 19:30:47,235 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:30:47,235 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 19:30:47,236 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:30:47,236 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 19:30:47,236 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:30:47,236 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:30:50,487 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 19:30:50,513 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 1
+2026-01-12 19:30:50,553 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 19:30:50,946 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 3
+2026-01-12 19:30:50,947 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:50,947 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 19:30:50,959 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 3
+2026-01-12 19:30:53,330 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 4
+2026-01-12 19:30:54,945 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:54,945 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 19:30:54,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 4
+2026-01-12 19:30:54,965 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:30:58,959 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:30:58,962 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:30:58,963 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:02,953 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:02,957 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:02,958 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:06,948 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:06,950 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:06,950 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:10,950 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:10,950 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:10,951 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:14,947 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:14,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:31:14,951 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:31:19,012 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:19,042 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:19,043 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:22,959 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:22,964 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:22,965 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:26,948 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:26,951 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:26,952 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:30,946 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:30,949 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:31:31,117 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:31:34,988 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:35,004 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:35,005 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:38,961 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:38,966 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:38,967 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:42,958 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:42,965 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:42,965 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:46,946 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:46,949 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:46,950 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:50,947 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:50,950 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:50,951 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:53,980 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:53,982 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:53,982 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:56,988 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:31:56,989 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:31:56,990 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:31:59,996 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:00,001 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:00,016 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:02,999 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:03,002 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:03,002 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:06,010 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:06,012 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:06,012 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:09,010 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:09,011 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:09,012 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:12,011 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:12,012 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:32:12,013 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:32:15,018 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:15,019 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:32:15,021 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:32:18,019 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:18,498 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:18,498 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:21,040 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:21,578 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:21,579 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:24,028 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:24,039 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:32:24,041 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:32:27,045 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:27,051 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:27,086 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:30,037 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:30,042 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:32:30,045 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:32:33,045 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:33,048 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:33,050 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:36,045 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:36,046 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:32:36,048 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 5
+2026-01-12 19:32:39,063 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 6
+2026-01-12 19:32:39,070 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:39,071 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 5
+2026-01-12 19:32:39,890 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:32:39,893 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 4
+2026-01-12 19:32:39,894 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:32:39,894 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 19:32:39,895 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:32:39,895 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 19:32:40,804 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:32:40,817 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 19:32:40,820 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:32:40,826 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
