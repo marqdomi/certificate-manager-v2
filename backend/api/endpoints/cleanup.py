@@ -613,13 +613,15 @@ def direct_cleanup_certificates(
             
             # Delete the certificate from F5
             try:
-                f5_service_logic.delete_certificate_from_f5(
+                delete_result = f5_service_logic.delete_certificate_from_f5(
                     hostname=device.ip_address,
                     username=device.username,
                     password=f5_password,
                     cert_name=cert_name,
                     partition=request_obj.partition
                 )
+                cert_deleted = delete_result.get('cert_deleted', False)
+                key_deleted = delete_result.get('key_deleted', False)
             except Exception as delete_error:
                 # Parse F5 error message for better user feedback
                 error_msg = str(delete_error)
@@ -651,38 +653,62 @@ def direct_cleanup_certificates(
                 continue  # Continue with next certificate
             
             # Also delete from local database if exists
-            local_cert = db.query(Certificate).filter(
-                Certificate.device_id == device.id,
-                Certificate.name == cert_name
-            ).first()
+            # Try multiple name variations since DB might have different naming
+            base_name = cert_name.rsplit('.crt', 1)[0]
+            possible_names = [
+                cert_name,                    # Original: 2022-star.audatex.by.crt
+                base_name,                    # Without .crt: 2022-star.audatex.by
+                f"{base_name}.crt",          # Ensure .crt version
+            ]
+            # Remove duplicates
+            possible_names = list(dict.fromkeys(possible_names))
+            
+            local_cert = None
+            for try_name in possible_names:
+                local_cert = db.query(Certificate).filter(
+                    Certificate.device_id == device.id,
+                    Certificate.name == try_name
+                ).first()
+                if local_cert:
+                    logger.info(f"Found certificate in DB with name: {try_name}")
+                    break
             
             db_deleted = False
+            cert_id_deleted = 0
             if local_cert:
                 try:
+                    cert_id_deleted = local_cert.id
                     db.delete(local_cert)
                     db.commit()
                     db_deleted = True
-                    logger.info(f"Deleted certificate {cert_name} from local database")
+                    logger.info(f"Deleted certificate {cert_name} (ID: {cert_id_deleted}) from local database")
                 except Exception as db_error:
                     logger.warning(f"Could not delete {cert_name} from local DB: {db_error}")
                     db.rollback()
+            else:
+                logger.info(f"Certificate {cert_name} not found in local DB (tried: {possible_names})")
+            
+            # Build detailed success message
+            key_status = "cert + key" if key_deleted else "cert only (key not found)"
+            db_status = " + inventory" if db_deleted else ""
+            success_message = f"Deleted {key_status}{db_status}"
             
             # Log success
             audit_svc.log_action(
                 action=AuditAction.CLEANUP_DELETE,
                 resource_type="certificate",
-                resource_id=local_cert.id if local_cert else 0,
+                resource_id=cert_id_deleted if db_deleted else 0,
                 resource_name=cert_name,
                 username=current_user.username,
                 device_hostname=device.hostname,
                 result=AuditResult.SUCCESS,
-                description=f"Deleted certificate {cert_name} from F5{' and local DB' if db_deleted else ''} via cleanup tool"
+                description=f"Deleted certificate {cert_name} from F5 ({key_status}){' and inventory' if db_deleted else ''} via cleanup tool"
             )
             
             results.append(DirectCleanupResult(
                 cert_name=cert_name,
                 success=True,
-                message=f"Deleted successfully{' (also removed from inventory)' if db_deleted else ''}",
+                message=success_message,
                 snapshot_id=snapshot_id
             ))
             successful += 1

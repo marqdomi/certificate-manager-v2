@@ -322,6 +322,17 @@ function InventoryPage() {
     fetchData();
   }, [onlyPrimaries, dedupe]);
 
+  // Listen for global certificate updates (e.g., from cleanup tool)
+  useEffect(() => {
+    const handleCertificatesUpdated = () => {
+      console.log('[InventoryPage] Certificates updated event received, refreshing...');
+      fetchData();
+    };
+    
+    window.addEventListener('certificatesUpdated', handleCertificatesUpdated);
+    return () => window.removeEventListener('certificatesUpdated', handleCertificatesUpdated);
+  }, [fetchData]);
+
   const displayCerts = useMemo(() => {
     let dataToFilter = [...allCerts];
     if (statusFilter) {

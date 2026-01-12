@@ -1,93 +1,285 @@
-2025-12-22 14:49:54,839 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='192.168.52.187', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa3680e50>: Failed to establish a new connection: [Errno 111] Connection refused')). Retrying in 2.0s...
-2025-12-22 14:49:57,792 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.119.0.90', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa3870810>: Failed to establish a new connection: [Errno 111] Connection refused')). Retrying in 4.0s...
-2025-12-22 14:49:58,009 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='192.168.52.187', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa36621d0>: Failed to establish a new connection: [Errno 111] Connection refused')). Retrying in 4.0s...
-2025-12-22 14:52:12,521 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='192.168.52.187', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa3661750>: Failed to establish a new connection: [Errno 111] Connection refused'))
-2025-12-22 14:52:12,535 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.119.0.90', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa38c7d90>: Failed to establish a new connection: [Errno 111] Connection refused'))
-2025-12-22 14:52:33,791 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":83610762,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-22 14:52:36,667 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":83610845,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-22 14:52:41,584 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":83610938,"kind":":resterrorresponse"}'
-2025-12-22 14:53:21,300 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1004668254,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-22 14:53:28,362 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1004668395,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-22 14:53:34,930 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Maximum number of login attempts exceeded.","referer":"10.119.36.1","restOperationId":1004668636,"kind":":resterrorresponse"}'
-2025-12-22 14:55:06,095 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-22 14:55:26,903 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-22 14:55:43,016 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-22 14:55:49,782 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-22 14:56:03,816 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-22 14:56:26,698 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-23 04:22:29,704 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.119.0.91', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-23 10:06:11,186 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.119.16.80', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa344d5d0>: Failed to establish a new connection: [Errno 111] Connection refused')). Retrying in 2.0s...
-2025-12-23 10:33:28,024 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.119.16.80', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0xffffa3422790>: Failed to establish a new connection: [Errno 111] Connection refused')). Retrying in 4.0s...
-2025-12-23 14:33:45,579 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.119.8.87', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-23 16:31:14,759 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1006429697,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-23 16:31:20,762 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1006429771,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-23 16:31:29,960 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1006429917,"kind":":resterrorresponse"}'
-2025-12-23 16:33:30,056 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-23 16:33:50,856 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-23 16:34:13,741 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-23 16:34:35,579 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-23 16:34:56,348 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-23 16:35:19,236 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-24 03:02:59,144 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":58938140,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-24 03:03:06,327 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":58938314,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-24 03:03:16,719 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://34.241.100.251:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"213.52.176.20","restOperationId":58938540,"kind":":resterrorresponse"}'
-2025-12-24 03:03:24,258 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":86565126,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-24 03:03:27,131 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":86565240,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-24 03:03:31,988 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":86565383,"kind":":resterrorresponse"}'
-2025-12-24 03:05:43,341 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-24 03:06:04,149 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-24 03:06:27,022 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-24 03:06:44,192 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa2a3da90>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)')). Retrying in 2.0s...
-2025-12-24 03:08:59,353 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa2ea8590>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)')). Retrying in 4.0s...
-2025-12-24 03:11:18,613 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa2d21950>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)'))
-2025-12-25 03:03:27,368 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":88525222,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-25 03:03:30,301 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":88525336,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-25 03:03:35,168 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":88525439,"kind":":resterrorresponse"}'
-2025-12-25 03:04:14,729 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1008803695,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-25 03:04:21,849 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1008803868,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-25 03:04:30,489 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.51:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":1008804008,"kind":":resterrorresponse"}'
-2025-12-25 03:05:37,470 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-25 03:05:58,279 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-25 03:06:21,154 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.253', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-25 03:06:53,665 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa33ea2d0>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)')). Retrying in 2.0s...
-2025-12-25 03:09:08,839 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa33bb650>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)')). Retrying in 4.0s...
-2025-12-25 03:11:28,098 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa2a147d0>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)'))
-2025-12-26 03:03:37,250 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":90486146,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-26 03:03:40,093 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":90486232,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-26 03:03:44,931 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 404 Unexpected Error: Not Found for uri: https://10.119.0.81:443/mgmt/shared/authn/login
-Text: '{"code":404,"message":"Public URI path not registered: /tm/auth/source","referer":"10.119.1.7","restOperationId":90486502,"kind":":resterrorresponse"}'
-2025-12-26 03:04:33,351 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.50:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":928419023,"kind":":resterrorresponse"}'. Retrying in 2.0s...
-2025-12-26 03:04:40,433 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.50:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Authentication failed.","referer":"10.119.36.1","restOperationId":928419144,"kind":":resterrorresponse"}'. Retrying in 4.0s...
-2025-12-26 03:04:47,511 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: 401 Unexpected Error: F5 Authorization Required for uri: https://10.119.36.50:443/mgmt/shared/authn/login
-Text: '{"code":401,"message":"Maximum number of login attempts exceeded.","referer":"10.119.36.1","restOperationId":928419385,"kind":":resterrorresponse"}'
-2025-12-26 03:06:42,069 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 2.0s...
-2025-12-26 03:07:02,870 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))). Retrying in 4.0s...
-2025-12-26 03:07:11,455 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 1/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa3c9d550>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)')). Retrying in 2.0s...
-2025-12-26 03:07:25,751 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='10.132.3.252', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)')))
-2025-12-26 03:09:26,620 - cmt.retry - WARNING - wrapper:58 - _connect_to_f5 attempt 2/3 failed: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa3509690>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)')). Retrying in 4.0s...
-2025-12-26 03:11:45,890 - cmt.retry - ERROR - wrapper:47 - _connect_to_f5 failed after 3 attempts: HTTPSConnectionPool(host='172.20.188.53', port=443): Max retries exceeded with url: /mgmt/shared/authn/login (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffffa3440590>, 'Connection to 172.20.188.53 timed out. (connect timeout=None)'))
+2026-01-09 03:00:02,002 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.8.87
+2026-01-09 03:00:02,008 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc02-fab1-lb-002-grpur.network.axadmin.net (10.119.8.87)
+2026-01-09 03:00:07,417 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc02-fab1-lb-002-grpur.network.axadmin.net
+2026-01-09 03:00:07,418 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc02-fab1-lb-002-grpur.network.axadmin.net. Certs - New: 0, Updated: 43, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:00:08,489 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.8.81
+2026-01-09 03:00:08,490 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc02-fab1-lb-002-blue.network.axadmin.net (10.119.8.81)
+2026-01-09 03:00:17,572 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc02-fab1-lb-002-blue.network.axadmin.net
+2026-01-09 03:00:17,572 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc02-fab1-lb-002-blue.network.axadmin.net. Certs - New: 0, Updated: 71, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:00:19,956 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.24.91
+2026-01-09 03:00:19,957 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc02-lb-002-test.network.axadmin.net (10.119.24.91)
+2026-01-09 03:00:21,934 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023-audatex.com' from DB (no longer exists on F5)
+2026-01-09 03:00:21,935 - cmt.f5 - INFO - _perform_scan:524 - Removed 1 orphan certificates from DB for eudc02-lb-002-test.network.axadmin.net
+2026-01-09 03:00:22,993 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.0.89
+2026-01-09 03:00:22,993 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device USDC01-LB02-BLUENP-SEC.solera.farm (10.119.0.89)
+2026-01-09 03:00:25,820 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for USDC01-LB02-BLUENP-SEC.solera.farm
+2026-01-09 03:00:25,821 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for USDC01-LB02-BLUENP-SEC.solera.farm. Certs - New: 0, Updated: 25, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:00:27,629 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.16.85
+2026-01-09 03:00:27,630 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc01-lb-002-white.network.axadmin.net (10.119.16.85)
+2026-01-09 03:00:50,568 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023_www.vanstatuscheck.co.uk' from DB (no longer exists on F5)
+2026-01-09 03:00:50,569 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-wildcard.cap-hpi.services' from DB (no longer exists on F5)
+2026-01-09 03:00:50,570 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.audaexpress.co.uk' from DB (no longer exists on F5)
+2026-01-09 03:00:50,570 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.capdownload.co.uk' from DB (no longer exists on F5)
+2026-01-09 03:00:50,570 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.hpivaluations.com' from DB (no longer exists on F5)
+2026-01-09 03:00:50,570 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2025-star.audatex.com' from DB (no longer exists on F5)
+2026-01-09 03:00:50,571 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:00:50,571 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.bikestatuscheck.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:00:50,572 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.carstatuscheck.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:00:50,572 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.hpicarbuyersguide.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:00:50,572 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.simplecarcheck.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:00:50,573 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.vehiclestatusreport.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:00:50,573 - cmt.f5 - INFO - _perform_scan:524 - Removed 12 orphan certificates from DB for eudc01-lb-002-white.network.axadmin.net
+2026-01-09 03:00:52,337 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.24.84
+2026-01-09 03:00:52,338 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc02-lb-001-white.network.axadmin.net (10.119.24.84)
+2026-01-09 03:01:36,056 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.idaschox.com-2022_573023_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,057 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.idasnetwork.com_2020.crt_223320_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,057 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.instantcarcheck.co.uk.crt_223327_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,057 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.miaftr.com_2020.crt_572506_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.miaftr.ws.crt_395034_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.miaftr.ws_2020.crt_572513_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.private-dev.ukdc20.axadmin.net_2020.crt_572520_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.private-prod.ukdc20.axadmin.net.crt_572527_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.private-prod.ukdc20.axadmin.net_2021.crt_572682_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.service.cap-hpi.com_2022.crt_223109_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.services.cap-hpi.com_395674_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,058 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.solera.farm.crt_357492_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.svc.solera-uk.com_2021.crt_572542_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.svc.solera-uk.com_2021_572446_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.system-dev.ukdc20.axadmin.net_2020.crt_572175_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.ukdc20.soleracloud.com.crt_572549_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.ukdc20.soleracloud.com_2021.crt_572689_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_audaexpress.co.uk_2021.crt_223217_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_capconnect_co.uk_2019.crt_572696_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,059 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_instantcarcheck.co.uk_11072023_404607_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,060 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.78888.co.uk.crt_223341_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,060 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.bikestatuscheck.co.uk.crt_223224_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,060 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.bikestatuscheck.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:01:36,060 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.bikestatuscheck.co.uk_2024_143747_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,060 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.carstatuscheck.co.uk.crt_223231_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,060 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.carstatuscheck.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:01:36,061 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.carstatuscheck.co.uk_2024_143614_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,061 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.hpicarbuyersguide.co.uk.crt_572556_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,061 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.hpicarbuyersguide.co.uk_2021.crt_223238_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,061 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.hpicarbuyersguide.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:01:36,061 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.hpicarbuyersguide.co.uk_2024_143871_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.hpitextcheck.co.uk.crt_223348_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.mcnbikecheck.com.crt_223355_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.simplecarcheck.co.uk_2021.crt_223245_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.simplecarcheck.co.uk_2024_144065_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.theaacarcheck.com.crt_223362_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.theaacarcheck.com_11072023_404588_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.vehiclestatusreport.co.uk_2021.crt_223252_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'www.vehiclestatusreport.co.uk_2024_144577_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,062 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2021_star.audaexpress.co.uk.crt_572194_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2021_wildcard.dev.cap-hpi.services.crt_572299_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2021_wildcard.dev.cap-hpi.tools.crt_572485_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2021_www.vanstatuscheck.co.uk_582329_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-mobile.za.ax-aee.co.uk_574235_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-star.idasnetwork.com_404276_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-wildcard.rsapaws.com_397455_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-wildcard.valexalabs.com_395860_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-www.mcnbikecheck.com_405066_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,063 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023_www.vanstatuscheck.co.uk' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023_www.vanstatuscheck.co.uk_758752_2' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-wildcard.cap-hpi.services' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-wildcard.cap-hpi.services_143827_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.audaexpress.co.uk_143890_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.capdownload.co.uk' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.capdownload.co.uk_144224_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.hpivaluations.com_144054_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_valuation_vehicleregistration_gov_mt_143534_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,064 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2025-star.audatex.com_144094_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'DigiCert_SHA2_SecureServer_CA_64123_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'DigiCert_SHA2_Secure_Server_CA.crt_572001_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'GeoTrustTLSDVRSAMIXEDSHA2562020CA1.crt_357648_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'GeoTrust_DV_SSL_CA_G3.crt_572626_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'GeoTrust_New_Root2021.crt_572633_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'RapidSSL_SHA256_CA.crt_572654_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'RapidSSL_TLSDVRSAMixedSHA2562020CA-1.crt_372551_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'Solera-UK-Root-CA-G1_Interim.crt_395633_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,065 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'carvaluation.confused.com.crt_372516_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'concourse.solera-uk.tools.crt_395292_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'costcomparisoncalculator.mercedes-benz.co.uk_2022.crt_572081_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'demandfarm.solera.com_2022.crt_222990_2' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'demandfarm.solera.com_2024_141134_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'equote.grosvenor-leasing.co.uk_2024_142112_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'fleetcomparisontool.mercedes-benz.co.uk.crt_572102_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'hpismsendpoint.78888.co.uk.crt_357571_2' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'mobile.za.ax-aee.co.uk.crt_572147_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'pat-tco.audi-services.co.uk.crt_572154_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,066 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'san_wildcard.system-prod.ukdc20.axadmin.net.crt_572161_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'san_wildcard.system-prod.ukdc20.axadmin.net_2021.crt_572668_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.hpivaluations.com_2021.crt_223168_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'tco.audi.co.uk_2021.crt_223175_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'valuation.autoexpress.co.uk.crt_223306_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'vehiclehistory.confused.com.crt_372523_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.app.cap-hpi.com_2022.crt_223039_2' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.apps-dev.ukdc20.axadmin.net_2020.crt_572201_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.apps-prod.ukdc20.axadmin.net.crt_572208_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.apps-prod.ukdc20.axadmin.net_2021.crt_572675_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,067 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatarget.co.uk.crt_572306_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatarget.co.uk_2020.crt_572313_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex-quantex.co.uk_2020.crt_572320_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex.co.uk.crt_572168_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex.co.uk_2020.crt_572327_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex.com.crt_572334_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex.com_2020.crt_572341_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex.com_2020b.crt_572348_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audi.co.uk_selfsigned.crt_572355_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,068 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.ax-aee.co.uk.crt_572362_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.ax-aee.co.uk_2019.crt_572369_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.ax-aee.co.uk_2021.crt_223182_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap-hpi.app_v2.0.crt_395059_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap-hpi.co.uk.crt_572376_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap-hpi.co.uk_2021.crt_223189_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap-hpi.com.crt_572383_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap-hpi.com_2020.crt_572390_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap-hpi.com_2022.crt_223067_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,069 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap.co.uk.crt_572397_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap.co.uk_2019.crt_572404_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap.co.uk_2021.crt_223196_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap.co.uk_2024' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.cap.co.uk_2024_143917_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capconnect.co.uk.crt_572411_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capconnect.co.uk_2021.crt_223203_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capconnect.co.uk_2022_581815_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capdownload.co.uk.crt_572418_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,070 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capdownload.co.uk_2021_372483_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,071 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capnetwork.co.uk.crt_572425_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,071 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.capnetwork.co.uk_2021.crt_223210_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,071 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.carwebuk.com_2020.crt_571990_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,071 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.carwebuk.com_2023_584968_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,071 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.dev.cap-hpi.services.crt_572432_1' from DB (no longer exists on F5)
+2026-01-09 03:01:36,071 - cmt.f5 - INFO - _perform_scan:524 - Removed 119 orphan certificates from DB for eudc02-lb-001-white.network.axadmin.net
+2026-01-09 03:01:37,182 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 192.168.13.12
+2026-01-09 03:01:37,183 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device dc1-sag-tst-01.mgmt.omnitracs.com (192.168.13.12)
+2026-01-09 03:01:42,115 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for dc1-sag-tst-01.mgmt.omnitracs.com
+2026-01-09 03:01:42,115 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for dc1-sag-tst-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 36, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:01:43,197 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 192.168.52.187
+2026-01-09 03:01:43,197 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device na-oec-02-test-pcrf-01.mgmt.omnitracs.com (192.168.52.187)
+2026-01-09 03:01:44,537 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for na-oec-02-test-pcrf-01.mgmt.omnitracs.com
+2026-01-09 03:01:44,537 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for na-oec-02-test-pcrf-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 4, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:01:45,550 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 192.168.13.11
+2026-01-09 03:01:45,550 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device dc1-sag-dev-01.mgmt.omnitracs.com (192.168.13.11)
+2026-01-09 03:01:47,296 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for dc1-sag-dev-01.mgmt.omnitracs.com
+2026-01-09 03:01:47,297 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for dc1-sag-dev-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 9, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:01:48,302 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 192.168.13.14
+2026-01-09 03:01:48,303 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device dc1-sag-acpt-01.mgmt.omnitracs.com (192.168.13.14)
+2026-01-09 03:01:53,846 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for dc1-sag-acpt-01.mgmt.omnitracs.com
+2026-01-09 03:01:53,847 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for dc1-sag-acpt-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 40, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:01:55,510 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.24.89
+2026-01-09 03:01:55,511 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc02-lb-002-nonprod.network.axadmin.net (10.119.24.89)
+2026-01-09 03:02:28,184 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-wildcard.cap-hpi.services_474974_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,185 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.speedbids.prod2.autoonline.com_478112_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,185 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.speedonline.prod2.autoonline.com_478101_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,185 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.tkg-shared-dev.eudc01.solera.farm_477954_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,185 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2025-star.audatex.com_478139_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2025_star.int.soleraitalia.it_477969_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '20251029_star_privatmarkt.int1.autoonline.com_480209_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'peripay.com_480571_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.istio-tkg-rms-lte.eudc01.solera.farm_2025_477797_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.istio-tkg-rms-qae.eudc01.solera.farm_2025_470602_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.lte.volmachtportaal.nl_2025_480581_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.ncomm-local-np.eudc01.solera.farm_local_san_477826_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,186 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.wcone-np.eudc01.solera.farm_local_san_477838_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,187 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.wctwo-np.eudc01.solera.farm_local_san_477850_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,187 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard.audatex.com.tr_2024_478169_1' from DB (no longer exists on F5)
+2026-01-09 03:02:28,187 - cmt.f5 - INFO - _perform_scan:524 - Removed 15 orphan certificates from DB for eudc02-lb-002-nonprod.network.axadmin.net
+2026-01-09 03:02:29,322 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.8.88
+2026-01-09 03:02:29,323 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc02-fab1-lb-001-rell-npd.solera.farm (10.119.8.88)
+2026-01-09 03:02:38,428 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc02-fab1-lb-001-rell-npd.solera.farm
+2026-01-09 03:02:38,429 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc02-fab1-lb-001-rell-npd.solera.farm. Certs - New: 0, Updated: 69, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:02:39,332 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.8.85
+2026-01-09 03:02:39,333 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc02-fab1-lb-002-white.network.axadmin.net (10.119.8.85)
+2026-01-09 03:02:44,826 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc02-fab1-lb-002-white.network.axadmin.net
+2026-01-09 03:02:44,826 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc02-fab1-lb-002-white.network.axadmin.net. Certs - New: 0, Updated: 51, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:02:46,419 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.16.82
+2026-01-09 03:02:46,420 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc01-lb-001-black.network.axadmin.net (10.119.16.82)
+2026-01-09 03:03:07,342 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for eudc01-lb-001-black.network.axadmin.net
+2026-01-09 03:03:07,342 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for eudc01-lb-001-black.network.axadmin.net. Certs - New: 0, Updated: 108, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:03:09,071 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.24.82
+2026-01-09 03:03:09,073 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc02-lb-001-black.network.axadmin.net (10.119.24.82)
+2026-01-09 03:03:48,287 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023_star.cisl.soleraproperty.com_92983_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,288 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-star.c360.be_71058_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,288 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-star.network.axadmin.net' from DB (no longer exists on F5)
+2026-01-09 03:03:48,289 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024-star.network.axadmin.net_85189_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,289 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.int.soleraitalia.it' from DB (no longer exists on F5)
+2026-01-09 03:03:48,290 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.int.soleraitalia.it_82117_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,290 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.solera.farm_71813_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,291 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.soleraproperty.com' from DB (no longer exists on F5)
+2026-01-09 03:03:48,291 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2020-wildcard.api.solera.com.crt_81659_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,292 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_tkg-shared-dev_eudc01_solera_farm_70446_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,292 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_tkg-shared-prod_eudc01_solera_farm_70453_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,292 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2021_star.mtls.soleraproperty.com.crt_81620_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,293 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2021_star.tkg-shared-prod.eudc01.solera.farm_83056_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,294 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-star.api.solera.com_84242_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,295 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022-wildcard.svc.solera-uk.com_87411_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,295 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022_star.tkg-prod.eudc01.solera.farm_87305_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,295 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2022_star_solera.farm_84315_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,296 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023-star.int.audatex.com_93039_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,296 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2023_star.autodata-group.com_93733_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,296 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.soleraproperty.com_82980_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,297 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.tkg-shared-prod.eudc01.solera.farm' from DB (no longer exists on F5)
+2026-01-09 03:03:48,297 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star.tkg-shared-prod.eudc01.solera.farm_72820_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,297 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star_audatex.ch_72676_2' from DB (no longer exists on F5)
+2026-01-09 03:03:48,297 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2024_star_svc.solera-uk_com_71074_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,298 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate '2025-star.audatex.com_82389_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,298 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'cae.volmachtportaal.nl_2025_84119_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,298 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'soleraitalia.wildcard.com_84365_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,298 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.int.audatex.com_20230604_83845_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,298 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.ncomm-local-prod.eudc01.solera.farm_local_san_82057_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,298 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.private.soleraproperty.com_exp20230326_81732_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.solera.farm_exp_2022_07_31_79952_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.tkg-shared-dev.eudc01.solera.farm_20231023_87745_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.tkg-shared-prod.eudc01.solera.farm_20231024_87732_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.wcone-prod.eudc01.solera.farm_local_san_82069_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star.wctwo-prod.eudc01.solera.farm_local_san_82081_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_audagarage_com_89257_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_cardna_be_89279_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,299 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_claims360_be_89290_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_informex-claims-platform_be_89312_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_informex-hellas.com_89323_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_informex-vehicle-online_be_89334_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_informex_be_89301_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_quickglass_be_89345_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_s3-us_solera_farm_20251107_83511_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'star_winformex_be_89356_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,300 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wc.solera.com_20220714_81168_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,301 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_apps-prod.chdc20-cf.solera.com.crt_92436_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,301 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_istio-tkg-rms-cae.eudc01.solera.farm_2025' from DB (no longer exists on F5)
+2026-01-09 03:03:48,301 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_istio-tkg-rms-cae.eudc01.solera.farm_2025_78094_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,301 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_istio-tkg-rms-prod.eudc01.solera.farm_2025' from DB (no longer exists on F5)
+2026-01-09 03:03:48,301 - cmt.f5 - INFO - _perform_scan:519 - Removing orphan certificate 'wildcard_istio-tkg-rms-prod.eudc01.solera.farm_2025_78107_1' from DB (no longer exists on F5)
+2026-01-09 03:03:48,301 - cmt.f5 - INFO - _perform_scan:524 - Removed 51 orphan certificates from DB for eudc02-lb-001-black.network.axadmin.net
+2026-01-09 03:03:49,889 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.16.76
+2026-01-09 03:03:49,890 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc01-lb-002-vcmp.network.axadmin.net (10.119.16.76)
+2026-01-09 03:03:51,886 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for eudc01-lb-002-vcmp.network.axadmin.net
+2026-01-09 03:03:51,886 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for eudc01-lb-002-vcmp.network.axadmin.net. Certs - New: 0, Updated: 5, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:03:53,502 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.24.76
+2026-01-09 03:03:53,503 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device eudc02-lb-002-vcmp.network.axadmin.net (10.119.24.76)
+2026-01-09 03:03:55,708 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for eudc02-lb-002-vcmp.network.axadmin.net
+2026-01-09 03:03:55,709 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for eudc02-lb-002-vcmp.network.axadmin.net. Certs - New: 0, Updated: 5, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:03:58,743 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.37.51
+2026-01-09 03:03:58,744 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device sgdc10-fab1-lb-002.network.axadmin.net (10.119.37.51)
+2026-01-09 03:04:06,642 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for sgdc10-fab1-lb-002.network.axadmin.net
+2026-01-09 03:04:06,642 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for sgdc10-fab1-lb-002.network.axadmin.net. Certs - New: 0, Updated: 19, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:04:07,585 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.8.75
+2026-01-09 03:04:07,586 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc02-fab1-lb-001.network.axadmin.net (10.119.8.75)
+2026-01-09 03:04:08,737 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc02-fab1-lb-001.network.axadmin.net
+2026-01-09 03:04:08,737 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc02-fab1-lb-001.network.axadmin.net. Certs - New: 0, Updated: 5, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:04:09,634 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.0.78
+2026-01-09 03:04:09,634 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc01-fab1-lb-004.network.axadmin.net (10.119.0.78)
+2026-01-09 03:04:18,241 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc01-fab1-lb-004.network.axadmin.net
+2026-01-09 03:04:18,242 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc01-fab1-lb-004.network.axadmin.net. Certs - New: 0, Updated: 93, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:04:19,183 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.0.77
+2026-01-09 03:04:19,184 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc01-fab1-lb-003.network.axadmin.net (10.119.0.77)
+2026-01-09 03:04:28,209 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc01-fab1-lb-003.network.axadmin.net
+2026-01-09 03:04:28,209 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc01-fab1-lb-003.network.axadmin.net. Certs - New: 0, Updated: 93, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:04:29,143 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 10.119.8.76
+2026-01-09 03:04:29,144 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device usdc02-fab1-lb-002.network.axadmin.net (10.119.8.76)
+2026-01-09 03:04:30,320 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for usdc02-fab1-lb-002.network.axadmin.net
+2026-01-09 03:04:30,321 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for usdc02-fab1-lb-002.network.axadmin.net. Certs - New: 0, Updated: 6, Removed: 0. Facts refreshed: 0 field(s).
+2026-01-09 03:04:31,323 - cmt.f5 - INFO - _connect_to_f5:348 - Successfully connected to F5: 192.168.13.48
+2026-01-09 03:04:31,324 - cmt.f5 - INFO - _perform_scan:412 - Scanning certificates on F5 device dc1-sag-intp-01.mgmt.omnitracs.com (192.168.13.48)
+2026-01-09 03:04:35,752 - cmt.f5 - INFO - _perform_scan:535 - Database commit successful for dc1-sag-intp-01.mgmt.omnitracs.com
+2026-01-09 03:04:35,753 - cmt.f5 - INFO - _perform_scan:537 - Scan complete for dc1-sag-intp-01.mgmt.omnitracs.com. Certs - New: 0, Updated: 31, Removed: 0. Facts refreshed: 0 field(s).

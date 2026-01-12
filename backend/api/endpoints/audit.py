@@ -47,11 +47,21 @@ class AuditLogListResponse(BaseModel):
     page_size: int
 
 
+class RecentActivityItem(BaseModel):
+    action: str
+    status: str
+    details: Optional[str] = None
+    target: Optional[str] = None
+    timestamp: datetime
+    user: Optional[str] = None
+
+
 class AuditStatsResponse(BaseModel):
     total_entries: int
     by_action: dict
     by_result: dict
     recent_failures: int
+    recent_activities: List[RecentActivityItem] = []
 
 
 # --------------------------------------------------------------------------
@@ -252,11 +262,29 @@ async def get_audit_stats(
     # Recent failures - sum all non-success results from the counts we already have
     failures = sum(c for r, c in result_counts if r != AuditResult.SUCCESS)
     
+    # Get recent activities (last 10)
+    recent_logs = db.query(AuditLog).order_by(
+        AuditLog.timestamp.desc()
+    ).limit(10).all()
+    
+    recent_activities = [
+        RecentActivityItem(
+            action=log.action.value,
+            status=log.result.value,
+            details=log.description or log.resource_name,
+            target=log.device_hostname or log.resource_type,
+            timestamp=log.timestamp,
+            user=log.username
+        )
+        for log in recent_logs
+    ]
+    
     return AuditStatsResponse(
         total_entries=total,
         by_action=by_action,
         by_result=by_result,
-        recent_failures=failures
+        recent_failures=failures,
+        recent_activities=recent_activities
     )
 
 

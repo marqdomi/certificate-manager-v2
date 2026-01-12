@@ -260,6 +260,10 @@ const CertificateCleanupPage = () => {
       
       if (response.data.success) {
         setSuccess(`Successfully deleted certificate: ${cert.name}`);
+        // Dispatch global event to notify other components (e.g., InventoryPage)
+        window.dispatchEvent(new CustomEvent('certificatesUpdated', { 
+          detail: { deletedCount: 1, source: 'cleanup' }
+        }));
         runAnalysis();
       } else {
         setError(response.data.message);
@@ -335,6 +339,13 @@ const CertificateCleanupPage = () => {
       setConfirmDialog({ open: false, type: '', data: null });
       setSelectedSafeCerts([]);
       setSelectedBlockedCerts([]);
+      
+      // Dispatch global event to notify other components (e.g., InventoryPage)
+      if (successful > 0) {
+        window.dispatchEvent(new CustomEvent('certificatesUpdated', { 
+          detail: { deletedCount: successful, source: 'cleanup' }
+        }));
+      }
       
       // Wait a moment so user can see the message, then refresh (preserving success message)
       setTimeout(() => {
