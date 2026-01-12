@@ -694,3 +694,138 @@ class CredentialTemplate(Base):
 
     def __repr__(self):
         return f"<CredentialTemplate(id={self.id}, name='{self.name}')>"
+
+
+# -------------------------------------------------------------------
+# CERTIFICATE MASTER TABLE - v2.5 (January 2026)
+# Multi-location certificate tracking for NOC team visibility
+# -------------------------------------------------------------------
+
+class InstallationLocationType(str, enum.Enum):
+    """Types of locations where certificates can be installed."""
+    F5 = "f5"
+    LOCAL_VM = "local_vm"
+    PHYSICAL_SERVER = "physical_server"
+    AZURE_APP_GW = "azure_app_gw"
+    AZURE_FRONT_DOOR = "azure_front_door"
+    AWS_ALB = "aws_alb"
+    AWS_CLOUDFRONT = "aws_cloudfront"
+    GCP_LB = "gcp_lb"
+    KUBERNETES = "kubernetes"
+    CDN = "cdn"
+    OTHER = "other"
+
+
+class InstallationStatus(str, enum.Enum):
+    """Status of certificate installation at a location."""
+    PENDING = "pending"
+    INSTALLED = "installed"
+    VERIFIED = "verified"
+    FAILED = "failed"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class CertificateMaster(Base):
+    """
+    Master record for a certificate identity (by common_name).
+    Tracks the certificate across all installation locations.
+    """
+    __tablename__ = "certificate_masters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    common_name = Column(String(500), unique=True, nullable=False, index=True)
+    friendly_name = Column(String(200), nullable=True)
+    description = Column(Text, nullable=True)
+    
+    # Current valid certificate info
+    current_expiration = Column(DateTime, nullable=True, index=True)
+    current_issuer = Column(String(500), nullable=True)
+    current_serial = Column(String(100), nullable=True)
+    
+    # Ownership / Contact
+    owner_team = Column(String(100), nullable=True, index=True)
+    primary_contact = Column(String(200), nullable=True)
+    secondary_contact = Column(String(200), nullable=True)
+    notification_emails = Column(Text, nullable=True)
+    slack_channel = Column(String(100), nullable=True)
+    
+    # Renewal configuration
+    renewal_lead_days = Column(Integer, default=30)
+    auto_sync_f5 = Column(Boolean, default=True)
+    last_renewal_date = Column(DateTime, nullable=True)
+    renewal_notes = Column(Text, nullable=True)
+    
+    # Categorization
+    environment = Column(String(50), nullable=True, index=True)
+    application = Column(String(200), nullable=True, index=True)
+    criticality = Column(String(20), nullable=True, index=True)
+    
+    # Notes
+    notes = Column(Text, nullable=True)
+    documentation_url = Column(String(500), nullable=True)
+    is_active = Column(Boolean, default=True, index=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String(100), nullable=True)
+    
+    # Relationships
+    installations = relationship(
+        "CertificateInstallation", 
+        back_populates="master", 
+        cascade="all, delete-orphan"
+    )
+
+    def __repr__(self):
+        return f"<CertificateMaster(id={self.id}, cn='{self.common_name}')>"
+
+
+class CertificateInstallation(Base):
+    """
+    Tracks where a certificate is installed and its update status.
+    """
+    __tablename__ = "certificate_installations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    master_id = Column(Integer, ForeignKey("certificate_masters.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Location details
+    location_type = Column(Enum(InstallationLocationType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    location_name = Column(String(200), nullable=False)
+    location_identifier = Column(String(500), nullable=True)
+    location_details = Column(Text, nullable=True)
+    
+    # For F5 locations
+    device_id = Column(Integer, ForeignKey("devices.id", ondelete="SET NULL"), nullable=True, index=True)
+    
+    # Status tracking
+    status = Column(Enum(InstallationStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=InstallationStatus.PENDING, index=True)
+    installed_expiration = Column(DateTime, nullable=True)
+    installed_serial = Column(String(100), nullable=True)
+    installed_at = Column(DateTime, nullable=True)
+    is_current = Column(Boolean, default=False, index=True)
+    
+    # Team responsibility
+    responsible_team = Column(String(100), nullable=False, index=True)
+    responsible_contact = Column(String(200), nullable=True)
+    
+    # Update tracking
+    updated_by = Column(String(100), nullable=True)
+    updated_at = Column(DateTime, nullable=True)
+    verified_by = Column(String(100), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+    verification_notes = Column(Text, nullable=True)
+    
+    # Notes
+    notes = Column(Text, nullable=True)
+    installation_instructions = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    master = relationship("CertificateMaster", back_populates="installations")
+    device = relationship("Device", foreign_keys=[device_id])
+
+    __table_args__ = (
+        UniqueConstraint('master_id', 'location_type', 'location_name', name='uq_installation_location'),
+    )

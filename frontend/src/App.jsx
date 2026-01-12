@@ -23,6 +23,7 @@ import HostSearchPage from './pages/HostSearchPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import CredentialTemplatesPage from './pages/CredentialTemplatesPage';
+import CertMasterPage from './pages/CertMasterPage';
 
 // --- PÁGINAS DE ADMINISTRACIÓN ---
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -60,6 +61,7 @@ function App() {
                     <Route path="/batch-renewal" element={<BatchRenewalPage />} />
                     <Route path="/certificate-cleanup" element={<CertificateCleanupPage />} />
                     <Route path="/host-search" element={<HostSearchPage />} />
+                    <Route path="/cert-master" element={<CertMasterPage />} />
                     <Route path="/audit-log" element={<AuditLogPage />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />

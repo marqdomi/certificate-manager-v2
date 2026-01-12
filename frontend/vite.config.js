@@ -7,9 +7,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // Resolve API base.
-  // In Docker (NODE_ENV !== 'development' locally), use 'backend' hostname.
-  // When running npm run dev locally (outside Docker), use localhost.
+  // In Docker, use 'backend' hostname. When running locally, use localhost.
   const resolveApiBase = () => {
+    // Check if we're running inside Docker first (highest priority)
+    const isInsideDocker = env.RUNNING_IN_DOCKER === 'true' || process.env.RUNNING_IN_DOCKER === 'true'
+    
+    if (isInsideDocker) {
+      return 'http://backend:8000'
+    }
+    
     const raw = env.VITE_API_BASE_URL || ''
     
     // If explicitly set and not empty, use it directly
@@ -17,18 +23,13 @@ export default defineConfig(({ mode }) => {
       return raw
     }
     
-    // Check if we're running inside Docker (backend hostname works)
-    // or locally (need localhost)
-    const isInsideDocker = env.RUNNING_IN_DOCKER === 'true'
-    
-    if (isInsideDocker) {
-      return 'http://backend:8000'
-    }
-    
     // Default to localhost for local development
     return 'http://localhost:8000'
   }
   const apiBase = resolveApiBase()
+  
+  console.log('[Vite Config] API Base URL:', apiBase)
+  console.log('[Vite Config] RUNNING_IN_DOCKER:', env.RUNNING_IN_DOCKER || process.env.RUNNING_IN_DOCKER)
 
   return {
     plugins: [react()],

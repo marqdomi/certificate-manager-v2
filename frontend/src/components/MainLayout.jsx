@@ -26,6 +26,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import TableChartIcon from '@mui/icons-material/TableChart';
 
 // --- Components ---
 import NotificationBell from './NotificationBell';
@@ -37,6 +38,7 @@ const drawerWidth = 240;
 const navItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Certificates', icon: <VpnKeyIcon />, path: '/certificates' },
+  { text: 'Cert Master', icon: <TableChartIcon />, path: '/cert-master' },
   { text: 'Devices', icon: <DnsIcon />, path: '/devices' },
   { text: 'Discovery', icon: <RadarIcon />, path: '/discovery' },
   { text: 'CSR Generator', icon: <AssignmentIcon />, path: '/generate-csr' },

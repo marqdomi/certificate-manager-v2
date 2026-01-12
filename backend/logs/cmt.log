@@ -8779,3 +8779,171 @@ requests.exceptions.ConnectTimeout: HTTPSConnectionPool(host='172.20.188.53', po
 2026-01-12 19:32:40,817 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
 2026-01-12 19:32:40,820 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
 2026-01-12 19:32:40,826 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:40:20,458 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 19:41:57,246 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 19:41:57,262 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:41:57,263 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:41:57,265 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 19:41:59,988 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 19:42:09,270 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 3
+2026-01-12 19:42:09,288 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 4
+2026-01-12 19:42:09,323 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:42:09,324 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 19:42:10,884 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 19:42:10,885 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 19:43:16,026 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:43:16,028 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 19:43:16,029 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:43:16,029 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:43:21,767 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 19:43:22,883 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 19:43:22,894 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:43:22,898 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:43:22,914 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 19:43:25,521 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 19:43:56,869 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:43:56,874 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 19:43:56,875 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:43:56,875 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:43:57,940 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 19:43:57,945 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:43:57,945 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:43:57,949 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 19:44:00,948 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 19:44:34,524 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:44:34,529 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 19:44:59,790 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 19:44:59,794 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 19:46:25,910 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 19:52:41,052 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 20:04:30,147 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:04:30,189 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:04:30,189 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:04:30,191 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:04:33,005 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:05:09,641 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 3
+2026-01-12 20:05:09,658 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 4
+2026-01-12 20:05:09,689 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 20:05:09,689 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 20:05:11,555 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 20:05:11,555 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 20:05:11,559 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 3
+2026-01-12 20:05:11,583 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 4
+2026-01-12 20:05:11,584 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 20:05:11,584 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 20:05:16,854 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 20:05:16,854 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 20:17:02,122 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:17:02,124 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:17:02,124 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:17:02,124 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:17:04,969 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 20:17:05,181 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:17:05,182 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:17:05,182 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:17:05,184 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:17:08,138 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:17:31,479 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:17:31,481 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:17:31,482 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:17:31,482 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:17:33,525 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 20:17:35,199 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 20:17:35,229 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:17:35,230 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:17:35,230 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:17:35,231 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:17:37,510 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:18:44,486 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:18:44,487 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:18:44,489 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:18:44,489 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:18:46,601 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 20:18:48,375 - cmt.main - INFO - <module>:102 - Password hashing self-test passed
+2026-01-12 20:18:48,410 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:18:50,505 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:19:12,488 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:19:12,495 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:19:12,498 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:19:12,498 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:35:08,826 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:35:51,618 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:38:04,352 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:38:04,365 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:38:04,366 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:38:04,425 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:38:07,343 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:38:29,506 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:38:29,510 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:38:29,512 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:38:29,513 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:38:34,643 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:38:34,648 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:38:34,648 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:38:34,655 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:38:37,520 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:38:51,748 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 3
+2026-01-12 20:38:51,775 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=None). Total: 4
+2026-01-12 20:38:52,059 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 20:38:52,060 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 3
+2026-01-12 20:38:54,490 - cmt.websocket - INFO - websocket_devices:188 - WebSocket client disconnected normally
+2026-01-12 20:38:54,492 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 2
+2026-01-12 20:39:00,080 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:39:00,084 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:39:00,091 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:39:00,092 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:39:01,218 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:39:01,223 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:39:01,224 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:39:01,227 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:39:04,212 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:40:35,984 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:40:36,017 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:40:36,018 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:40:36,018 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:40:39,536 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:40:39,576 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:40:39,577 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:40:39,577 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:40:39,579 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:40:42,092 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:41:39,971 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:41:39,980 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:41:39,985 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:41:39,985 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:41:48,876 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:41:49,045 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:42:03,955 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:42:03,956 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:42:08,298 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:42:08,321 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:42:08,325 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:42:08,325 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:42:11,333 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:55:19,943 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:55:19,946 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:55:19,946 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:55:19,946 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:55:21,915 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:55:23,049 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:55:25,960 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:55:45,439 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:55:45,442 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:55:45,443 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:55:45,444 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:55:47,406 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:55:48,472 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:55:48,473 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:55:48,473 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:55:48,474 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:55:51,461 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2
+2026-01-12 20:56:57,932 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:56:57,939 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 1
+2026-01-12 20:56:57,940 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:56:57,945 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:57:07,822 - cmt.main - INFO - <module>:104 - Password hashing self-test passed
+2026-01-12 20:57:08,790 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:57:08,794 - cmt.websocket - INFO - websocket_notifications:276 - Notification WebSocket disconnected (user_id=1)
+2026-01-12 20:57:08,795 - cmt.websocket - INFO - disconnect:62 - WebSocket disconnected. Total: 0
+2026-01-12 20:57:08,799 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 1
+2026-01-12 20:57:11,633 - cmt.websocket - INFO - connect:49 - WebSocket connected (user_id=1). Total: 2

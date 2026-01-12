@@ -34,6 +34,7 @@ from api.endpoints import (
     notifications,
     cleanup,
     credentials,
+    cert_master,
 )
 
 app = FastAPI(
@@ -93,6 +94,7 @@ app.include_router(health.router,       prefix="/api/v1/health",       tags=["He
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(cleanup.router,      prefix="/api/v1/cleanup",      tags=["Certificate Cleanup"])
 app.include_router(credentials.router,  prefix="/api/v1/credentials",  tags=["Credential Management"])
+app.include_router(cert_master.router,  prefix="/api/v1",              tags=["Certificate Master"])
 
 # Optional: hashing self-test at startup to catch env/package drift early
 try:
