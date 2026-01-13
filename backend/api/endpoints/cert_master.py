@@ -14,7 +14,10 @@ import json
 from db.base import get_db
 from db.models import (
     CertificateMaster, 
-    CertificateInstallation, 
+    CertificateInstallation,
+    CertificateMasterTeam,
+    Team,
+    LocationType,
     Certificate,
     Device,
     InstallationLocationType,
@@ -36,7 +39,8 @@ from schemas.cert_master import (
     TeamSummary,
     LocationTypeSummary,
     BulkInstallationCreate,
-    SyncFromF5Request
+    SyncFromF5Request,
+    PaginatedCertificateMasterResponse
 )
 from services.auth_service import get_current_user, get_current_active_user
 from core.logger import setup_logger
@@ -70,6 +74,23 @@ def build_master_response(master: CertificateMaster, include_installations_previ
         "pending_installations": pending,
         "verified_installations": verified
     }
+    
+    # Include teams information
+    teams = []
+    primary_team = None
+    for assoc in master.team_associations:
+        team_info = {
+            "id": assoc.team.id,
+            "name": assoc.team.name,
+            "display_name": assoc.team.display_name,
+            "color": assoc.team.color
+        }
+        teams.append(team_info)
+        if assoc.is_primary:
+            primary_team = team_info
+    
+    response["teams"] = teams
+    response["primary_team"] = primary_team or (teams[0] if teams else None)
     
     # Include a preview of installations (first 10 with basic info) for tooltips
     if include_installations_preview and master.installations:
@@ -134,7 +155,7 @@ def create_audit_log(
 # CERTIFICATE MASTER ENDPOINTS
 # -------------------------------------------------------------------
 
-@router.get("/", response_model=List[CertificateMasterResponse])
+@router.get("/", response_model=PaginatedCertificateMasterResponse)
 def list_certificate_masters(
     db: Session = Depends(get_db),
     search: Optional[str] = Query(None, description="Search by CN, friendly name, or application"),
@@ -143,14 +164,16 @@ def list_certificate_masters(
     criticality: Optional[str] = Query(None),
     expiring_in_days: Optional[int] = Query(None, description="Filter certs expiring within N days"),
     has_pending: Optional[bool] = Query(None, description="Filter certs with pending installations"),
+    team_id: Optional[int] = Query(None, description="Filter by team ID"),
     is_active: bool = Query(True),
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(25, ge=1, le=500),
     current_user: User = Depends(get_current_active_user)
 ):
     """List all master certificates with optional filters."""
     query = db.query(CertificateMaster).options(
-        joinedload(CertificateMaster.installations)
+        joinedload(CertificateMaster.installations),
+        joinedload(CertificateMaster.team_associations).joinedload(CertificateMasterTeam.team)
     ).filter(CertificateMaster.is_active == is_active)
     
     if search:
@@ -164,7 +187,11 @@ def list_certificate_masters(
             )
         )
     
-    if owner_team:
+    # Filter by team (new - using team_associations)
+    if team_id:
+        query = query.join(CertificateMasterTeam).filter(CertificateMasterTeam.team_id == team_id)
+    elif owner_team:
+        # Legacy filter by owner_team string
         query = query.filter(CertificateMaster.owner_team == owner_team)
     
     if environment:
@@ -176,6 +203,9 @@ def list_certificate_masters(
     if expiring_in_days is not None:
         cutoff = datetime.utcnow() + timedelta(days=expiring_in_days)
         query = query.filter(CertificateMaster.current_expiration <= cutoff)
+    
+    # Get total count before pagination
+    total_count = query.count()
     
     masters = query.order_by(CertificateMaster.current_expiration.asc().nullslast()).offset(skip).limit(limit).all()
     
@@ -189,7 +219,13 @@ def list_certificate_masters(
                 continue
         results.append(data)
     
-    return results
+    return {
+        "items": results,
+        "total": total_count,
+        "skip": skip,
+        "limit": limit,
+        "has_more": skip + len(results) < total_count
+    }
 
 
 @router.get("/dashboard", response_model=CertMasterDashboardSummary)
@@ -331,7 +367,8 @@ def get_certificate_master(
 ):
     """Get a master certificate with all its installations."""
     master = db.query(CertificateMaster).options(
-        joinedload(CertificateMaster.installations).joinedload(CertificateInstallation.device)
+        joinedload(CertificateMaster.installations).joinedload(CertificateInstallation.device),
+        joinedload(CertificateMaster.team_associations).joinedload(CertificateMasterTeam.team)
     ).filter(CertificateMaster.id == master_id).first()
     
     if not master:
@@ -361,12 +398,31 @@ def create_certificate_master(
             detail=f"Certificate with CN '{data.common_name}' already exists"
         )
     
+    # Extract team_ids before creating master
+    team_ids = data.team_ids or []
+    primary_team_id = data.primary_team_id
+    
+    # Create master without team_ids (not a db column)
+    master_data = data.model_dump(exclude={'team_ids', 'primary_team_id'})
     master = CertificateMaster(
-        **data.model_dump(),
+        **master_data,
         created_by=current_user.username
     )
     
     db.add(master)
+    db.flush()  # Get ID before adding associations
+    
+    # Add team associations
+    for tid in team_ids:
+        team = db.query(Team).filter(Team.id == tid).first()
+        if team:
+            assoc = CertificateMasterTeam(
+                master_id=master.id,
+                team_id=tid,
+                is_primary=(tid == primary_team_id)
+            )
+            db.add(assoc)
+    
     db.commit()
     db.refresh(master)
     
@@ -387,14 +443,38 @@ def update_certificate_master(
     current_user: User = Depends(get_current_active_user)
 ):
     """Update a master certificate record."""
-    master = db.query(CertificateMaster).filter(CertificateMaster.id == master_id).first()
+    master = db.query(CertificateMaster).options(
+        joinedload(CertificateMaster.team_associations),
+        joinedload(CertificateMaster.installations)
+    ).filter(CertificateMaster.id == master_id).first()
     
     if not master:
         raise HTTPException(status_code=404, detail="Certificate master not found")
     
-    update_data = data.model_dump(exclude_unset=True)
+    # Handle team_ids update if provided
+    team_ids = data.team_ids
+    primary_team_id = data.primary_team_id
+    
+    update_data = data.model_dump(exclude_unset=True, exclude={'team_ids', 'primary_team_id'})
     for key, value in update_data.items():
         setattr(master, key, value)
+    
+    # Update team associations if team_ids was provided
+    if team_ids is not None:
+        # Remove existing associations
+        for assoc in list(master.team_associations):
+            db.delete(assoc)
+        
+        # Add new associations
+        for tid in team_ids:
+            team = db.query(Team).filter(Team.id == tid).first()
+            if team:
+                assoc = CertificateMasterTeam(
+                    master_id=master.id,
+                    team_id=tid,
+                    is_primary=(tid == primary_team_id)
+                )
+                db.add(assoc)
     
     db.commit()
     db.refresh(master)

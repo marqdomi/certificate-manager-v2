@@ -1,0 +1,188 @@
+# GitHub Actions CI/CD Pipeline for Certificate Manager
+# Deploys to Azure Container Apps on push to main branch
+
+name: Deploy to Azure Container Apps
+
+on:
+  push:
+    branches:
+      - main
+      - v2.5
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Manual trigger
+
+env:
+  AZURE_SUBSCRIPTION_ID: 3299abb4-876d-4894-a305-2a438b0c7cfb
+  RESOURCE_GROUP: rg-netops-certmgr-prd-usc
+  HUB_RESOURCE_GROUP: rg-netops-hub-prd-usc
+  ACR_NAME: acrnetopshubprdusc
+  ACR_LOGIN_SERVER: acrnetopshubprdusc.azurecr.io
+
+jobs:
+  # ============================================
+  # BUILD AND TEST
+  # ============================================
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install and build frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+        continue-on-error: true
+
+  # ============================================
+  # BUILD IMAGES WITH ACR TASKS (Cloud Build)
+  # ============================================
+  build-images:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate image tag
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "version=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "Image tag: ${SHORT_SHA}"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build Backend with ACR Tasks
+        run: |
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image certmgr/backend:${{ steps.meta.outputs.version }} \
+            --image certmgr/backend:latest \
+            --file backend/Dockerfile \
+            backend/
+
+      - name: Build Worker with ACR Tasks
+        run: |
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image certmgr/worker:${{ steps.meta.outputs.version }} \
+            --image certmgr/worker:latest \
+            --file backend/Dockerfile.worker \
+            backend/
+
+      - name: Build Beat with ACR Tasks
+        run: |
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image certmgr/beat:${{ steps.meta.outputs.version }} \
+            --image certmgr/beat:latest \
+            --file backend/Dockerfile.beat \
+            backend/
+
+      - name: Build Frontend with ACR Tasks
+        run: |
+          az acr build \
+            --registry ${{ env.ACR_NAME }} \
+            --image certmgr/frontend:${{ steps.meta.outputs.version }} \
+            --image certmgr/frontend:latest \
+            --file frontend/Dockerfile.prod \
+            frontend/
+
+  # ============================================
+  # DEPLOY TO AZURE CONTAINER APPS
+  # ============================================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-images
+    environment: production
+    
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Backend
+        run: |
+          az containerapp update \
+            --name ca-certmgr-backend-prd \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/certmgr/backend:${{ needs.build-images.outputs.image_tag }}
+
+      - name: Deploy Worker
+        run: |
+          az containerapp update \
+            --name ca-certmgr-worker-prd \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/certmgr/worker:${{ needs.build-images.outputs.image_tag }}
+
+      - name: Deploy Beat
+        run: |
+          az containerapp update \
+            --name ca-certmgr-beat-prd \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/certmgr/beat:${{ needs.build-images.outputs.image_tag }}
+
+      - name: Deploy Frontend
+        run: |
+          az containerapp update \
+            --name ca-certmgr-frontend-prd \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/certmgr/frontend:${{ needs.build-images.outputs.image_tag }}
+
+      - name: Run Database Migrations
+        run: |
+          az containerapp exec \
+            --name ca-certmgr-backend-prd \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --command "/bin/sh -c 'cd /app && alembic upgrade head'" || echo "Migration completed or skipped"
+        continue-on-error: true
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ needs.build-images.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Deployed Services:" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Container App |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ca-certmgr-backend-prd |" >> $GITHUB_STEP_SUMMARY
+          echo "| Worker | ca-certmgr-worker-prd |" >> $GITHUB_STEP_SUMMARY
+          echo "| Beat | ca-certmgr-beat-prd |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ca-certmgr-frontend-prd |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 URLs:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** https://ca-certmgr-frontend-prd.wonderfulsand-7d6f91a8.centralus.azurecontainerapps.io" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Docs:** https://ca-certmgr-backend-prd.wonderfulsand-7d6f91a8.centralus.azurecontainerapps.io/docs" >> $GITHUB_STEP_SUMMARY

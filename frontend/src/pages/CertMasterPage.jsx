@@ -11,7 +11,8 @@ import {
   DialogActions, FormControl, InputLabel, Select, MenuItem, Alert,
   Tooltip, CircularProgress, Collapse, Divider, Stack, LinearProgress,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Tabs, Tab, Switch, FormControlLabel, Snackbar
+  Tabs, Tab, Switch, FormControlLabel, Snackbar, TablePagination,
+  Checkbox, ListItemText, OutlinedInput
 } from '@mui/material';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { useTheme } from '@mui/material/styles';
@@ -36,6 +37,7 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import GroupsIcon from '@mui/icons-material/Groups';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import InfoIcon from '@mui/icons-material/Info';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import apiClient from '../services/api';
 
@@ -230,14 +232,21 @@ const CertMasterPage = () => {
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
   const [certificates, setCertificates] = useState([]);
+  const [totalCertificates, setTotalCertificates] = useState(0);
   const [teams, setTeams] = useState([]);
+  const [locationTypes, setLocationTypes] = useState([]);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({
-    owner_team: '',
+    team_id: '',
     environment: '',
     criticality: '',
     has_pending: null
   });
+  
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  
   const [expandedRows, setExpandedRows] = useState({});
   const [selectedCert, setSelectedCert] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -247,12 +256,19 @@ const CertMasterPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [syncing, setSyncing] = useState(false);
   
+  // Settings dialog state
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState(0);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [editingLocationType, setEditingLocationType] = useState(null);
+  
   // Form state for certificate master
   const [certForm, setCertForm] = useState({
     common_name: '',
     friendly_name: '',
     description: '',
-    owner_team: '',
+    team_ids: [],
+    primary_team_id: null,
     primary_contact: '',
     secondary_contact: '',
     environment: '',
@@ -265,9 +281,10 @@ const CertMasterPage = () => {
   // Form state for installation
   const [installForm, setInstallForm] = useState({
     location_type: 'local_vm',
+    location_type_id: null,
     location_name: '',
     location_identifier: '',
-    responsible_team: '',
+    responsible_team_id: null,
     responsible_contact: '',
     notes: '',
     installation_instructions: ''
@@ -288,27 +305,41 @@ const CertMasterPage = () => {
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
-      if (filters.owner_team) params.append('owner_team', filters.owner_team);
+      if (filters.team_id) params.append('team_id', filters.team_id);
       if (filters.environment) params.append('environment', filters.environment);
       if (filters.criticality) params.append('criticality', filters.criticality);
       if (filters.has_pending !== null) params.append('has_pending', filters.has_pending);
       
+      // Add pagination params
+      params.append('skip', page * rowsPerPage);
+      params.append('limit', rowsPerPage);
+      
       const response = await apiClient.get(`/cert-master/?${params}`);
-      setCertificates(response.data);
+      setCertificates(response.data.items);
+      setTotalCertificates(response.data.total);
     } catch (error) {
       console.error('Failed to fetch certificates:', error);
       setSnackbar({ open: true, message: 'Failed to load certificates', severity: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [search, filters]);
+  }, [search, filters, page, rowsPerPage]);
 
   const fetchTeams = useCallback(async () => {
     try {
-      const response = await apiClient.get('/cert-master/teams');
+      const response = await apiClient.get('/teams/summary');
       setTeams(response.data);
     } catch (error) {
       console.error('Failed to fetch teams:', error);
+    }
+  }, []);
+
+  const fetchLocationTypes = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/location-types');
+      setLocationTypes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch location types:', error);
     }
   }, []);
 
@@ -316,13 +347,30 @@ const CertMasterPage = () => {
     fetchDashboard();
     fetchCertificates();
     fetchTeams();
-  }, [fetchDashboard, fetchCertificates, fetchTeams]);
+    fetchLocationTypes();
+  }, [fetchDashboard, fetchCertificates, fetchTeams, fetchLocationTypes]);
+
+  // Reset page when filters or search change
+  useEffect(() => {
+    setPage(0);
+  }, [search, filters]);
+
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   // Handlers
   const handleRefresh = () => {
     fetchDashboard();
     fetchCertificates();
     fetchTeams();
+    fetchLocationTypes();
   };
 
   const handleSyncFromF5 = async () => {
@@ -439,7 +487,8 @@ const CertMasterPage = () => {
       common_name: '',
       friendly_name: '',
       description: '',
-      owner_team: '',
+      team_ids: [],
+      primary_team_id: null,
       primary_contact: '',
       secondary_contact: '',
       environment: '',
@@ -458,7 +507,8 @@ const CertMasterPage = () => {
       common_name: cert.common_name,
       friendly_name: cert.friendly_name || '',
       description: cert.description || '',
-      owner_team: cert.owner_team || '',
+      team_ids: cert.teams?.map(t => t.id) || [],
+      primary_team_id: cert.primary_team?.id || null,
       primary_contact: cert.primary_contact || '',
       secondary_contact: cert.secondary_contact || '',
       environment: cert.environment || '',
@@ -475,9 +525,10 @@ const CertMasterPage = () => {
     setSelectedCert(cert);
     setInstallForm({
       location_type: 'local_vm',
+      location_type_id: null,
       location_name: '',
       location_identifier: '',
-      responsible_team: '',
+      responsible_team_id: null,
       responsible_contact: '',
       notes: '',
       installation_instructions: ''
@@ -609,7 +660,10 @@ const CertMasterPage = () => {
                 label={`${team.team}: ${team.verified}/${team.total} verified`}
                 color={team.pending > 0 ? 'warning' : 'success'}
                 variant="outlined"
-                onClick={() => setFilters(f => ({ ...f, owner_team: team.team }))}
+                onClick={() => {
+                  const teamObj = teams.find(t => t.name === team.team);
+                  if (teamObj) setFilters(f => ({ ...f, team_id: teamObj.id }));
+                }}
                 sx={{ mb: 1 }}
               />
             ))}
@@ -633,13 +687,18 @@ const CertMasterPage = () => {
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Team</InputLabel>
             <Select
-              value={filters.owner_team}
+              value={filters.team_id}
               label="Team"
-              onChange={(e) => setFilters(f => ({ ...f, owner_team: e.target.value }))}
+              onChange={(e) => setFilters(f => ({ ...f, team_id: e.target.value }))}
             >
               <MenuItem value="">All Teams</MenuItem>
               {teams.map(team => (
-                <MenuItem key={team} value={team}>{team}</MenuItem>
+                <MenuItem key={team.id} value={team.id}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: team.color }} />
+                    <span>{team.name}</span>
+                  </Stack>
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -679,11 +738,17 @@ const CertMasterPage = () => {
             }
             label="Has Pending"
           />
-          {(filters.owner_team || filters.environment || filters.criticality || filters.has_pending !== null) && (
-            <Button size="small" onClick={() => setFilters({ owner_team: '', environment: '', criticality: '', has_pending: null })}>
+          {(filters.team_id || filters.environment || filters.criticality || filters.has_pending !== null) && (
+            <Button size="small" onClick={() => setFilters({ team_id: '', environment: '', criticality: '', has_pending: null })}>
               Clear Filters
             </Button>
           )}
+          <Box sx={{ flexGrow: 1 }} />
+          <Tooltip title="Manage Teams & Location Types">
+            <IconButton onClick={() => setSettingsOpen(true)}>
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Paper>
 
@@ -701,6 +766,7 @@ const CertMasterPage = () => {
             </Typography>
           </Box>
         ) : (
+          <>
           <TableContainer>
             <Table>
               <TableHead>
@@ -769,7 +835,22 @@ const CertMasterPage = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2">{cert.owner_team || '—'}</Typography>
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                          {cert.teams?.length > 0 ? cert.teams.map(team => (
+                            <Chip
+                              key={team.id}
+                              label={team.name}
+                              size="small"
+                              sx={{
+                                bgcolor: team.color || '#757575',
+                                color: 'white',
+                                fontSize: '0.7rem',
+                                height: 20,
+                                '& .MuiChip-label': { px: 1 }
+                              }}
+                            />
+                          )) : <Typography variant="body2" color="text.secondary">—</Typography>}
+                        </Stack>
                         {cert.primary_contact && (
                           <Typography variant="caption" color="text.secondary">
                             {cert.primary_contact}
@@ -924,6 +1005,23 @@ const CertMasterPage = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          
+          {/* Pagination */}
+          <TablePagination
+            component="div"
+            count={totalCertificates}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            labelRowsPerPage="Rows per page:"
+            labelDisplayedRows={({ from, to, count }) => 
+              `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+            }
+            sx={{ borderTop: 1, borderColor: 'divider' }}
+          />
+          </>
         )}
       </Paper>
 
@@ -961,12 +1059,58 @@ const CertMasterPage = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Owner Team"
-                value={certForm.owner_team}
-                onChange={(e) => setCertForm(f => ({ ...f, owner_team: e.target.value }))}
-              />
+              <FormControl fullWidth>
+                <InputLabel>Teams</InputLabel>
+                <Select
+                  multiple
+                  value={certForm.team_ids}
+                  onChange={(e) => setCertForm(f => ({ ...f, team_ids: e.target.value }))}
+                  input={<OutlinedInput label="Teams" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((id) => {
+                        const team = teams.find(t => t.id === id);
+                        return team ? (
+                          <Chip
+                            key={id}
+                            label={team.name}
+                            size="small"
+                            sx={{ bgcolor: team.color, color: 'white' }}
+                          />
+                        ) : null;
+                      })}
+                    </Box>
+                  )}
+                >
+                  {teams.map(team => (
+                    <MenuItem key={team.id} value={team.id}>
+                      <Checkbox checked={certForm.team_ids.includes(team.id)} />
+                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: team.color, mr: 1 }} />
+                      <ListItemText primary={team.name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Primary Team</InputLabel>
+                <Select
+                  value={certForm.primary_team_id || ''}
+                  onChange={(e) => setCertForm(f => ({ ...f, primary_team_id: e.target.value || null }))}
+                  label="Primary Team"
+                >
+                  <MenuItem value="">None</MenuItem>
+                  {teams.filter(t => certForm.team_ids.includes(t.id)).map(team => (
+                    <MenuItem key={team.id} value={team.id}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: team.color }} />
+                        <span>{team.name}</span>
+                      </Stack>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -1050,20 +1194,26 @@ const CertMasterPage = () => {
               <FormControl fullWidth required>
                 <InputLabel>Location Type</InputLabel>
                 <Select
-                  value={installForm.location_type}
+                  value={installForm.location_type_id || ''}
                   label="Location Type"
-                  onChange={(e) => setInstallForm(f => ({ ...f, location_type: e.target.value }))}
+                  onChange={(e) => {
+                    const locType = locationTypes.find(lt => lt.id === e.target.value);
+                    setInstallForm(f => ({ 
+                      ...f, 
+                      location_type_id: e.target.value,
+                      location_type: locType?.code || 'other'
+                    }));
+                  }}
                 >
-                  <MenuItem value="local_vm">Local VM</MenuItem>
-                  <MenuItem value="physical_server">Physical Server</MenuItem>
-                  <MenuItem value="azure_app_gw">Azure App Gateway</MenuItem>
-                  <MenuItem value="azure_front_door">Azure Front Door</MenuItem>
-                  <MenuItem value="aws_alb">AWS ALB</MenuItem>
-                  <MenuItem value="aws_cloudfront">AWS CloudFront</MenuItem>
-                  <MenuItem value="gcp_lb">GCP Load Balancer</MenuItem>
-                  <MenuItem value="kubernetes">Kubernetes</MenuItem>
-                  <MenuItem value="cdn">CDN</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
+                  {locationTypes.map(lt => (
+                    <MenuItem key={lt.id} value={lt.id}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        {locationTypeIcons[lt.code] || <StorageIcon fontSize="small" />}
+                        <span>{lt.name}</span>
+                        <Chip label={lt.category} size="small" variant="outlined" />
+                      </Stack>
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -1087,13 +1237,23 @@ const CertMasterPage = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Responsible Team"
-                value={installForm.responsible_team}
-                onChange={(e) => setInstallForm(f => ({ ...f, responsible_team: e.target.value }))}
-                required
-              />
+              <FormControl fullWidth required>
+                <InputLabel>Responsible Team</InputLabel>
+                <Select
+                  value={installForm.responsible_team_id || ''}
+                  label="Responsible Team"
+                  onChange={(e) => setInstallForm(f => ({ ...f, responsible_team_id: e.target.value }))}
+                >
+                  {teams.map(team => (
+                    <MenuItem key={team.id} value={team.id}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: team.color }} />
+                        <span>{team.name}</span>
+                      </Stack>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -1121,10 +1281,307 @@ const CertMasterPage = () => {
           <Button 
             variant="contained" 
             onClick={handleAddInstallation}
-            disabled={!installForm.location_name || !installForm.responsible_team}
+            disabled={!installForm.location_name || !installForm.responsible_team_id}
           >
             Add Installation
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Settings Dialog - Manage Teams & Location Types */}
+      <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <SettingsIcon />
+            <span>Settings - Teams & Location Types</span>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Tabs value={settingsTab} onChange={(e, v) => setSettingsTab(v)} sx={{ mb: 2 }}>
+            <Tab label="Teams" />
+            <Tab label="Location Types" />
+          </Tabs>
+
+          {/* Teams Tab */}
+          {settingsTab === 0 && (
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Typography variant="subtitle1">Manage Teams</Typography>
+                <Button 
+                  startIcon={<AddIcon />} 
+                  size="small"
+                  onClick={() => setEditingTeam({ name: '', description: '', color: '#1976d2' })}
+                >
+                  Add Team
+                </Button>
+              </Stack>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Color</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell align="center">Certificates</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {teams.map(team => (
+                    <TableRow key={team.id}>
+                      <TableCell>
+                        <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: team.color }} />
+                      </TableCell>
+                      <TableCell>{team.name}</TableCell>
+                      <TableCell>{team.description || '—'}</TableCell>
+                      <TableCell align="center">{team.certificate_count || 0}</TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" onClick={() => setEditingTeam(team)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={async () => {
+                            if (window.confirm(`Delete team "${team.name}"?`)) {
+                              try {
+                                await apiClient.delete(`/teams/${team.id}`);
+                                fetchTeams();
+                                setSnackbar({ open: true, message: 'Team deleted', severity: 'success' });
+                              } catch (err) {
+                                setSnackbar({ open: true, message: err.response?.data?.detail || 'Failed to delete', severity: 'error' });
+                              }
+                            }
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Edit/Create Team Form */}
+              {editingTeam && (
+                <Paper sx={{ p: 2, mt: 2 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                    {editingTeam.id ? 'Edit Team' : 'Add New Team'}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Team Name"
+                        value={editingTeam.name}
+                        onChange={(e) => setEditingTeam(t => ({ ...t, name: e.target.value }))}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Description"
+                        value={editingTeam.description || ''}
+                        onChange={(e) => setEditingTeam(t => ({ ...t, description: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Color"
+                        type="color"
+                        value={editingTeam.color || '#1976d2'}
+                        onChange={(e) => setEditingTeam(t => ({ ...t, color: e.target.value }))}
+                        InputProps={{ sx: { height: 40 } }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={async () => {
+                            try {
+                              if (editingTeam.id) {
+                                await apiClient.put(`/teams/${editingTeam.id}`, editingTeam);
+                              } else {
+                                await apiClient.post('/teams', editingTeam);
+                              }
+                              fetchTeams();
+                              setEditingTeam(null);
+                              setSnackbar({ open: true, message: 'Team saved', severity: 'success' });
+                            } catch (err) {
+                              setSnackbar({ open: true, message: 'Failed to save', severity: 'error' });
+                            }
+                          }}
+                          disabled={!editingTeam.name}
+                        >
+                          Save
+                        </Button>
+                        <Button size="small" onClick={() => setEditingTeam(null)}>Cancel</Button>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              )}
+            </Box>
+          )}
+
+          {/* Location Types Tab */}
+          {settingsTab === 1 && (
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Typography variant="subtitle1">Manage Location Types</Typography>
+                <Button 
+                  startIcon={<AddIcon />} 
+                  size="small"
+                  onClick={() => setEditingLocationType({ name: '', code: '', category: 'other', description: '' })}
+                >
+                  Add Location Type
+                </Button>
+              </Stack>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Code</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell align="center">Installations</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {locationTypes.map(lt => (
+                    <TableRow key={lt.id}>
+                      <TableCell>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {locationTypeIcons[lt.code] || <StorageIcon fontSize="small" />}
+                          <span>{lt.name}</span>
+                        </Stack>
+                      </TableCell>
+                      <TableCell><code>{lt.code}</code></TableCell>
+                      <TableCell>
+                        <Chip label={lt.category} size="small" variant="outlined" />
+                      </TableCell>
+                      <TableCell>{lt.description || '—'}</TableCell>
+                      <TableCell align="center">{lt.installation_count || 0}</TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" onClick={() => setEditingLocationType(lt)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={async () => {
+                            if (window.confirm(`Delete location type "${lt.name}"?`)) {
+                              try {
+                                await apiClient.delete(`/location-types/${lt.id}`);
+                                fetchLocationTypes();
+                                setSnackbar({ open: true, message: 'Location type deleted', severity: 'success' });
+                              } catch (err) {
+                                setSnackbar({ open: true, message: err.response?.data?.detail || 'Failed to delete', severity: 'error' });
+                              }
+                            }
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Edit/Create Location Type Form */}
+              {editingLocationType && (
+                <Paper sx={{ p: 2, mt: 2 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                    {editingLocationType.id ? 'Edit Location Type' : 'Add New Location Type'}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Name"
+                        value={editingLocationType.name}
+                        onChange={(e) => setEditingLocationType(lt => ({ ...lt, name: e.target.value }))}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Code"
+                        value={editingLocationType.code}
+                        onChange={(e) => setEditingLocationType(lt => ({ ...lt, code: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
+                        required
+                        placeholder="e.g. azure_vm"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Category</InputLabel>
+                        <Select
+                          value={editingLocationType.category}
+                          label="Category"
+                          onChange={(e) => setEditingLocationType(lt => ({ ...lt, category: e.target.value }))}
+                        >
+                          <MenuItem value="cloud">Cloud</MenuItem>
+                          <MenuItem value="network">Network</MenuItem>
+                          <MenuItem value="server">Server</MenuItem>
+                          <MenuItem value="other">Other</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Description"
+                        value={editingLocationType.description || ''}
+                        onChange={(e) => setEditingLocationType(lt => ({ ...lt, description: e.target.value }))}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={async () => {
+                            try {
+                              if (editingLocationType.id) {
+                                await apiClient.put(`/location-types/${editingLocationType.id}`, editingLocationType);
+                              } else {
+                                await apiClient.post('/location-types', editingLocationType);
+                              }
+                              fetchLocationTypes();
+                              setEditingLocationType(null);
+                              setSnackbar({ open: true, message: 'Location type saved', severity: 'success' });
+                            } catch (err) {
+                              setSnackbar({ open: true, message: 'Failed to save', severity: 'error' });
+                            }
+                          }}
+                          disabled={!editingLocationType.name || !editingLocationType.code}
+                        >
+                          Save
+                        </Button>
+                        <Button size="small" onClick={() => setEditingLocationType(null)}>Cancel</Button>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSettingsOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

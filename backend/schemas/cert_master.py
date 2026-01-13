@@ -11,7 +11,7 @@ from enum import Enum
 
 
 # -------------------------------------------------------------------
-# ENUMS
+# ENUMS (Legacy - for backwards compatibility)
 # -------------------------------------------------------------------
 
 class InstallationLocationType(str, Enum):
@@ -41,6 +41,101 @@ class Criticality(str, Enum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
+
+
+# -------------------------------------------------------------------
+# TEAM SCHEMAS
+# -------------------------------------------------------------------
+
+class TeamBase(BaseModel):
+    """Base schema for team."""
+    name: str = Field(..., min_length=1, max_length=100)
+    display_name: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = None
+    color: Optional[str] = Field(None, max_length=20)  # Hex color for UI
+    contact_email: Optional[str] = Field(None, max_length=200)
+    slack_channel: Optional[str] = Field(None, max_length=100)
+
+
+class TeamCreate(TeamBase):
+    """Schema for creating a new team."""
+    pass
+
+
+class TeamUpdate(BaseModel):
+    """Schema for updating a team."""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    contact_email: Optional[str] = None
+    slack_channel: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class TeamResponse(TeamBase):
+    """Response schema for team."""
+    id: int
+    is_active: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    # Computed fields
+    certificate_count: int = 0
+    installation_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TeamSummaryResponse(BaseModel):
+    """Minimal team info for dropdowns and references."""
+    id: int
+    name: str
+    display_name: Optional[str] = None
+    color: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# -------------------------------------------------------------------
+# LOCATION TYPE SCHEMAS
+# -------------------------------------------------------------------
+
+class LocationTypeBase(BaseModel):
+    """Base schema for location type."""
+    code: str = Field(..., min_length=1, max_length=50)
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    icon: Optional[str] = Field(None, max_length=50)  # Material icon name
+    category: Optional[str] = Field(None, max_length=50)  # 'network', 'cloud', 'server'
+
+
+class LocationTypeCreate(LocationTypeBase):
+    """Schema for creating a new location type."""
+    pass
+
+
+class LocationTypeUpdate(BaseModel):
+    """Schema for updating a location type."""
+    code: Optional[str] = Field(None, min_length=1, max_length=50)
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class LocationTypeResponse(LocationTypeBase):
+    """Response schema for location type."""
+    id: int
+    is_active: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    # Computed
+    installation_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # -------------------------------------------------------------------
@@ -102,6 +197,14 @@ class CertificateInstallationResponse(CertificateInstallationBase):
     # Computed fields
     device_hostname: Optional[str] = None
     days_until_expiration: Optional[int] = None
+    
+    # Team info
+    responsible_team_id: Optional[int] = None
+    responsible_team_info: Optional[TeamSummaryResponse] = None
+    
+    # Location type info
+    location_type_id: Optional[int] = None
+    location_type_info: Optional[LocationTypeResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -110,12 +213,18 @@ class CertificateInstallationResponse(CertificateInstallationBase):
 # CERTIFICATE MASTER SCHEMAS
 # -------------------------------------------------------------------
 
+class CertificateTeamAssignment(BaseModel):
+    """Schema for assigning teams to a certificate."""
+    team_id: int
+    is_primary: bool = False
+
+
 class CertificateMasterBase(BaseModel):
     """Base schema for certificate master record."""
     common_name: str = Field(..., min_length=1, max_length=500)
     friendly_name: Optional[str] = Field(None, max_length=200)
     description: Optional[str] = None
-    owner_team: Optional[str] = Field(None, max_length=100)
+    owner_team: Optional[str] = Field(None, max_length=100)  # Legacy
     primary_contact: Optional[str] = Field(None, max_length=200)
     secondary_contact: Optional[str] = Field(None, max_length=200)
     notification_emails: Optional[str] = None  # JSON array
@@ -135,13 +244,16 @@ class CertificateMasterCreate(CertificateMasterBase):
     current_expiration: Optional[datetime] = None
     current_issuer: Optional[str] = None
     current_serial: Optional[str] = None
+    # Teams to assign (new)
+    team_ids: Optional[List[int]] = None
+    primary_team_id: Optional[int] = None
 
 
 class CertificateMasterUpdate(BaseModel):
     """Schema for updating a master certificate record."""
     friendly_name: Optional[str] = None
     description: Optional[str] = None
-    owner_team: Optional[str] = None
+    owner_team: Optional[str] = None  # Legacy
     primary_contact: Optional[str] = None
     secondary_contact: Optional[str] = None
     notification_emails: Optional[str] = None
@@ -153,6 +265,9 @@ class CertificateMasterUpdate(BaseModel):
     criticality: Optional[str] = None
     notes: Optional[str] = None
     documentation_url: Optional[str] = None
+    # Teams to assign (new)
+    team_ids: Optional[List[int]] = None
+    primary_team_id: Optional[int] = None
     renewal_notes: Optional[str] = None
     is_active: Optional[bool] = None
 
@@ -187,6 +302,10 @@ class CertificateMasterResponse(CertificateMasterBase):
     pending_installations: int = 0
     verified_installations: int = 0
     
+    # Teams (new)
+    teams: List[TeamSummaryResponse] = []
+    primary_team: Optional[TeamSummaryResponse] = None
+    
     # Preview of installations for tooltips (first 10)
     installations: List[InstallationPreview] = []
 
@@ -196,6 +315,15 @@ class CertificateMasterResponse(CertificateMasterBase):
 class CertificateMasterWithInstallations(CertificateMasterResponse):
     """Response schema with full installation details."""
     installations: List[CertificateInstallationResponse] = []
+
+
+class PaginatedCertificateMasterResponse(BaseModel):
+    """Paginated response for certificate master list."""
+    items: List[CertificateMasterResponse]
+    total: int
+    skip: int
+    limit: int
+    has_more: bool
 
 
 # -------------------------------------------------------------------

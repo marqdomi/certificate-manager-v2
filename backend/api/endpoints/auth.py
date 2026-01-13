@@ -32,9 +32,15 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 3. Creamos el token de acceso
+    # 3. Creamos el token de acceso con toda la info del usuario
     access_token = auth_service.create_access_token(
-        data={"sub": user.username, "role": user.role.value}
+        data={
+            "sub": str(user.id),
+            "username": user.username,
+            "role": user.role.value,
+            "email": user.email,
+            "full_name": user.full_name
+        }
     )
 
     # 4. Devolvemos el token

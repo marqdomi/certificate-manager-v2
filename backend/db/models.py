@@ -702,7 +702,7 @@ class CredentialTemplate(Base):
 # -------------------------------------------------------------------
 
 class InstallationLocationType(str, enum.Enum):
-    """Types of locations where certificates can be installed."""
+    """Types of locations where certificates can be installed (legacy enum, use LocationType table)."""
     F5 = "f5"
     LOCAL_VM = "local_vm"
     PHYSICAL_SERVER = "physical_server"
@@ -725,6 +725,81 @@ class InstallationStatus(str, enum.Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
+# -------------------------------------------------------------------
+# TEAMS - Dynamic team management
+# -------------------------------------------------------------------
+class Team(Base):
+    """Dynamic team for certificate ownership and responsibility."""
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    display_name = Column(String(200), nullable=True)
+    description = Column(Text, nullable=True)
+    color = Column(String(20), nullable=True)  # For UI badges (e.g., #1976d2)
+    contact_email = Column(String(200), nullable=True)
+    slack_channel = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    certificate_associations = relationship("CertificateMasterTeam", back_populates="team", cascade="all, delete-orphan")
+    responsible_installations = relationship("CertificateInstallation", back_populates="responsible_team_rel", foreign_keys="CertificateInstallation.responsible_team_id")
+
+    def __repr__(self):
+        return f"<Team(id={self.id}, name='{self.name}')>"
+
+
+# -------------------------------------------------------------------
+# LOCATION TYPES - Dynamic installation location types
+# -------------------------------------------------------------------
+class LocationType(Base):
+    """Dynamic location type for certificate installations."""
+    __tablename__ = "location_types"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, nullable=False, index=True)  # e.g., 'f5', 'azure_app_gw'
+    name = Column(String(100), nullable=False)  # e.g., 'F5 Load Balancer'
+    description = Column(Text, nullable=True)
+    icon = Column(String(50), nullable=True)  # Material icon name
+    category = Column(String(50), nullable=True, index=True)  # 'network', 'cloud', 'server'
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    installations = relationship("CertificateInstallation", back_populates="location_type_rel", foreign_keys="CertificateInstallation.location_type_id")
+
+    def __repr__(self):
+        return f"<LocationType(id={self.id}, code='{self.code}')>"
+
+
+# -------------------------------------------------------------------
+# CERTIFICATE MASTER <-> TEAM (Many-to-Many)
+# -------------------------------------------------------------------
+class CertificateMasterTeam(Base):
+    """Association between certificate masters and teams."""
+    __tablename__ = "certificate_master_teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    master_id = Column(Integer, ForeignKey("certificate_masters.id", ondelete="CASCADE"), nullable=False, index=True)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    is_primary = Column(Boolean, default=False)  # Primary owner team
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    master = relationship("CertificateMaster", back_populates="team_associations")
+    team = relationship("Team", back_populates="certificate_associations")
+
+    __table_args__ = (
+        UniqueConstraint('master_id', 'team_id', name='uq_master_team'),
+    )
+
+    def __repr__(self):
+        return f"<CertificateMasterTeam(master_id={self.master_id}, team_id={self.team_id})>"
+
+
 class CertificateMaster(Base):
     """
     Master record for a certificate identity (by common_name).
@@ -742,8 +817,8 @@ class CertificateMaster(Base):
     current_issuer = Column(String(500), nullable=True)
     current_serial = Column(String(100), nullable=True)
     
-    # Ownership / Contact
-    owner_team = Column(String(100), nullable=True, index=True)
+    # Ownership / Contact (legacy - use team_associations for new data)
+    owner_team = Column(String(100), nullable=True, index=True)  # Legacy, kept for compatibility
     primary_contact = Column(String(200), nullable=True)
     secondary_contact = Column(String(200), nullable=True)
     notification_emails = Column(Text, nullable=True)
@@ -776,6 +851,24 @@ class CertificateMaster(Base):
         back_populates="master", 
         cascade="all, delete-orphan"
     )
+    team_associations = relationship(
+        "CertificateMasterTeam",
+        back_populates="master",
+        cascade="all, delete-orphan"
+    )
+
+    @property
+    def teams(self):
+        """Get list of teams associated with this certificate."""
+        return [assoc.team for assoc in self.team_associations]
+    
+    @property
+    def primary_team(self):
+        """Get the primary owner team."""
+        for assoc in self.team_associations:
+            if assoc.is_primary:
+                return assoc.team
+        return self.team_associations[0].team if self.team_associations else None
 
     def __repr__(self):
         return f"<CertificateMaster(id={self.id}, cn='{self.common_name}')>"
@@ -790,8 +883,9 @@ class CertificateInstallation(Base):
     id = Column(Integer, primary_key=True, index=True)
     master_id = Column(Integer, ForeignKey("certificate_masters.id", ondelete="CASCADE"), nullable=False, index=True)
     
-    # Location details
+    # Location details (legacy enum + new FK)
     location_type = Column(Enum(InstallationLocationType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    location_type_id = Column(Integer, ForeignKey("location_types.id", ondelete="SET NULL"), nullable=True, index=True)
     location_name = Column(String(200), nullable=False)
     location_identifier = Column(String(500), nullable=True)
     location_details = Column(Text, nullable=True)
@@ -806,8 +900,9 @@ class CertificateInstallation(Base):
     installed_at = Column(DateTime, nullable=True)
     is_current = Column(Boolean, default=False, index=True)
     
-    # Team responsibility
-    responsible_team = Column(String(100), nullable=False, index=True)
+    # Team responsibility (legacy string + new FK)
+    responsible_team = Column(String(100), nullable=True, index=True)  # Legacy, kept for compatibility
+    responsible_team_id = Column(Integer, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True, index=True)
     responsible_contact = Column(String(200), nullable=True)
     
     # Update tracking
@@ -825,6 +920,8 @@ class CertificateInstallation(Base):
     # Relationships
     master = relationship("CertificateMaster", back_populates="installations")
     device = relationship("Device", foreign_keys=[device_id])
+    location_type_rel = relationship("LocationType", back_populates="installations", foreign_keys=[location_type_id])
+    responsible_team_rel = relationship("Team", back_populates="responsible_installations", foreign_keys=[responsible_team_id])
 
     __table_args__ = (
         UniqueConstraint('master_id', 'location_type', 'location_name', name='uq_installation_location'),
