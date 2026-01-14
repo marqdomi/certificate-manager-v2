@@ -178,12 +178,19 @@ class UserRole(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)   # <-- antes tenía un typo en "index"
+    id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.VIEWER)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Azure AD fields (v2.5)
+    email = Column(String, nullable=True, index=True)
+    full_name = Column(String, nullable=True)
+    azure_oid = Column(String, nullable=True, unique=True, index=True)  # Azure Object ID
+    auth_provider = Column(String, nullable=True, default='local')  # 'local' | 'azure_ad'
+    last_login = Column(DateTime, nullable=True)
     
     # Relationships for notification system
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")

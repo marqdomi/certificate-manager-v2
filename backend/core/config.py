@@ -58,3 +58,45 @@ DEFAULT_CHAIN_NAME = os.getenv(
     "DEFAULT_CHAIN_NAME", 
     "DigiCert_Global_G2_TLS_RSA_SHA256_2020_CA1"
 )
+
+# =============================================================================
+# AZURE AD AUTHENTICATION (v2.5)
+# =============================================================================
+# Authentication mode: 'local' | 'azure_ad' | 'hybrid'
+# - local: Only local username/password authentication
+# - azure_ad: Only Azure AD SSO (requires App Registration)
+# - hybrid: Both Azure AD and local auth supported
+AUTH_MODE = os.getenv("AUTH_MODE", "local")
+
+# Azure AD configuration (required if AUTH_MODE != 'local')
+AZURE_AD_TENANT_ID = os.getenv("AZURE_AD_TENANT_ID")
+AZURE_AD_CLIENT_ID = os.getenv("AZURE_AD_CLIENT_ID")
+
+# Validate Azure AD config if enabled
+if AUTH_MODE in ('azure_ad', 'hybrid'):
+    if not AZURE_AD_TENANT_ID or not AZURE_AD_CLIENT_ID:
+        print("\n⚠️  WARNING: AUTH_MODE is set to '{AUTH_MODE}' but Azure AD is not configured.", file=sys.stderr)
+        print("   Set AZURE_AD_TENANT_ID and AZURE_AD_CLIENT_ID environment variables.", file=sys.stderr)
+        print("   Falling back to local authentication only.\n", file=sys.stderr)
+        AUTH_MODE = "local"
+
+
+# =============================================================================
+# SETTINGS CLASS (for compatibility)
+# =============================================================================
+class Settings:
+    """Settings class for easier access to configuration."""
+    DATABASE_URL = DATABASE_URL
+    ENCRYPTION_KEY = ENCRYPTION_KEY
+    JWT_SECRET = JWT_SECRET
+    JWT_ALGORITHM = JWT_ALGORITHM
+    ACCESS_TOKEN_EXPIRE_MINUTES = ACCESS_TOKEN_EXPIRE_MINUTES
+    CELERY_BROKER_URL = CELERY_BROKER_URL
+    CELERY_RESULT_BACKEND = CELERY_RESULT_BACKEND
+    DEFAULT_CHAIN_NAME = DEFAULT_CHAIN_NAME
+    AUTH_MODE = AUTH_MODE
+    AZURE_AD_TENANT_ID = AZURE_AD_TENANT_ID
+    AZURE_AD_CLIENT_ID = AZURE_AD_CLIENT_ID
+
+
+settings = Settings()
