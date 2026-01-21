@@ -294,7 +294,7 @@ AZURE_AD_CLIENT_ID=<from-app-registration>               # App Registration clie
 
 Please create an Azure AD App Registration with the following configuration:
 
-1. **Application Name:** Certificate Manager
+1. **Application Name:** Certificate Management Tool
 2. **Account Type:** Single tenant (Solera only)
 3. **Platform:** Single-page application (SPA)
 4. **Redirect URIs:**

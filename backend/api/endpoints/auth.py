@@ -22,8 +22,9 @@ router = APIRouter()
 
 class AuthConfig(BaseModel):
     """Authentication configuration for frontend"""
-    auth_mode: str  # 'local' | 'azure_ad' | 'hybrid'
+    auth_mode: str  # 'local' | 'radius' | 'azure_ad' | 'hybrid'
     azure_ad_enabled: bool
+    radius_enabled: bool = False
     azure_ad_tenant_id: Optional[str] = None
     azure_ad_client_id: Optional[str] = None
     azure_ad_authority: Optional[str] = None
@@ -52,13 +53,17 @@ def get_auth_config():
     Returns authentication configuration for the frontend.
     This allows the frontend to know which auth methods are available.
     """
+    from services.radius_auth import is_radius_enabled
+    
     auth_mode = getattr(settings, 'AUTH_MODE', 'local')
     azure_enabled = auth_mode in ('azure_ad', 'hybrid') and \
                     getattr(settings, 'AZURE_AD_CLIENT_ID', None) is not None
+    radius_enabled = auth_mode in ('radius', 'hybrid') and is_radius_enabled()
     
     return AuthConfig(
         auth_mode=auth_mode,
         azure_ad_enabled=azure_enabled,
+        radius_enabled=radius_enabled,
         azure_ad_tenant_id=getattr(settings, 'AZURE_AD_TENANT_ID', None) if azure_enabled else None,
         azure_ad_client_id=getattr(settings, 'AZURE_AD_CLIENT_ID', None) if azure_enabled else None,
         azure_ad_authority=f"https://login.microsoftonline.com/{settings.AZURE_AD_TENANT_ID}" if azure_enabled else None,
@@ -67,17 +72,22 @@ def get_auth_config():
 
 
 # ============================================
-# Local Authentication
+# Local Authentication (Also supports RADIUS in hybrid mode)
 # ============================================
 
-@router.post("/token", response_model=TokenResponse, summary="User Login (Local)")
+@router.post("/token", response_model=TokenResponse, summary="User Login")
 def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint de login con usuario/contraseña local.
-    Recibe username y password, devuelve un token JWT.
+    Endpoint de login con usuario/contraseña.
+    
+    Soporta múltiples modos de autenticación según AUTH_MODE:
+    - 'local': Solo autenticación contra base de datos local
+    - 'radius': Solo autenticación contra NPS/RADIUS (Active Directory)
+    - 'hybrid': Intenta RADIUS primero, si falla intenta local
+    - 'azure_ad': Solo Azure AD (este endpoint no aplica)
     """
     auth_mode = getattr(settings, 'AUTH_MODE', 'local')
     if auth_mode == 'azure_ad':
@@ -86,29 +96,33 @@ def login_for_access_token(
             detail="Local authentication is disabled. Use Azure AD login."
         )
     
-    # 1. Buscamos al usuario en la BBDD
-    user = db.query(User).filter(User.username == form_data.username).first()
-
-    # 2. Verificamos que el usuario exista y que la contraseña sea correcta
-    if not user or not auth_service.verify_password(form_data.password, user.hashed_password):
+    # Usar la nueva función que soporta RADIUS + local
+    user = auth_service.authenticate_user(form_data.username, form_data.password, db)
+    
+    if not user:
+        # Mensaje de error según el modo de autenticación
+        if auth_mode == 'radius':
+            detail = "Invalid Active Directory credentials"
+        elif auth_mode == 'hybrid':
+            detail = "Invalid credentials (tried RADIUS and local)"
+        else:
+            detail = "Incorrect username or password"
+            
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail=detail,
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 3. Verificar que no sea un usuario de Azure AD intentando login local
-    if user.auth_provider == 'azure_ad' and not user.hashed_password:
+    # Verificar que el usuario esté activo
+    if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This account uses Azure AD authentication. Please login with Microsoft."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is disabled",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # 4. Actualizar último login
-    user.last_login = datetime.now(timezone.utc)
-    db.commit()
-    
-    # 5. Creamos el token de acceso con toda la info del usuario
+    # Crear el token de acceso
     access_token = auth_service.create_access_token(
         data={
             "sub": str(user.id),
@@ -116,11 +130,10 @@ def login_for_access_token(
             "role": user.role.value,
             "email": user.email,
             "full_name": user.full_name,
-            "auth_provider": "local"
+            "auth_provider": user.auth_provider or "local"
         }
     )
 
-    # 6. Devolvemos el token
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
@@ -129,7 +142,8 @@ def login_for_access_token(
             "username": user.username,
             "email": user.email,
             "full_name": user.full_name,
-            "role": user.role.value
+            "role": user.role.value,
+            "auth_provider": user.auth_provider or "local"
         }
     )
 
@@ -208,3 +222,103 @@ async def read_users_me(
     Endpoint protegido que devuelve la información del usuario logueado.
     """
     return current_user
+
+
+# ============================================
+# RADIUS/NPS Authentication Endpoints
+# ============================================
+
+class RadiusTestResult(BaseModel):
+    """Result of RADIUS connection test"""
+    success: bool
+    message: str
+    server: Optional[str] = None
+    port: Optional[int] = None
+
+
+class RadiusUserInfo(BaseModel):
+    """RADIUS user information"""
+    username: str
+    groups: list[str] = []
+    mapped_role: str
+    attributes: dict = {}
+
+
+@router.get("/radius/status", response_model=RadiusTestResult, summary="Check RADIUS Status")
+def check_radius_status():
+    """
+    Check if RADIUS authentication is configured and server is reachable.
+    Useful for diagnosing connection issues.
+    """
+    from services.radius_auth import is_radius_enabled, get_radius_service
+    
+    if not is_radius_enabled():
+        return RadiusTestResult(
+            success=False,
+            message="RADIUS is not enabled. Set RADIUS_SERVER and RADIUS_SECRET environment variables."
+        )
+    
+    radius_service = get_radius_service()
+    if not radius_service:
+        return RadiusTestResult(
+            success=False,
+            message="RADIUS service failed to initialize. Check configuration."
+        )
+    
+    # Test connection
+    success, message = radius_service.test_connection()
+    
+    return RadiusTestResult(
+        success=success,
+        message=message,
+        server=radius_service.config.server if success else None,
+        port=radius_service.config.port if success else None
+    )
+
+
+@router.post("/radius/test-auth", summary="Test RADIUS Authentication")
+def test_radius_auth(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    current_user: Annotated[User, Depends(auth_service.get_current_active_user)]
+):
+    """
+    Test RADIUS authentication for a specific user without creating a session.
+    Requires ADMIN role.
+    
+    This is useful for testing RADIUS configuration before enabling it fully.
+    """
+    if current_user.role.value != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can test RADIUS authentication"
+        )
+    
+    from services.radius_auth import is_radius_enabled, get_radius_service
+    
+    if not is_radius_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="RADIUS is not enabled"
+        )
+    
+    radius_service = get_radius_service()
+    if not radius_service:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="RADIUS service not available"
+        )
+    
+    radius_user = radius_service.authenticate(form_data.username, form_data.password)
+    
+    if not radius_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="RADIUS authentication failed"
+        )
+    
+    return RadiusUserInfo(
+        username=radius_user.username,
+        groups=radius_user.groups,
+        mapped_role=radius_user.role.value,
+        attributes=radius_user.attributes
+    )
