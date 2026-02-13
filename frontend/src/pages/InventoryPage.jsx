@@ -56,72 +56,24 @@ import RenewalWizardDialog from '../components/wizard/RenewWizardDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportButton from '../components/ExportButton';
 import CertificateDetailDrawer from '../components/CertificateDetailDrawer';
+import SharedStatCard from '../components/shared/StatCard';
+import EmptyState from '../components/shared/EmptyState';
+import { SkeletonKpiBar, SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { glassmorphicCard } from '../constants/styleMixins';
+import { STATUS_COLORS, FAVORITE_COLOR, TRANSITIONS } from '../constants/designTokens';
 
 // localStorage keys
 const FILTERS_KEY = 'cmt_cert_filters';
 const FAVORITES_KEY = 'cmt_cert_favorites';
 
-// StatCard component for KPIs
-const StatCard = ({ icon, label, value, color, onClick, active }) => (
-  <Tooltip title={`Click to filter by ${label}`}>
-    <Box
-      onClick={onClick}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        px: 2.5,
-        py: 1.5,
-        borderRadius: 3,
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        border: '2px solid',
-        borderColor: active ? color : 'transparent',
-        backgroundColor: active
-          ? (theme) => alpha(color, theme.palette.mode === 'dark' ? 0.2 : 0.1)
-          : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-        '&:hover': {
-          backgroundColor: (theme) => alpha(color, theme.palette.mode === 'dark' ? 0.15 : 0.08),
-          transform: 'translateY(-2px)',
-          boxShadow: `0 4px 12px ${alpha(color, 0.3)}`,
-        },
-      }}
-    >
-      <Box
-        sx={{
-          width: 44,
-          height: 44,
-          borderRadius: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: alpha(color, 0.15),
-          color: color,
-        }}
-      >
-        {icon}
-      </Box>
-      <Box>
-        <Typography variant="h5" fontWeight={700} color={color}>
-          {value}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-          {label}
-        </Typography>
-      </Box>
-    </Box>
-  </Tooltip>
-);
+// StatCard component for KPIs — now uses shared component
+const StatCard = (props) => <SharedStatCard variant="kpi" {...props} />;
 
 
-const glassmorphicStyle = {
+const glassmorphicStyle = (theme) => ({
   p: { xs: 2, sm: 3 },
-  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(26, 33, 51, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-  backdropFilter: 'blur(12px)',
-  border: '1px solid',
-  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-  borderRadius: '20px',
-};
+  ...glassmorphicCard(theme),
+});
 
 
 function InventoryPage() {
@@ -482,8 +434,9 @@ function InventoryPage() {
 
   if (loading && allCerts.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress size={60} />
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <SkeletonKpiBar count={4} />
+        <SkeletonTable rows={8} columns={5} sx={{ mt: 3 }} />
       </Box>
     );
   }
@@ -509,7 +462,7 @@ function InventoryPage() {
             icon={<SecurityIcon />}
             label="Total Certificates"
             value={stats.total}
-            color="#6366f1"
+            color="primary"
             onClick={() => { setStatusFilter(null); }}
             active={!statusFilter}
           />
@@ -517,7 +470,7 @@ function InventoryPage() {
             icon={<CheckCircleOutlineIcon />}
             label="Healthy"
             value={stats.healthy}
-            color="#10b981"
+            color="success"
             onClick={() => { setStatusFilter('healthy'); }}
             active={statusFilter === 'healthy'}
           />
@@ -525,7 +478,7 @@ function InventoryPage() {
             icon={<WarningAmberIcon />}
             label="Expiring Soon"
             value={stats.expiring}
-            color="#f59e0b"
+            color="warning"
             onClick={() => { setStatusFilter('warning'); }}
             active={statusFilter === 'warning'}
           />
@@ -533,7 +486,7 @@ function InventoryPage() {
             icon={<ErrorOutlineIcon />}
             label="Expired"
             value={stats.expired}
-            color="#ef4444"
+            color="error"
             onClick={() => { setStatusFilter('expired'); }}
             active={statusFilter === 'expired'}
           />
@@ -736,15 +689,11 @@ function InventoryPage() {
 
         {/* Empty State */}
         {displayCerts.length === 0 && !loading ? (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <SecurityIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              No certificates found
-            </Typography>
-            <Typography variant="body2" color="text.disabled">
-              Try adjusting your search or filters
-            </Typography>
-          </Box>
+          <EmptyState
+            icon={<SecurityIcon />}
+            title="No certificates found"
+            subtitle="Try adjusting your search or filters"
+          />
         ) : viewMode === 'table' ? (
           <CertificateTable
             certificates={displayCerts}
@@ -772,7 +721,7 @@ function InventoryPage() {
           }}>
             {displayCerts.map((cert) => {
               const daysRemaining = cert.days_remaining;
-              const statusColor = daysRemaining <= 0 ? '#ef4444' : daysRemaining <= 30 ? '#f59e0b' : '#10b981';
+              const statusColor = daysRemaining <= 0 ? STATUS_COLORS.error.light.main : daysRemaining <= 30 ? STATUS_COLORS.warning.light.main : STATUS_COLORS.success.light.main;
               const isFav = isFavorite(cert.id);
               
               return (
@@ -783,9 +732,9 @@ function InventoryPage() {
                     p: 2,
                     cursor: 'pointer',
                     border: '1px solid',
-                    borderColor: isFav ? alpha('#f59e0b', 0.5) : 'divider',
+                    borderColor: isFav ? alpha(FAVORITE_COLOR.active, 0.5) : 'divider',
                     borderRadius: 2,
-                    transition: 'all 0.2s ease-in-out',
+                    transition: TRANSITIONS.fast,
                     backgroundColor: (theme) => theme.palette.background.paper,
                     '&:hover': {
                       transform: 'translateY(-2px)',
@@ -808,7 +757,7 @@ function InventoryPage() {
                       transition: 'opacity 0.2s',
                     }}
                   >
-                    {isFav ? <StarIcon sx={{ color: '#f59e0b', fontSize: 18 }} /> : <StarBorderIcon sx={{ color: 'text.disabled', fontSize: 18 }} />}
+                    {isFav ? <StarIcon sx={{ color: FAVORITE_COLOR.active, fontSize: 18 }} /> : <StarBorderIcon sx={{ color: 'text.disabled', fontSize: 18 }} />}
                   </IconButton>
 
                   {/* Status indicator dot */}

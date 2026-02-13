@@ -40,6 +40,7 @@ import {
   Grid,
   Skeleton,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
 import WifiIcon from '@mui/icons-material/Wifi';
@@ -87,6 +88,11 @@ import BulkActionsBar from '../components/BulkActionsBar';
 import BulkCredentialsDialog from '../components/BulkCredentialsDialog';
 import { useDeviceWebSocket } from '../hooks/useDeviceWebSocket';
 import type { Device, DeviceCredentials, DeviceCreate } from '../types/device';
+import SharedStatCard from '../components/shared/StatCard';
+import EmptyState from '../components/shared/EmptyState';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { glassmorphicCard } from '../constants/styleMixins';
+import { STATUS_COLORS, FAVORITE_COLOR, TRANSITIONS, MONO_FONT } from '../constants/designTokens';
 
 // Types
 type AlertSeverity = 'success' | 'error' | 'warning' | 'info';
@@ -142,39 +148,9 @@ interface StatCardProps {
   active?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, color, onClick, active }) => (
-  <Box
-    onClick={onClick}
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1.5,
-      px: 2,
-      py: 1,
-      borderRadius: 2,
-      cursor: onClick ? 'pointer' : 'default',
-      backgroundColor: active ? alpha(color, 0.15) : 'transparent',
-      border: '1px solid',
-      borderColor: active ? color : 'divider',
-      transition: 'all 0.2s ease',
-      '&:hover': onClick
-        ? {
-            backgroundColor: alpha(color, 0.1),
-            borderColor: color,
-          }
-        : {},
-    }}
-  >
-    <Box sx={{ color, display: 'flex' }}>{icon}</Box>
-    <Box>
-      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, color }}>
-        {value}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-    </Box>
-  </Box>
+// Stat Card Component — using shared StatCard as 'kpi' variant
+const StatCard: React.FC<StatCardProps> = (props) => (
+  <SharedStatCard variant="kpi" {...props} />
 );
 
 // Device Card Component for Grid View
@@ -199,16 +175,16 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 }) => {
   const getHealthIcon = () => {
     const status = device.last_scan_status?.toLowerCase();
-    if (status === 'success') return <CheckCircleIcon sx={{ color: '#10b981', fontSize: 20 }} />;
-    if (status === 'error' || status === 'failed') return <ErrorIcon sx={{ color: '#ef4444', fontSize: 20 }} />;
-    if (status === 'warning') return <WarningIcon sx={{ color: '#f59e0b', fontSize: 20 }} />;
-    return <HelpOutlineIcon sx={{ color: '#6b7280', fontSize: 20 }} />;
+    if (status === 'success') return <CheckCircleIcon sx={{ color: STATUS_COLORS.success.light.main, fontSize: 20 }} />;
+    if (status === 'error' || status === 'failed') return <ErrorIcon sx={{ color: STATUS_COLORS.error.light.main, fontSize: 20 }} />;
+    if (status === 'warning') return <WarningIcon sx={{ color: STATUS_COLORS.warning.light.main, fontSize: 20 }} />;
+    return <HelpOutlineIcon sx={{ color: STATUS_COLORS.neutral.light.main, fontSize: 20 }} />;
   };
 
   const getHAColor = () => {
-    if (device.ha_state === 'ACTIVE') return '#10b981';
-    if (device.ha_state === 'STANDBY') return '#6b7280';
-    return '#6366f1';
+    if (device.ha_state === 'ACTIVE') return STATUS_COLORS.success.light.main;
+    if (device.ha_state === 'STANDBY') return STATUS_COLORS.neutral.light.main;
+    return STATUS_COLORS.info.light.main;
   };
 
   return (
@@ -218,7 +194,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         display: 'flex',
         flexDirection: 'column',
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        transition: TRANSITIONS.fast,
         border: '1px solid',
         borderColor: 'divider',
         '&:hover': {
@@ -247,6 +223,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               onToggleFavorite(device.id);
             }}
             sx={{ color: isFavorite ? 'warning.main' : 'action.disabled' }}
+            aria-label="Toggle favorite"
           >
             {isFavorite ? <StarIcon /> : <StarBorderIcon />}
           </IconButton>
@@ -256,7 +233,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5, lineHeight: 1.3 }} noWrap>
           {device.hostname}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontFamily: 'monospace' }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontFamily: MONO_FONT }}>
           {device.ip_address}
         </Typography>
 
@@ -274,7 +251,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
             <Typography variant="caption" color="text.secondary">
               Version
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: 'monospace', fontSize: '0.8rem' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: MONO_FONT, fontSize: '0.8rem' }}>
               {device.version || '—'}
             </Typography>
           </Box>
@@ -302,10 +279,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               size="small"
               sx={{
                 backgroundColor: alpha(
-                  device.last_sync_color === 'green' ? '#10b981' : device.last_sync_color === 'red' ? '#ef4444' : '#f59e0b',
+                  device.last_sync_color === 'green' ? STATUS_COLORS.success.light.main : device.last_sync_color === 'red' ? STATUS_COLORS.error.light.main : STATUS_COLORS.warning.light.main,
                   0.1
                 ),
-                color: device.last_sync_color === 'green' ? '#10b981' : device.last_sync_color === 'red' ? '#ef4444' : '#f59e0b',
+                color: device.last_sync_color === 'green' ? STATUS_COLORS.success.light.main : device.last_sync_color === 'red' ? STATUS_COLORS.error.light.main : STATUS_COLORS.warning.light.main,
                 fontWeight: 500,
                 fontSize: '0.7rem',
               }}
@@ -346,6 +323,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 e.stopPropagation();
                 onSetCredentials(device);
               }}
+              aria-label="Set Credentials"
             >
               <VpnKeyIcon fontSize="small" />
             </IconButton>
@@ -359,6 +337,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                   e.stopPropagation();
                   onDelete(device.id);
                 }}
+                aria-label="Delete"
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
@@ -373,20 +352,16 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 // Main Component
 const DevicesPage: React.FC = () => {
   const userRole = authProvider.getRole() as UserRole;
+  const theme = useTheme();
 
   const glassmorphicStyle: SxProps<Theme> = {
     p: { xs: 2, sm: 3 },
-    backgroundColor: (theme: Theme) =>
-      theme.palette.mode === 'dark' ? 'rgba(26, 33, 51, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid',
-    borderColor: (theme: Theme) =>
-      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-    borderRadius: '20px',
+    ...glassmorphicCard(theme),
   };
 
   // State
   const [notification, setNotification] = useState<Notification>({ open: false, message: '', severity: 'info' });
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
@@ -705,14 +680,20 @@ const DevicesPage: React.FC = () => {
   };
 
   const handleDeleteDevice = (id: number): void => {
-    deleteDevice(id)
+    setConfirmDeleteId(id);
+  };
+
+  const executeDeleteDevice = (): void => {
+    if (confirmDeleteId === null) return;
+    deleteDevice(confirmDeleteId)
       .then(() => {
         setNotification({ open: true, message: 'Device deleted.', severity: 'success' });
-        setSelectedIds((prev) => prev.filter((x) => x !== id));
-        setFavorites((prev) => prev.filter((x) => x !== id));
+        setSelectedIds((prev) => prev.filter((x) => x !== confirmDeleteId));
+        setFavorites((prev) => prev.filter((x) => x !== confirmDeleteId));
         forceTableRefresh();
       })
-      .catch((err: Error) => setNotification({ open: true, message: `Error: ${err.message}`, severity: 'error' }));
+      .catch((err: Error) => setNotification({ open: true, message: `Error: ${err.message}`, severity: 'error' }))
+      .finally(() => setConfirmDeleteId(null));
   };
 
   const bulkRefreshFacts = async (): Promise<void> => {
@@ -844,7 +825,7 @@ const DevicesPage: React.FC = () => {
               icon={<DevicesIcon />}
               label="Total Devices"
               value={stats.total}
-              color="#6366f1"
+              color={theme.palette.primary.main}
               onClick={() => handleStatClick('all')}
               active={activeFilterCount === 0}
             />
@@ -852,7 +833,7 @@ const DevicesPage: React.FC = () => {
               icon={<CheckCircleOutlineIcon />}
               label="Healthy"
               value={stats.healthy}
-              color="#10b981"
+              color={STATUS_COLORS.success.light.main}
               onClick={() => handleStatClick('healthy')}
               active={filters.health_status === 'success'}
             />
@@ -860,7 +841,7 @@ const DevicesPage: React.FC = () => {
               icon={<ErrorOutlineIcon />}
               label="Issues"
               value={stats.issues}
-              color="#ef4444"
+              color={STATUS_COLORS.error.light.main}
               onClick={() => handleStatClick('issues')}
               active={filters.health_status === 'failed'}
             />
@@ -868,7 +849,7 @@ const DevicesPage: React.FC = () => {
               icon={<KeyOffIcon />}
               label="No Credentials"
               value={stats.noCredentials}
-              color="#f59e0b"
+              color={STATUS_COLORS.warning.light.main}
               onClick={() => handleStatClick('noCredentials')}
               active={filters.no_credentials === true}
             />
@@ -876,7 +857,7 @@ const DevicesPage: React.FC = () => {
               icon={<StarIcon />}
               label="Favorites"
               value={stats.favoritesCount}
-              color="#ec4899"
+              color={FAVORITE_COLOR.active}
               onClick={() => handleStatClick('favorites')}
               active={filters.favorites_only === true}
             />
@@ -928,7 +909,7 @@ const DevicesPage: React.FC = () => {
 
           {activeFilterCount > 0 && (
             <Tooltip title="Clear all filters">
-              <IconButton size="small" onClick={clearAllFilters}>
+              <IconButton size="small" onClick={clearAllFilters} aria-label="Clear all filters">
                 <ClearAllIcon />
               </IconButton>
             </Tooltip>
@@ -959,7 +940,7 @@ const DevicesPage: React.FC = () => {
           {viewMode === 'table' && (
             <>
               <Tooltip title="Configure columns">
-                <IconButton onClick={(e) => setColumnsMenuAnchor(e.currentTarget)}>
+                <IconButton onClick={(e) => setColumnsMenuAnchor(e.currentTarget)} aria-label="Configure columns">
                   <ViewColumnIcon />
                 </IconButton>
               </Tooltip>
@@ -994,7 +975,7 @@ const DevicesPage: React.FC = () => {
 
           {/* Refresh */}
           <Tooltip title="Refresh data">
-            <IconButton onClick={forceTableRefresh}>
+            <IconButton onClick={forceTableRefresh} aria-label="Refresh data">
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -1116,15 +1097,11 @@ const DevicesPage: React.FC = () => {
         ) : (
           <Box sx={{ height: 'calc(100vh - 400px)', overflow: 'auto', py: 1 }}>
             {filteredDevicesForGrid.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <DevicesIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">
-                  No devices found
-                </Typography>
-                <Typography variant="body2" color="text.disabled">
-                  Try adjusting your search or filters
-                </Typography>
-              </Box>
+              <EmptyState
+                icon={<DevicesIcon />}
+                title="No devices found"
+                subtitle="Try adjusting your search or filters"
+              />
             ) : (
               <Grid container spacing={2}>
                 {filteredDevicesForGrid.map((device) => (
@@ -1158,7 +1135,7 @@ const DevicesPage: React.FC = () => {
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>Filters</Typography>
-          <IconButton onClick={() => setFilterDrawerOpen(false)} size="small"><CloseIcon /></IconButton>
+          <IconButton onClick={() => setFilterDrawerOpen(false)} size="small" aria-label="Close filters"><CloseIcon /></IconButton>
         </Box>
 
         <Stack spacing={3}>
@@ -1227,6 +1204,17 @@ const DevicesPage: React.FC = () => {
       <EditDeviceDialog open={editModalOpen} onClose={() => setEditModalOpen(false)} device={editDevice} onSave={handleSaveDevice} />
       <BulkCredentialsDialog open={bulkCredentialsOpen} onClose={() => { setBulkCredentialsOpen(false); forceTableRefresh(); }} devices={allDevices.filter((d) => selectedIds.includes(d.id))} onSave={handleBulkCredentialSave} />
       {userRole === 'admin' && <AddDeviceDialog open={addModalOpen} onClose={() => setAddModalOpen(false)} onAdd={handleAddDevice} />}
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        severity="error"
+        title="Delete Device"
+        message="Are you sure you want to delete this device? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={executeDeleteDevice}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </Box>
   );
 };

@@ -41,109 +41,30 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import SharedStatCard, { useCountUp, AnimatedValue as AnimatedNumber } from './shared/StatCard';
+import { glassmorphicCard } from '../constants/styleMixins';
+import { CHART_COLORS, TRANSITIONS, getChartColors } from '../constants/designTokens';
+import { StaggerContainer, StaggerItem } from './shared/AnimationWrappers';
 
-// ============================================
-// PHASE 2 - Animated Counter Hook
-// ============================================
-const useCountUp = (end, duration = 1000, startOnMount = true) => {
-  const [count, setCount] = useState(0);
-  const prevEndRef = useRef(end);
-  const frameRef = useRef(null);
-  
-  useEffect(() => {
-    if (!startOnMount) return;
-    
-    const startValue = prevEndRef.current !== end ? prevEndRef.current : 0;
-    prevEndRef.current = end;
-    
-    const startTime = performance.now();
-    const diff = end - startValue;
-    
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Easing function: easeOutExpo
-      const easeOut = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      const currentValue = Math.round(startValue + diff * easeOut);
-      
-      setCount(currentValue);
-      
-      if (progress < 1) {
-        frameRef.current = requestAnimationFrame(animate);
-      }
-    };
-    
-    frameRef.current = requestAnimationFrame(animate);
-    
-    return () => {
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, [end, duration, startOnMount]);
-  
-  return count;
-};
-
-// Animated number component
-const AnimatedNumber = ({ value, duration = 800 }) => {
-  const animatedValue = useCountUp(value, duration);
-  return <>{animatedValue.toLocaleString()}</>;
-};
-
-const glassmorphicStyle = {
+const glassmorphicStyle = (theme) => ({
   p: { xs: 2, sm: 2.5 },
   height: '100%',
-  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(26, 33, 51, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-  backdropFilter: 'blur(12px)',
-  border: '1px solid',
-  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-  borderRadius: '16px',
-  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-};
+  ...glassmorphicCard(theme),
+});
 
-const StatCard = ({ title, value, color, icon: Icon, onClick, subtitle, animated = true, tooltip }) => {
-  const cardContent = (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        ...glassmorphicStyle,
-        textAlign: 'center',
-        cursor: onClick ? 'pointer' : 'default',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: { xs: 100, sm: 120 },
-        '&:hover': onClick ? {
-          transform: 'translateY(-5px)',
-          boxShadow: (theme) => `0 10px 20px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(90, 100, 120, 0.15)'}`,
-        } : {},
-      }} 
-      onClick={onClick}
-    >
-      {Icon && <Icon sx={{ fontSize: { xs: 28, sm: 32 }, color, mb: 1, opacity: 0.8 }} />}
-      <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-        {title}
-      </Typography>
-      <Typography variant="h3" component="p" sx={{ fontWeight: 'bold', color, fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' } }}>
-        {animated ? <AnimatedNumber value={value} /> : value}
-      </Typography>
-      {subtitle && (
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-          {subtitle}
-        </Typography>
-      )}
-    </Paper>
-  );
-
-  return tooltip ? (
-    <MuiTooltip title={tooltip} arrow placement="top" enterDelay={400}>
-      {cardContent}
-    </MuiTooltip>
-  ) : cardContent;
-};
+const StatCard = ({ title, value, color, icon: Icon, onClick, subtitle, animated = true, tooltip }) => (
+  <SharedStatCard
+    variant="glass"
+    title={title}
+    value={value}
+    color={color}
+    icon={Icon ? <Icon /> : undefined}
+    onClick={onClick}
+    subtitle={subtitle}
+    animated={animated}
+    tooltip={tooltip}
+  />
+);
 
 const MiniStatCard = ({ title, value, color, animated = true }) => (
   <Box sx={{ textAlign: 'center', p: 1 }}>
@@ -189,7 +110,7 @@ const HealthScoreGauge = ({ score, theme }) => {
           arrow
           placement="top"
         >
-          <IconButton size="small" sx={{ ml: 0.5 }}>
+          <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Health score info">
             <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
           </IconButton>
         </MuiTooltip>
@@ -303,7 +224,7 @@ const ExpirationTrendChart = ({ certificates, theme }) => {
             arrow
             placement="top"
           >
-            <IconButton size="small" sx={{ ml: 0.5 }}>
+            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Expiration forecast info">
               <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             </IconButton>
           </MuiTooltip>
@@ -436,7 +357,7 @@ const ActivityTimeline = ({ auditStats, theme, navigate }) => {
             arrow
             placement="top"
           >
-            <IconButton size="small" sx={{ ml: 0.5 }}>
+            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Recent activity info">
               <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             </IconButton>
           </MuiTooltip>
@@ -552,7 +473,7 @@ const CriticalCertificates = ({ certificates, theme, navigate }) => {
             arrow
             placement="top"
           >
-            <IconButton size="small" sx={{ ml: 0.5 }}>
+            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Critical expired info">
               <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             </IconButton>
           </MuiTooltip>
@@ -704,6 +625,8 @@ const CertificatesBySite = ({ certificates, devices, theme, navigate }) => {
       .slice(0, 8); // Top 8 sites
   }, [certificates, devices]);
 
+  const chartColors = getChartColors(theme.palette.mode);
+
   const COLORS = [
     theme.palette.primary.main,
     theme.palette.secondary.main,
@@ -711,8 +634,8 @@ const CertificatesBySite = ({ certificates, devices, theme, navigate }) => {
     theme.palette.success.main,
     theme.palette.warning.main,
     theme.palette.error.main,
-    '#8884d8',
-    '#82ca9d',
+    chartColors.series[6],
+    chartColors.series[7],
   ];
 
   const getHealthColor = (percent) => {
@@ -773,7 +696,7 @@ const CertificatesBySite = ({ certificates, devices, theme, navigate }) => {
             arrow
             placement="top"
           >
-            <IconButton size="small" sx={{ ml: 0.5 }}>
+            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Certificates by site info">
               <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             </IconButton>
           </MuiTooltip>
@@ -953,9 +876,9 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
   };
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} component={StaggerContainer}>
       {/* Top Stats Row - Phase 3: Added tooltips - Always visible */}
-      <Grid item xs={6} sm={6} md={3}>
+      <Grid item xs={6} sm={6} md={3} component={StaggerItem}>
         <StatCard 
           title="Total Certificates" 
           value={total} 
@@ -965,7 +888,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
           tooltip="Total number of SSL certificates discovered across all F5 devices. Click to view all certificates."
         />
       </Grid>
-      <Grid item xs={6} sm={6} md={3}>
+      <Grid item xs={6} sm={6} md={3} component={StaggerItem}>
         <StatCard 
           title="Healthy" 
           value={healthy} 
@@ -976,7 +899,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
           tooltip="Certificates with more than 30 days until expiration. These are in good standing and don't require immediate attention."
         />
       </Grid>
-      <Grid item xs={6} sm={6} md={3}>
+      <Grid item xs={6} sm={6} md={3} component={StaggerItem}>
         <StatCard 
           title="Warning" 
           value={warning} 
@@ -987,7 +910,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
           tooltip="Certificates expiring within 30 days. Consider initiating renewal process for these certificates."
         />
       </Grid>
-      <Grid item xs={6} sm={6} md={3}>
+      <Grid item xs={6} sm={6} md={3} component={StaggerItem}>
         <StatCard 
           title="Expired" 
           value={expired} 
@@ -1190,7 +1113,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                     borderColor: 'divider',
                     fontSize: { xs: '0.7rem', sm: '0.875rem' },
                     '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                    transition: 'all 0.2s ease'
+                    transition: TRANSITIONS.fast
                   }}
                 >
                   Generate CSR
@@ -1208,7 +1131,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                   borderColor: 'divider',
                   fontSize: { xs: '0.7rem', sm: '0.875rem' },
                   '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: 'all 0.2s ease'
+                  transition: TRANSITIONS.fast
                 }}
               >
                 Upload PFX
@@ -1226,7 +1149,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                   borderColor: 'divider',
                   fontSize: { xs: '0.7rem', sm: '0.875rem' },
                   '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: 'all 0.2s ease'
+                  transition: TRANSITIONS.fast
                 }}
               >
                 Batch Renewal
@@ -1244,7 +1167,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                   borderColor: 'divider',
                   fontSize: { xs: '0.7rem', sm: '0.875rem' },
                   '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: 'all 0.2s ease'
+                  transition: TRANSITIONS.fast
                 }}
               >
                 Audit Log
@@ -1258,7 +1181,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
       {/* Quick Stats Row - Phase 4: Conditional visibility */}
       {isWidgetVisible('quickStats') && (
         <Grid item xs={12}>
-          <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
+          <Paper elevation={0} sx={(theme) => ({ ...glassmorphicStyle(theme), py: 2 })}>
             <Grid container spacing={2} justifyContent="center">
               <Grid item xs={6} sm={4} md={3}>
                 <MiniStatCard title="Critical (< 7d)" value={expirationBands.critical || 0} color={theme.palette.error.main} />
@@ -1280,7 +1203,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
       {/* Device HA Status - Phase 4: Conditional visibility */}
       {isWidgetVisible('deviceHaStatus') && (
         <Grid item xs={12}>
-          <Paper elevation={0} sx={{ ...glassmorphicStyle, py: 2 }}>
+          <Paper elevation={0} sx={(theme) => ({ ...glassmorphicStyle(theme), py: 2 })}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
             <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
             <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>

@@ -36,6 +36,7 @@ import {
   refreshDeviceCerts 
 } from '../../services/api';
 import PlanPreview from './PlanPreview';
+import { MONO_FONT } from '../../constants/designTokens';
 import type { 
   DeviceInfo, 
   PreviewData, 
@@ -231,7 +232,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
               label={newObjectName} 
               color="success" 
               variant="outlined"
-              sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+              sx={{ fontFamily: MONO_FONT, fontSize: '0.875rem' }}
             />
           )}
         </Paper>
@@ -273,7 +274,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
               {verifyResult.fingerprint_sha256 && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="caption" color="text.secondary">SHA-256 Fingerprint</Typography>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                  <Typography variant="body2" sx={{ fontFamily: MONO_FONT, fontSize: '0.75rem', wordBreak: 'break-all' }}>
                     {verifyResult.fingerprint_sha256}
                   </Typography>
                 </Box>

@@ -15,6 +15,7 @@ import MicrosoftIcon from '@mui/icons-material/Microsoft';
 import apiClient from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import azureAuthService from '../services/azureAuthService';
+import { AZURE_BRAND } from '../constants/designTokens';
 
 // --- 1. Importamos la imagen de fondo y el logo ---
 import loginBg from '../assets/login-background.png'; 
@@ -179,11 +180,11 @@ const LoginPage = () => {
               startIcon={azureLoading ? <CircularProgress size={20} /> : <MicrosoftIcon />}
               sx={{
                 py: 1.5,
-                borderColor: '#0078D4',
-                color: '#0078D4',
+                borderColor: AZURE_BRAND.primary,
+                color: AZURE_BRAND.primary,
                 '&:hover': {
-                  borderColor: '#106EBE',
-                  backgroundColor: 'rgba(0, 120, 212, 0.08)',
+                  borderColor: AZURE_BRAND.hover,
+                  backgroundColor: `${AZURE_BRAND.primary}14`,
                 },
               }}
             >

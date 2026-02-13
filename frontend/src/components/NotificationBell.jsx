@@ -200,7 +200,7 @@ const NotificationBell = () => {
         onClose={handleClose}
         PaperProps={{
           sx: {
-            width: 380,
+            width: { xs: 320, sm: 380 },
             maxHeight: 480,
             overflow: 'hidden',
             display: 'flex',
@@ -279,7 +279,7 @@ const NotificationBell = () => {
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
-                              maxWidth: 200,
+                              maxWidth: { xs: 160, sm: 200 },
                             }}
                           >
                             {notification.title}

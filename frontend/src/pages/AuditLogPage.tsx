@@ -7,14 +7,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Grid,
-  Card,
-  CardContent,
   Stack,
   Chip,
-  CircularProgress,
   Alert,
   FormControl,
   InputLabel,
@@ -37,6 +33,9 @@ import AuditLogTable from '../components/AuditLogTable';
 import { fetchAuditStats } from '../api/audit';
 import { exportAuditCsv, exportAuditExcel, downloadBlob } from '../services/adminApi';
 import type { AuditStatsResponse } from '../types/audit';
+import SharedStatCard from '../components/shared/StatCard';
+import { SkeletonStatCard } from '../components/shared/SkeletonLoaders';
+import { LAYOUT } from '../constants/designTokens';
 
 const StatCard: React.FC<{
   title: string;
@@ -44,31 +43,13 @@ const StatCard: React.FC<{
   icon: React.ReactNode;
   color: string;
 }> = ({ title, value, icon, color }) => (
-  <Card sx={{ height: '100%' }}>
-    <CardContent>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: 2,
-            bgcolor: `${color}15`,
-            color: color,
-            display: 'flex',
-          }}
-        >
-          {icon}
-        </Box>
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            {value.toLocaleString()}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {title}
-          </Typography>
-        </Box>
-      </Stack>
-    </CardContent>
-  </Card>
+  <SharedStatCard
+    variant="simple"
+    title={title}
+    value={value}
+    icon={icon}
+    color={color}
+  />
 );
 
 const AuditLogPage: React.FC = () => {
@@ -129,7 +110,7 @@ const AuditLogPage: React.FC = () => {
   const failureCount = (stats?.by_result?.failure || 0) + (stats?.by_result?.partial || 0);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <Box sx={{ p: LAYOUT.pagePadding }}>
       {/* Page Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
@@ -185,49 +166,49 @@ const AuditLogPage: React.FC = () => {
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
           {statsLoading ? (
-            <Card><CardContent><CircularProgress size={24} /></CardContent></Card>
+            <SkeletonStatCard />
           ) : (
             <StatCard
               title={`Total Events (${statsDays}d)`}
               value={stats?.total_entries || 0}
               icon={<TimelineIcon />}
-              color="#2196f3"
+              color="info"
             />
           )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {statsLoading ? (
-            <Card><CardContent><CircularProgress size={24} /></CardContent></Card>
+            <SkeletonStatCard />
           ) : (
             <StatCard
               title="Successful"
               value={successCount}
               icon={<SuccessIcon />}
-              color="#4caf50"
+              color="success"
             />
           )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {statsLoading ? (
-            <Card><CardContent><CircularProgress size={24} /></CardContent></Card>
+            <SkeletonStatCard />
           ) : (
             <StatCard
               title="Failures"
               value={failureCount}
               icon={<ErrorIcon />}
-              color="#f44336"
+              color="error"
             />
           )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {statsLoading ? (
-            <Card><CardContent><CircularProgress size={24} /></CardContent></Card>
+            <SkeletonStatCard />
           ) : (
             <StatCard
               title="Warnings"
               value={stats?.by_result?.partial || 0}
               icon={<WarningIcon />}
-              color="#ff9800"
+              color="warning"
             />
           )}
         </Grid>
@@ -263,7 +244,7 @@ const AuditLogPage: React.FC = () => {
       {/* Export Error Snackbar */}
       <Snackbar
         open={!!exportError}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setExportError(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
@@ -275,7 +256,7 @@ const AuditLogPage: React.FC = () => {
           {exportError}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 

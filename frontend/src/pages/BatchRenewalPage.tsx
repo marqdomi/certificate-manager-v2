@@ -8,7 +8,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Paper,
   Table,
@@ -48,6 +47,10 @@ import {
 } from '@mui/icons-material';
 import { fetchWildcardGroups, fetchWildcardDetails, startBatchDeploy, fetchBatchDeployStatus } from '../api/batch';
 import type { WildcardGroup, WildcardInstance, BatchDeployResponse, BatchDeployStatus } from '../types/batch';
+import { StatCard as SharedStatCard, PageHeader } from '../components/shared';
+import { LAYOUT } from '../constants/designTokens';
+import EmptyState from '../components/shared/EmptyState';
+import { SkeletonTable } from '../components/shared/SkeletonLoaders';
 
 // Days until expiration to show warning
 const EXPIRY_WARNING_DAYS = 30;
@@ -86,7 +89,7 @@ const WildcardRow: React.FC<WildcardRowProps> = ({ group, onExpand, expanded, on
     <>
       <TableRow hover sx={{ '& > *': { borderBottom: expanded ? 'none' : undefined } }}>
         <TableCell>
-          <IconButton size="small" onClick={onExpand}>
+          <IconButton size="small" onClick={onExpand} aria-label="Toggle row expansion">
             {expanded ? <CollapseIcon /> : <ExpandIcon />}
           </IconButton>
         </TableCell>
@@ -110,7 +113,7 @@ const WildcardRow: React.FC<WildcardRowProps> = ({ group, onExpand, expanded, on
         </TableCell>
         <TableCell align="right">
           <Tooltip title="Batch Deploy">
-            <IconButton color="primary" onClick={onDeploy}>
+            <IconButton color="primary" onClick={onDeploy} aria-label="Batch Deploy">
               <DeployIcon />
             </IconButton>
           </Tooltip>
@@ -410,64 +413,48 @@ const BatchRenewalPage: React.FC = () => {
   }).length;
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <Box sx={{ p: LAYOUT.pagePadding }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Batch Renewal
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage wildcard certificates deployed across multiple F5 devices.
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadGroups}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
-      </Box>
+      <PageHeader
+        title="Batch Renewal"
+        subtitle="Manage wildcard certificates deployed across multiple F5 devices."
+        actions={
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={loadGroups}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+        }
+      />
 
       {/* Stats Cards */}
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h3" fontWeight="bold" color="primary.main">
-                {groups.length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Wildcard Certificates
-              </Typography>
-            </CardContent>
-          </Card>
+          <SharedStatCard
+            variant="simple"
+            title="Wildcard Certificates"
+            value={groups.length}
+            color="primary"
+          />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h3" fontWeight="bold" color="warning.main">
-                {urgentCount}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Expiring Soon (&lt; 30 days)
-              </Typography>
-            </CardContent>
-          </Card>
+          <SharedStatCard
+            variant="simple"
+            title="Expiring Soon (< 30 days)"
+            value={urgentCount}
+            color="warning"
+          />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h3" fontWeight="bold">
-                {groups.reduce((sum, g) => sum + g.device_count, 0)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Deployments
-              </Typography>
-            </CardContent>
-          </Card>
+          <SharedStatCard
+            variant="simple"
+            title="Total Deployments"
+            value={groups.reduce((sum, g) => sum + g.device_count, 0)}
+            color="primary"
+          />
         </Grid>
       </Grid>
 
@@ -491,16 +478,18 @@ const BatchRenewalPage: React.FC = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <CircularProgress />
+                  <TableCell colSpan={6} sx={{ p: 0, border: 'none' }}>
+                    <SkeletonTable rows={4} columns={6} />
                   </TableCell>
                 </TableRow>
               ) : groups.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">
-                      No wildcard certificates found on multiple devices.
-                    </Typography>
+                  <TableCell colSpan={6}>
+                    <EmptyState
+                      icon={<WarningIcon />}
+                      title="No wildcard certificates found"
+                      subtitle="No wildcard certificates were found on multiple devices."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -526,7 +515,7 @@ const BatchRenewalPage: React.FC = () => {
         wildcardName={deployDialog.wildcardName}
         devices={deployDialog.devices}
       />
-    </Container>
+    </Box>
   );
 };
 

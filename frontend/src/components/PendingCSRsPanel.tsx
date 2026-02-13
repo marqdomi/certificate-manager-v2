@@ -43,6 +43,8 @@ import {
 import { listPendingCSRs, deleteCSRRequest, completeCSR, getCSRDownloadUrl } from '../services/api';
 import type { PendingCSR, CSRStatus } from '../types/csr';
 import { STATUS_COLORS, STATUS_LABELS } from '../types/csr';
+import { MONO_FONT } from '../constants/designTokens';
+import ConfirmDialog from './shared/ConfirmDialog';
 
 interface PendingCSRsPanelProps {
   onRefresh?: () => void;
@@ -65,6 +67,7 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
   const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false);
   const [viewingCSR, setViewingCSR] = useState<PendingCSR | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const fetchPendingCSRs = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -84,16 +87,16 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
     fetchPendingCSRs();
   }, [fetchPendingCSRs]);
 
-  const handleDelete = async (id: number): Promise<void> => {
-    if (!window.confirm('Are you sure you want to delete this CSR request? The private key will be permanently lost.')) {
-      return;
-    }
+  const handleDelete = async (): Promise<void> => {
+    if (confirmDeleteId === null) return;
     try {
-      await deleteCSRRequest(id);
+      await deleteCSRRequest(confirmDeleteId);
       fetchPendingCSRs();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
       setError(error.response?.data?.detail || 'Failed to delete CSR request');
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -152,7 +155,7 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">Pending CSR Requests</Typography>
         <Tooltip title="Refresh">
-          <IconButton onClick={fetchPendingCSRs} disabled={loading}>
+          <IconButton onClick={fetchPendingCSRs} disabled={loading} aria-label="Refresh">
             <RefreshIcon />
           </IconButton>
         </Tooltip>
@@ -223,7 +226,7 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
                   </TableCell>
                   <TableCell align="right">
                     <Tooltip title="View CSR">
-                      <IconButton size="small" onClick={() => handleViewCSR(csr)}>
+                      <IconButton size="small" onClick={() => handleViewCSR(csr)} aria-label="View CSR">
                         <ViewIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -234,6 +237,7 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
                           size="small" 
                           color="primary"
                           onClick={() => handleOpenComplete(csr)}
+                          aria-label="Complete with signed certificate"
                         >
                           <CompleteIcon fontSize="small" />
                         </IconButton>
@@ -248,6 +252,7 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
                           component="a"
                           href={getCSRDownloadUrl(csr.id)}
                           download
+                          aria-label="Download PFX"
                         >
                           <DownloadIcon fontSize="small" />
                         </IconButton>
@@ -258,7 +263,8 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
                       <IconButton 
                         size="small" 
                         color="error"
-                        onClick={() => handleDelete(csr.id)}
+                        onClick={() => setConfirmDeleteId(csr.id)}
+                        aria-label="Delete request"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -363,7 +369,7 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
             value={viewingCSR?.csr_pem || ''}
             InputProps={{ 
               readOnly: true,
-              sx: { fontFamily: 'monospace', fontSize: '0.75rem' }
+              sx: { fontFamily: MONO_FONT, fontSize: '0.75rem' }
             }}
           />
         </DialogContent>
@@ -380,6 +386,17 @@ const PendingCSRsPanel: FC<PendingCSRsPanelProps> = ({ onRefresh }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        severity="error"
+        title="Delete CSR Request"
+        message="Are you sure you want to delete this CSR request? The private key will be permanently lost."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </Box>
   );
 };

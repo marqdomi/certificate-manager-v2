@@ -1,9 +1,10 @@
 #!/bin/sh
 # Inject runtime configuration into index.html
 
-API_URL="${VITE_API_URL:-https://ca-certmgr-backend-prd.wonderfulsand-7d6f91a8.centralus.azurecontainerapps.io}"
+# If VITE_API_URL is empty or not set, use empty string (frontend will use relative paths)
+API_URL="${VITE_API_URL:-}"
 
-echo "🔧 Injecting API_URL: $API_URL"
+echo "🔧 Injecting API_URL: '${API_URL:-<empty, using relative paths>}'"
 
 # Create the config script
 CONFIG_SCRIPT="<script>window.APP_CONFIG={API_URL:'$API_URL'};</script>"

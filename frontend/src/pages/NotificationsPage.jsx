@@ -45,6 +45,10 @@ import {
 } from '@mui/icons-material';
 import { getNotifications, markNotificationsRead, deleteNotifications } from '../services/adminApi';
 import useWebSocketNotifications from '../hooks/useWebSocketNotifications';
+import { LAYOUT } from '../constants/designTokens';
+import EmptyState from '../components/shared/EmptyState';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { SkeletonTable } from '../components/shared/SkeletonLoaders';
 
 // Helper function to calculate time difference in relative format
 const getRelativeTime = (dateString) => {
@@ -249,8 +253,12 @@ const NotificationsPage = () => {
         message: 'Error al eliminar notificaciones',
         severity: 'error',
       });
+    } finally {
+      setConfirmDeleteIds(null);
     }
   };
+
+  const [confirmDeleteIds, setConfirmDeleteIds] = useState(null);
   
   // Reset filters
   const handleResetFilters = () => {
@@ -264,7 +272,7 @@ const NotificationsPage = () => {
   const hasActiveFilters = searchTerm || typeFilter !== 'all' || priorityFilter !== 'all' || readFilter !== 'all';
   
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: LAYOUT.pagePadding }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -293,7 +301,7 @@ const NotificationsPage = () => {
             </Button>
           </Tooltip>
           <Tooltip title="Actualizar">
-            <IconButton onClick={fetchNotifications} color="primary">
+            <IconButton onClick={fetchNotifications} color="primary" aria-label="Refresh notifications">
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -394,12 +402,12 @@ const NotificationsPage = () => {
               {selected.length} seleccionada(s)
             </Typography>
             <Tooltip title="Marcar como leídas">
-              <IconButton onClick={() => handleMarkRead()} color="primary">
+              <IconButton onClick={() => handleMarkRead()} color="primary" aria-label="Mark as read">
                 <MarkReadIcon />
               </IconButton>
             </Tooltip>
             <Tooltip title="Eliminar">
-              <IconButton onClick={() => handleDelete()} color="error">
+              <IconButton onClick={() => setConfirmDeleteIds(selected)} color="error" aria-label="Delete">
                 <DeleteIcon />
               </IconButton>
             </Tooltip>
@@ -429,26 +437,21 @@ const NotificationsPage = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                    <CircularProgress />
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      Cargando notificaciones...
-                    </Typography>
+                  <TableCell colSpan={8} sx={{ p: 0, border: 'none' }}>
+                    <SkeletonTable rows={5} columns={6} />
                   </TableCell>
                 </TableRow>
               ) : notifications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                    <NotificationsIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                    <Typography variant="h6" color="text.secondary">
-                      No hay notificaciones
-                    </Typography>
-                    <Typography variant="body2" color="text.disabled">
-                      {hasActiveFilters 
+                  <TableCell colSpan={8}>
+                    <EmptyState
+                      icon={<NotificationsIcon />}
+                      title="No hay notificaciones"
+                      subtitle={hasActiveFilters 
                         ? 'Prueba ajustando los filtros'
                         : 'Las nuevas notificaciones aparecerán aquí'
                       }
-                    </Typography>
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -523,6 +526,7 @@ const NotificationsPage = () => {
                               <IconButton
                                 size="small"
                                 onClick={() => handleMarkRead([notification.id])}
+                                aria-label="Mark as read"
                               >
                                 <MarkReadIcon fontSize="small" />
                               </IconButton>
@@ -532,7 +536,8 @@ const NotificationsPage = () => {
                             <IconButton
                               size="small"
                               color="error"
-                              onClick={() => handleDelete([notification.id])}
+                              onClick={() => setConfirmDeleteIds([notification.id])}
+                              aria-label="Delete"
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -562,6 +567,17 @@ const NotificationsPage = () => {
         />
       </Paper>
       
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmDeleteIds !== null}
+        severity="warning"
+        title="Eliminar Notificaciones"
+        message={confirmDeleteIds?.length === 1 ? '¿Eliminar esta notificación?' : `¿Eliminar ${confirmDeleteIds?.length || 0} notificación(es) seleccionada(s)?`}
+        confirmLabel="Eliminar"
+        onConfirm={() => handleDelete(confirmDeleteIds)}
+        onCancel={() => setConfirmDeleteIds(null)}
+      />
+
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}

@@ -14,8 +14,10 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Crea usuario no-root para ejecutar la app
-RUN useradd -m appuser
+# Crea usuario no-root y directorio de logs
+RUN useradd -m appuser && \
+    mkdir -p /app/logs && \
+    chown appuser:appuser /app/logs
 USER appuser
 
 # Copia el código con ownership correcto

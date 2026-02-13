@@ -70,6 +70,9 @@ import {
 } from '@mui/icons-material';
 import { authProvider } from './LoginPage';
 import api from '../services/api';
+import { TRANSITIONS, MONO_FONT, LAYOUT } from '../constants/designTokens';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { SkeletonTable } from '../components/shared/SkeletonLoaders';
 
 // ============================================================================
 // Types
@@ -205,6 +208,9 @@ export default function DiscoveryPage() {
   const [loadingDevices, setLoadingDevices] = useState(false);
   const [autoCluster, setAutoCluster] = useState(true);
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<number[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; jobId: number | null }>({
+    open: false, jobId: null,
+  });
   
   // Computed
   const hasRunningJobs = jobs.some(j => j.status === 'running' || j.status === 'pending');
@@ -399,14 +405,14 @@ export default function DiscoveryPage() {
   };
   
   const deleteJob = async (jobId: number) => {
-    if (!window.confirm('Delete this discovery job and all its results?')) return;
-    
     try {
       await api.delete(`/discovery/jobs/${jobId}`);
       setJobs(prev => prev.filter(j => j.id !== jobId));
       setSuccess('Job deleted');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to delete job');
+    } finally {
+      setConfirmDelete({ open: false, jobId: null });
     }
   };
   
@@ -494,7 +500,7 @@ export default function DiscoveryPage() {
                     bgcolor: selectedTemplateIds.includes(template.id)
                       ? 'primary.50'
                       : 'background.paper',
-                    transition: 'all 0.2s ease',
+                    transition: TRANSITIONS.fast,
                     '&:hover': {
                       borderColor: 'primary.main',
                       bgcolor: selectedTemplateIds.includes(template.id)
@@ -576,6 +582,7 @@ export default function DiscoveryPage() {
                     <IconButton
                       size="small"
                       onClick={() => setCredentials(prev => prev.filter((_, i) => i !== index))}
+                      aria-label="Remove credential set"
                     >
                       <RemoveIcon fontSize="small" />
                     </IconButton>
@@ -616,6 +623,7 @@ export default function DiscoveryPage() {
                               size="small"
                               edge="end"
                               onClick={() => setShowPasswords(prev => ({ ...prev, [index]: !prev[index] }))}
+                              aria-label="Toggle password visibility"
                             >
                               {showPasswords[index] ? <VisibilityOffIcon fontSize="small" /> : <ViewIcon fontSize="small" />}
                             </IconButton>
@@ -713,7 +721,7 @@ export default function DiscoveryPage() {
           {selectedPreset && (
             <Paper variant="outlined" sx={{ mt: 2, p: 2, bgcolor: 'action.hover' }}>
               <Typography variant="caption" color="text.secondary">Subnets to scan:</Typography>
-              <Typography variant="body2" fontFamily="monospace" sx={{ mt: 0.5 }}>
+              <Typography variant="body2" sx={{ fontFamily: MONO_FONT, mt: 0.5 }}>
                 {presets.find(p => p.key === selectedPreset)?.subnets.join(', ')}
               </Typography>
             </Paper>
@@ -732,7 +740,7 @@ export default function DiscoveryPage() {
             placeholder={`Examples:\n10.10.0.0/24\n192.168.1.100-192.168.1.200\n10.0.0.1`}
             value={customSubnets}
             onChange={(e) => setCustomSubnets(e.target.value)}
-            sx={{ fontFamily: 'monospace' }}
+            sx={{ fontFamily: MONO_FONT }}
           />
         </Box>
       )}
@@ -901,7 +909,7 @@ export default function DiscoveryPage() {
           {hasRunningJobs && <CircularProgress size={16} thickness={5} />}
         </Typography>
         <Tooltip title="Refresh">
-          <IconButton size="small" onClick={fetchJobs}>
+          <IconButton size="small" onClick={fetchJobs} aria-label="Refresh">
             <RefreshIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -981,14 +989,14 @@ export default function DiscoveryPage() {
                       <Stack direction="row" spacing={0.5} justifyContent="center">
                         {job.status === 'completed' && job.found_devices > 0 && (
                           <Tooltip title="View Results">
-                            <IconButton size="small" color="primary" onClick={() => viewJobDetails(job)}>
+                            <IconButton size="small" color="primary" onClick={() => viewJobDetails(job)} aria-label="View Results">
                               <ViewIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}
                         {['completed', 'failed', 'cancelled'].includes(job.status) && (
                           <Tooltip title="Delete">
-                            <IconButton size="small" color="error" onClick={() => deleteJob(job.id)}>
+                            <IconButton size="small" color="error" onClick={() => setConfirmDelete({ open: true, jobId: job.id })} aria-label="Delete">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -1028,8 +1036,8 @@ export default function DiscoveryPage() {
         
         <DialogContent dividers>
           {loadingDevices ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
-              <CircularProgress />
+            <Box sx={{ p: 2 }}>
+              <SkeletonTable rows={4} columns={4} />
             </Box>
           ) : discoveredDevices.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 6 }}>
@@ -1104,7 +1112,7 @@ export default function DiscoveryPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontFamily="monospace">{device.ip_address}</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: MONO_FONT }}>{device.ip_address}</Typography>
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
@@ -1159,7 +1167,7 @@ export default function DiscoveryPage() {
   // ─────────────────────────────────────────────────────────────────────────
   
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1200, mx: 'auto' }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
@@ -1216,6 +1224,17 @@ export default function DiscoveryPage() {
       
       {/* Results Dialog */}
       {renderResultsDialog()}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={confirmDelete.open}
+        title="Delete Discovery Job"
+        message="Delete this discovery job and all its results? This action cannot be undone."
+        confirmLabel="Delete"
+        severity="error"
+        onConfirm={() => confirmDelete.jobId && deleteJob(confirmDelete.jobId)}
+        onCancel={() => setConfirmDelete({ open: false, jobId: null })}
+      />
     </Box>
   );
 }

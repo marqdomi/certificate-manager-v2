@@ -69,6 +69,8 @@ import {
   Groups as GroupsIcon,
 } from '@mui/icons-material';
 import apiClient from '../services/api';
+import SharedStatCard from '../components/shared/StatCard';
+import { HOST_COMPONENT_COLORS, MONO_FONT, LAYOUT } from '../constants/designTokens';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -80,7 +82,7 @@ const SEARCH_COMPONENTS = {
     label: 'Virtual Servers',
     shortLabel: 'VIPs',
     icon: RouterIcon,
-    color: '#2196f3',
+    color: HOST_COMPONENT_COLORS.virtual_servers,
     description: 'Load balancer virtual servers and their destinations',
   },
   pools: {
@@ -88,7 +90,7 @@ const SEARCH_COMPONENTS = {
     label: 'Pools',
     shortLabel: 'Pools',
     icon: StorageIcon,
-    color: '#4caf50',
+    color: HOST_COMPONENT_COLORS.pools,
     description: 'Server pools and their configurations',
   },
   pool_members: {
@@ -96,7 +98,7 @@ const SEARCH_COMPONENTS = {
     label: 'Pool Members',
     shortLabel: 'Members',
     icon: GroupsIcon,
-    color: '#ff9800',
+    color: HOST_COMPONENT_COLORS.pool_members,
     description: 'Individual servers within pools',
   },
   nodes: {
@@ -104,7 +106,7 @@ const SEARCH_COMPONENTS = {
     label: 'Nodes',
     shortLabel: 'Nodes',
     icon: DnsIcon,
-    color: '#9c27b0',
+    color: HOST_COMPONENT_COLORS.nodes,
     description: 'Backend server nodes and their addresses',
   },
   irules: {
@@ -112,7 +114,7 @@ const SEARCH_COMPONENTS = {
     label: 'iRules',
     shortLabel: 'iRules',
     icon: CodeIcon,
-    color: '#f44336',
+    color: HOST_COMPONENT_COLORS.irules,
     description: 'Traffic management scripts and code',
   },
   data_groups: {
@@ -120,75 +122,16 @@ const SEARCH_COMPONENTS = {
     label: 'Data Groups',
     shortLabel: 'DGs',
     icon: TableIcon,
-    color: '#607d8b',
+    color: HOST_COMPONENT_COLORS.data_groups,
     description: 'Lists and lookup tables',
   },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STATS CARD COMPONENT
+// STATS CARD COMPONENT — using shared StatCard 'accent' variant
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const StatsCard = ({ icon, title, value, subtitle, color = 'primary', onClick }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card 
-      elevation={0} 
-      onClick={onClick}
-      sx={{ 
-        height: '100%',
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: 2,
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s',
-        '&:hover': onClick ? {
-          borderColor: theme.palette[color]?.main || color,
-          transform: 'translateY(-2px)',
-        } : {},
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '4px',
-          height: '100%',
-          backgroundColor: theme.palette[color]?.main || color,
-        }
-      }}
-    >
-      <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" fontWeight={500} gutterBottom>
-              {title}
-            </Typography>
-            <Typography variant="h4" fontWeight={700} color={typeof color === 'string' && color.startsWith('#') ? color : `${color}.main`}>
-              {value}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary">
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Box 
-            sx={{ 
-              p: 1, 
-              borderRadius: 2, 
-              bgcolor: alpha(theme.palette[color]?.main || theme.palette.primary.main, 0.1),
-              color: typeof color === 'string' && color.startsWith('#') ? color : `${color}.main`
-            }}
-          >
-            {icon}
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
+const StatsCard = (props) => <SharedStatCard variant="accent" {...props} />;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENT FILTER CHIP
@@ -414,7 +357,7 @@ const DeviceResultsAccordion = ({ device, enabledComponents }) => {
                             </TableCell>
                             {key === 'virtual_servers' && (
                               <TableCell>
-                                <Typography variant="body2" fontFamily="monospace">
+                                <Typography variant="body2" sx={{ fontFamily: MONO_FONT }}>
                                   {item.destination}
                                 </Typography>
                               </TableCell>
@@ -425,7 +368,7 @@ const DeviceResultsAccordion = ({ device, enabledComponents }) => {
                                   <Typography variant="body2">{item.pool}</Typography>
                                 </TableCell>
                                 <TableCell>
-                                  <Typography variant="body2" fontFamily="monospace">
+                                  <Typography variant="body2" sx={{ fontFamily: MONO_FONT }}>
                                     {item.address}
                                   </Typography>
                                 </TableCell>
@@ -434,7 +377,7 @@ const DeviceResultsAccordion = ({ device, enabledComponents }) => {
                             {key === 'nodes' && (
                               <>
                                 <TableCell>
-                                  <Typography variant="body2" fontFamily="monospace">
+                                  <Typography variant="body2" sx={{ fontFamily: MONO_FONT }}>
                                     {item.address}
                                   </Typography>
                                 </TableCell>
@@ -449,8 +392,8 @@ const DeviceResultsAccordion = ({ device, enabledComponents }) => {
                               <TableCell sx={{ maxWidth: 300 }}>
                                 <Typography 
                                   variant="caption" 
-                                  fontFamily="monospace"
                                   sx={{ 
+                                    fontFamily: MONO_FONT,
                                     display: 'block',
                                     whiteSpace: 'pre-wrap',
                                     bgcolor: alpha(theme.palette.grey[500], 0.1),
@@ -859,7 +802,7 @@ export default function HostSearchPage() {
   const activeComponentCount = Object.values(enabledComponents).filter(Boolean).length;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: LAYOUT.pagePadding }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
@@ -909,19 +852,19 @@ export default function HostSearchPage() {
               disabled={loading}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  fontFamily: 'monospace',
+                  fontFamily: MONO_FONT,
                   fontSize: 13,
                 }
               }}
             />
             <Stack spacing={1}>
               <Tooltip title="Paste from clipboard">
-                <IconButton onClick={handlePaste} disabled={loading}>
+                <IconButton onClick={handlePaste} disabled={loading} aria-label="Paste from clipboard">
                   <PasteIcon />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Clear">
-                <IconButton onClick={handleClear} disabled={loading || !searchText}>
+                <IconButton onClick={handleClear} disabled={loading || !searchText} aria-label="Clear">
                   <ClearIcon />
                 </IconButton>
               </Tooltip>
@@ -1261,7 +1204,7 @@ export default function HostSearchPage() {
           {results && (
             <>
               <Tooltip title="Export as Text">
-                <IconButton onClick={() => handleExport('txt')}>
+                <IconButton onClick={() => handleExport('txt')} aria-label="Export as Text">
                   <DownloadIcon />
                 </IconButton>
               </Tooltip>

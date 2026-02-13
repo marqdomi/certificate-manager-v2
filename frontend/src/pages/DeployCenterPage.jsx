@@ -260,11 +260,11 @@ function DeployCenterPage() {
             {/* Usamos Snackbar para notificaciones menos intrusivas */}
             <Snackbar
                 open={notification.open}
-                autoHideDuration={6000}
+                autoHideDuration={4000}
                 onClose={() => setNotification({ ...notification, open: false })}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert onClose={() => setNotification({ ...notification, open: false })} severity={notification.severity} sx={{ width: '100%' }}>
+                <Alert onClose={() => setNotification({ ...notification, open: false })} severity={notification.severity} variant="filled" sx={{ width: '100%' }}>
                     {notification.message}
                 </Alert>
             </Snackbar>

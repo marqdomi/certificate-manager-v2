@@ -15,7 +15,6 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SecurityIcon from '@mui/icons-material/Security';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -23,29 +22,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { authProvider } from '../pages/LoginPage';
+import { InfoRow } from './shared';
 
 dayjs.extend(relativeTime);
-
-// Helper component for info rows
-const InfoRow = ({ label, value, copyable = false, onCopy }) => (
-  <Box sx={{ mb: 1.5 }}>
-    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
-      {label}
-    </Typography>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-all' }}>
-        {value || '—'}
-      </Typography>
-      {copyable && value && (
-        <Tooltip title="Copy to clipboard">
-          <IconButton size="small" onClick={() => onCopy(value)}>
-            <ContentCopyIcon sx={{ fontSize: 14 }} />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Box>
-  </Box>
-);
 
 const CertificateDetailDrawer = ({
   open,
@@ -61,10 +40,6 @@ const CertificateDetailDrawer = ({
 
   // Get user role from auth provider
   const userRole = authProvider.getRole?.() || 'viewer';
-
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-  };
 
   // Format dates nicely
   const formatDate = (dateStr) => {
@@ -136,7 +111,7 @@ const CertificateDetailDrawer = ({
             <Box sx={{ display: 'flex', gap: 0.5 }}>
               {onToggleFavorite && (
                 <Tooltip title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
-                  <IconButton onClick={() => onToggleFavorite(certificate.id)} size="small">
+                  <IconButton onClick={() => onToggleFavorite(certificate.id)} size="small" aria-label="Toggle favorite">
                     {isFavorite ? (
                       <StarIcon sx={{ color: 'warning.main' }} />
                     ) : (
@@ -145,7 +120,7 @@ const CertificateDetailDrawer = ({
                   </IconButton>
                 </Tooltip>
               )}
-              <IconButton onClick={onClose} size="small">
+              <IconButton onClick={onClose} size="small" aria-label="Close">
                 <CloseIcon />
               </IconButton>
             </Box>
@@ -172,8 +147,8 @@ const CertificateDetailDrawer = ({
             Certificate Information
           </Typography>
           
-          <InfoRow label="Common Name" value={certificate.common_name} copyable onCopy={handleCopy} />
-          <InfoRow label="Certificate Name" value={certificate.name} copyable onCopy={handleCopy} />
+          <InfoRow label="Common Name" value={certificate.common_name} copyable />
+          <InfoRow label="Certificate Name" value={certificate.name} copyable />
           <InfoRow label="Expiration Date" value={formatDate(certificate.expiration_date)} />
           <InfoRow 
             label="Days Remaining" 
@@ -191,7 +166,7 @@ const CertificateDetailDrawer = ({
             F5 Device
           </Typography>
           
-          <InfoRow label="Hostname" value={certificate.f5_device_hostname} copyable onCopy={handleCopy} />
+          <InfoRow label="Hostname" value={certificate.f5_device_hostname} copyable />
           <InfoRow label="Device ID" value={certificate.device_id} />
 
           {certificate.renewal_status && (

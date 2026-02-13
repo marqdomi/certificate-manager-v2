@@ -32,8 +32,6 @@ import {
   DialogActions,
   DialogContentText,
   LinearProgress,
-  Card,
-  CardContent,
   Tabs,
   Tab,
   List,
@@ -77,72 +75,12 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import SearchIcon from '@mui/icons-material/Search';
 
 import apiClient from '../services/api';
+import { TabPanel } from '../components/shared';
+import SharedStatCard from '../components/shared/StatCard';
+import { dataGridStyles } from '../constants/styleMixins';
 
-// Tab panel helper
-function TabPanel({ children, value, index, ...other }) {
-  return (
-    <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && <Box sx={{ py: 2 }}>{children}</Box>}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// STATS CARD COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
-const StatsCard = ({ icon, title, value, subtitle, color = 'primary' }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card 
-      elevation={0} 
-      sx={{ 
-        height: '100%',
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: 2,
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '4px',
-          height: '100%',
-          backgroundColor: theme.palette[color]?.main || color,
-        }
-      }}
-    >
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" fontWeight={500} gutterBottom>
-              {title}
-            </Typography>
-            <Typography variant="h4" fontWeight={700} color={`${color}.main`}>
-              {value}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary">
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Box 
-            sx={{ 
-              p: 1.5, 
-              borderRadius: 2, 
-              bgcolor: alpha(theme.palette[color]?.main || theme.palette.primary.main, 0.1),
-              color: `${color}.main`
-            }}
-          >
-            {icon}
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
+// Stats card wrapper using accent variant
+const StatsCard = (props) => <SharedStatCard variant="accent" {...props} />;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -554,6 +492,7 @@ const CertificateCleanupPage = () => {
                   bgcolor: alpha(theme.palette.error.main, 0.1),
                   '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.2) }
                 }}
+                aria-label="Delete Certificate"
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
@@ -573,6 +512,7 @@ const CertificateCleanupPage = () => {
                   bgcolor: alpha(theme.palette.warning.main, 0.1),
                   '&:hover': { bgcolor: alpha(theme.palette.warning.main, 0.2) }
                 }}
+                aria-label="Dissociate and Delete"
               >
                 <LinkOffIcon fontSize="small" />
               </IconButton>
@@ -580,7 +520,7 @@ const CertificateCleanupPage = () => {
           )}
           {params.row.ssl_profiles?.length > 0 && (
             <Tooltip title={`Profiles: ${params.row.ssl_profiles.join(', ')}`} arrow>
-              <IconButton size="small" color="info">
+              <IconButton size="small" color="info" aria-label="View SSL profiles">
                 <InfoIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -998,11 +938,7 @@ const CertificateCleanupPage = () => {
                       onRowSelectionModelChange={(ids) => setSelectedSafeCerts(ids)}
                       rowSelectionModel={selectedSafeCerts}
                       getRowId={(row) => row.id || row.name}
-                      sx={{
-                        border: 'none',
-                        '& .MuiDataGrid-cell': { borderBottom: `1px solid ${theme.palette.divider}` },
-                        '& .MuiDataGrid-columnHeaders': { bgcolor: alpha(theme.palette.background.default, 0.5) },
-                      }}
+                      sx={dataGridStyles(theme)}
                     />
                   </>
                 ) : (
@@ -1063,11 +999,7 @@ const CertificateCleanupPage = () => {
                       onRowSelectionModelChange={(ids) => setSelectedBlockedCerts(ids)}
                       rowSelectionModel={selectedBlockedCerts}
                       getRowId={(row) => row.id || row.name}
-                      sx={{
-                        border: 'none',
-                        '& .MuiDataGrid-cell': { borderBottom: `1px solid ${theme.palette.divider}` },
-                        '& .MuiDataGrid-columnHeaders': { bgcolor: alpha(theme.palette.background.default, 0.5) },
-                      }}
+                      sx={dataGridStyles(theme)}
                     />
                   </>
                 ) : (
@@ -1118,11 +1050,7 @@ const CertificateCleanupPage = () => {
                   onRowSelectionModelChange={(ids) => setSelectedCerts(ids)}
                   rowSelectionModel={selectedCerts}
                   getRowId={(row) => row.id || row.name}
-                  sx={{
-                    border: 'none',
-                    '& .MuiDataGrid-cell': { borderBottom: `1px solid ${theme.palette.divider}` },
-                    '& .MuiDataGrid-columnHeaders': { bgcolor: alpha(theme.palette.background.default, 0.5) },
-                  }}
+                  sx={dataGridStyles(theme)}
                 />
               </TabPanel>
             </Box>
@@ -1324,7 +1252,7 @@ const CertificateCleanupPage = () => {
               <HistoryIcon color="primary" />
               Operation Snapshots
             </Box>
-            <IconButton onClick={loadSnapshots} disabled={loadingSnapshots} size="small">
+            <IconButton onClick={loadSnapshots} disabled={loadingSnapshots} size="small" aria-label="Refresh snapshots">
               <RefreshIcon />
             </IconButton>
           </Box>

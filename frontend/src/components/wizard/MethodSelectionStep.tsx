@@ -28,6 +28,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import WarningIcon from '@mui/icons-material/Warning';
 import apiClient from '../../services/api';
+import { TRANSITIONS } from '../../constants/designTokens';
 import type { 
   RenewalMethod, 
   CertificateInfo, 
@@ -186,7 +187,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
             bgcolor: method === 'pfx' 
               ? (theme) => alpha(theme.palette.primary.main, 0.04)
               : 'background.paper',
-            transition: 'all 0.15s ease-in-out',
+            transition: TRANSITIONS.fast,
             '&:hover': { 
               bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06),
               borderColor: method === 'pfx' ? 'primary.main' : 'primary.light',
@@ -234,7 +235,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
             bgcolor: method === 'csr'
               ? (theme) => alpha(theme.palette.primary.main, 0.04)
               : 'background.paper',
-            transition: 'all 0.15s ease-in-out',
+            transition: TRANSITIONS.fast,
             '&:hover': { 
               bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06),
               borderColor: method === 'csr' ? 'primary.main' : 'primary.light',
@@ -289,7 +290,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
               bgcolor: method === 'continue'
                 ? (theme) => alpha(theme.palette.warning.main, 0.08)
                 : 'background.paper',
-              transition: 'all 0.15s ease-in-out',
+              transition: TRANSITIONS.fast,
               '&:hover': { 
                 bgcolor: (theme) => alpha(theme.palette.warning.main, 0.1),
                 borderColor: method === 'continue' ? 'warning.main' : 'warning.light',

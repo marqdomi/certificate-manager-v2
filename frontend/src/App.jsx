@@ -8,7 +8,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // --- PÁGINAS DE LA APLICACIÓN ---
 import LoginPage from './pages/LoginPage';
-import AuthCallback from './pages/AuthCallback';
 import DashboardPage from './pages/DashboardPage';
 import InventoryPage from './pages/InventoryPage';
 import DevicesPage from './pages/DevicesPage';
@@ -24,7 +23,6 @@ import HostSearchPage from './pages/HostSearchPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import CredentialTemplatesPage from './pages/CredentialTemplatesPage';
-import CertMasterPage from './pages/CertMasterPage';
 
 // --- PÁGINAS DE ADMINISTRACIÓN ---
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -41,9 +39,8 @@ function App() {
     <Router basename={basename}>
       <AuthProvider>
         <Routes>
-          {/* Rutas públicas */}
+          {/* Ruta pública para Login */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Todo lo demás, detrás de auth y dentro del layout */}
           <Route
@@ -63,7 +60,6 @@ function App() {
                     <Route path="/batch-renewal" element={<BatchRenewalPage />} />
                     <Route path="/certificate-cleanup" element={<CertificateCleanupPage />} />
                     <Route path="/host-search" element={<HostSearchPage />} />
-                    <Route path="/cert-master" element={<CertMasterPage />} />
                     <Route path="/audit-log" element={<AuditLogPage />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />

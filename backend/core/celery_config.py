@@ -1,4 +1,5 @@
 import os
+import ssl
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,6 +10,16 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 # Allow overrides but default to REDIS_URL
 broker_url = os.getenv("CELERY_BROKER_URL", REDIS_URL)
 result_backend = os.getenv("CELERY_RESULT_BACKEND", REDIS_URL)
+
+# SSL configuration for Azure Redis (uses rediss:// scheme)
+# Azure Redis requires SSL but we need to disable cert verification for managed Redis
+if broker_url.startswith("rediss://"):
+    broker_use_ssl = {
+        "ssl_cert_reqs": ssl.CERT_NONE
+    }
+    redis_backend_use_ssl = {
+        "ssl_cert_reqs": ssl.CERT_NONE
+    }
 
 # Serialization & content
 task_serializer = "json"

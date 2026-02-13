@@ -48,6 +48,7 @@ import apiClient, { verifyInstalledCert } from "../../services/api";
 import UploadCertStep from "./UploadCertStep";
 import ConfirmDeploymentStep from "./ConfirmDeploymentStep";
 import MethodSelectionStep, { RENEWAL_METHODS } from "./MethodSelectionStep";
+import { MONO_FONT } from '../../constants/designTokens';
 import type { 
   DeviceInfo, 
   CertificateInfo, 
@@ -594,7 +595,7 @@ export default function RenewWizardDialog({
           <Typography 
             variant="body2" 
             color="text.secondary" 
-            sx={{ mt: 0.5, fontFamily: 'monospace' }}
+            sx={{ mt: 0.5, fontFamily: MONO_FONT }}
           >
             {certName}
           </Typography>
@@ -712,7 +713,7 @@ export default function RenewWizardDialog({
         open={toast.open}
         autoHideDuration={4000}
         onClose={() => setToast((t) => ({ ...t, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={() => setToast((t) => ({ ...t, open: false }))}

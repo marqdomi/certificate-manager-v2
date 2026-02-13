@@ -57,6 +57,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import DevicesIcon from '@mui/icons-material/Devices';
 
 import apiClient from '../services/api';
+import { LAYOUT } from '../constants/designTokens';
+import EmptyState from '../components/shared/EmptyState';
+import { SkeletonTable } from '../components/shared/SkeletonLoaders';
 
 const CredentialTemplatesPage = () => {
   const theme = useTheme();
@@ -221,14 +224,14 @@ const CredentialTemplatesPage = () => {
 
   if (loading && templates.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <SkeletonTable rows={5} columns={4} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: LAYOUT.pagePadding }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -301,10 +304,12 @@ const CredentialTemplatesPage = () => {
           <TableBody>
             {templates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">
-                    No credential templates found. Create one to get started.
-                  </Typography>
+                <TableCell colSpan={8}>
+                  <EmptyState
+                    icon={<VpnKeyIcon />}
+                    title="No credential templates found"
+                    subtitle="Create one to get started."
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -322,6 +327,7 @@ const CredentialTemplatesPage = () => {
                         size="small" 
                         onClick={() => handleToggleDefault(template)}
                         color={template.is_default ? "warning" : "default"}
+                        aria-label="Toggle default template"
                       >
                         {template.is_default ? <StarIcon /> : <StarBorderIcon />}
                       </IconButton>
@@ -375,6 +381,7 @@ const CredentialTemplatesPage = () => {
                         size="small" 
                         onClick={() => handleOpenEdit(template)}
                         color="primary"
+                        aria-label="Edit"
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -388,6 +395,7 @@ const CredentialTemplatesPage = () => {
                         }}
                         color="error"
                         disabled={template.is_default}
+                        aria-label="Delete"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -465,6 +473,7 @@ const CredentialTemplatesPage = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                       size="small"
+                      aria-label="Toggle password visibility"
                     >
                       {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                     </IconButton>

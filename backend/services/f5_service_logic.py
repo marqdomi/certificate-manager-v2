@@ -791,133 +791,60 @@ def get_certificate_usage(hostname: str, username: str, password: str, cert_name
     return usage_data
 
 def delete_certificate_from_f5(hostname: str, username: str, password: str, cert_name: str, partition: str):
-    """
-    Delete a certificate and its associated key from F5.
-    
-    This function handles the complexity of F5 naming conventions:
-    - Our tool shows certs with .crt extension (e.g., 2022-star.audatex.by.crt)
-    - F5 GUI may show them without extension (e.g., 2022-star.audatex.by)
-    - Keys can have .key extension or no extension
-    
-    The function will:
-    1. Try multiple certificate name patterns (with/without .crt)
-    2. Try to get the key name from the certificate object
-    3. Try multiple key name patterns (with/without .key)
-    4. Delete both certificate and associated key
-    
-    Returns dict with cert_deleted, key_deleted status.
-    """
     mgmt = _connect_to_f5(hostname, username, password)
     
     cert_deleted = False
     key_deleted = False
-    actual_cert_name_deleted = None
     
-    # Build list of possible certificate names to try
-    # F5 may store certs with or without .crt extension
-    base_name = cert_name.rsplit('.crt', 1)[0]  # Remove .crt if present
-    possible_cert_names = [
-        cert_name,                    # Original name (e.g., 2022-star.audatex.by.crt)
-        base_name,                    # Without extension (e.g., 2022-star.audatex.by)
-        f"{base_name}.crt",          # Ensure .crt version is tried
-    ]
-    # Remove duplicates while preserving order
-    possible_cert_names = list(dict.fromkeys(possible_cert_names))
-    
-    # Build list of possible key names to try
-    possible_key_names = [
-        f"{base_name}.key",           # Common pattern: name.key
-        base_name,                     # Sometimes just the base name (bundle style)
-        f"{base_name}_key",           # Alternative pattern: name_key
-        cert_name.replace('.crt', '.key'),  # Direct replacement if had .crt
-    ]
-    # Remove duplicates while preserving order
-    possible_key_names = list(dict.fromkeys(possible_key_names))
-    
-    logger.info(f"[CLEANUP] Starting deletion of certificate '{cert_name}' from {hostname}")
-    logger.info(f"[CLEANUP] Will try cert names: {possible_cert_names}")
-    logger.info(f"[CLEANUP] Will try key names: {possible_key_names}")
-    
-    # First, try to find and load the certificate to get the actual key reference
-    key_name_from_cert = None
-    for try_cert_name in possible_cert_names:
-        try:
-            cert_obj = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=try_cert_name, partition=partition)
-            key_full_path = getattr(cert_obj, 'key', '')
-            if key_full_path:
-                key_name_from_cert = key_full_path.strip('/').split('/')[-1]
-                logger.info(f"[CLEANUP] Found cert '{try_cert_name}', references key: {key_name_from_cert}")
-                # Add the actual key name to the front of the list
-                if key_name_from_cert not in possible_key_names:
-                    possible_key_names.insert(0, key_name_from_cert)
-            actual_cert_name_deleted = try_cert_name
-            break  # Found the cert
-        except (F5SDKError, iControlUnexpectedHTTPError) as e:
-            status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
-            if status_code == 404:
-                logger.debug(f"[CLEANUP] Cert '{try_cert_name}' not found, trying next...")
-                continue
-            else:
-                raise ValueError(f"F5 API Error: {e}")
+    # CAMBIO 3: Corregimos la lógica para obtener el nombre de la clave
+    try:
+        cert_obj = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=cert_name, partition=partition)
+        key_full_path = getattr(cert_obj, 'key', '')
+        if not key_full_path:
+            key_name_only = cert_name.rsplit('.crt', 1)[0]
+            key_name = key_name_only
+        else:
+            key_name = key_full_path.strip('/').split('/')[-1]
+    except (F5SDKError, iControlUnexpectedHTTPError) as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
+        if status_code == 404:
+            logger.warning(f"Certificate '{cert_name}' not found on {hostname} for key lookup")
+            key_name = cert_name.rsplit('.crt', 1)[0]
+        else:
+            raise ValueError(f"F5 API Error: {e}")
 
-    # Delete the certificate - try each possible name
-    for try_cert_name in possible_cert_names:
-        try:
-            cert_obj_to_delete = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=try_cert_name, partition=partition)
-            cert_obj_to_delete.delete()
-            logger.info(f"[CLEANUP] ✓ Deleted certificate '{try_cert_name}' from {hostname}")
-            cert_deleted = True
-            actual_cert_name_deleted = try_cert_name
-            break  # Successfully deleted
-        except (F5SDKError, iControlUnexpectedHTTPError) as e:
-            status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
-            if status_code == 404:
-                logger.debug(f"[CLEANUP] Cert '{try_cert_name}' not found, trying next...")
-                continue
-            else:
-                raise ValueError(f"F5 API Error during certificate deletion: {e}")
-    
-    if not cert_deleted:
-        # None of the cert names were found - consider it already deleted
-        logger.warning(f"[CLEANUP] Certificate not found with any name variant: {possible_cert_names}")
-        cert_deleted = True  # Consider it success - cert is gone
+    # Ahora procedemos a borrar el certificado
+    try:
+        cert_obj_to_delete = mgmt.tm.sys.file.ssl_certs.ssl_cert.load(name=cert_name, partition=partition)
+        cert_obj_to_delete.delete()
+        logger.info(f"Deleted certificate '{cert_name}' from {hostname}")
+        cert_deleted = True
+    except (F5SDKError, iControlUnexpectedHTTPError) as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
+        if status_code == 404:
+            logger.warning(f"Certificate '{cert_name}' not found on {hostname} during deletion (already deleted)")
+            cert_deleted = True  # Certificate not found = it's gone = success
+        else:
+            raise ValueError(f"F5 API Error during certificate deletion: {e}")
 
-    # Now try to delete the associated key
-    # Try each possible key name until one succeeds
-    for key_name in possible_key_names:
-        try:
-            key_obj = mgmt.tm.sys.file.ssl_keys.ssl_key.load(name=key_name, partition=partition)
-            key_obj.delete()
-            logger.info(f"[CLEANUP] ✓ Deleted key '{key_name}' from {hostname}")
-            key_deleted = True
-            break  # Successfully deleted, no need to try other names
-        except (F5SDKError, iControlUnexpectedHTTPError) as e:
-            status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
-            if status_code == 404:
-                # Key not found with this name, try next
-                logger.debug(f"[CLEANUP] Key '{key_name}' not found, trying next...")
-                continue
-            else:
-                # Some other error - log warning but continue trying other names
-                logger.warning(f"[CLEANUP] Could not delete key '{key_name}': {e}")
-                continue
+    # Ahora intentamos borrar la llave (no es crítico si no existe)
+    try:
+        key_obj = mgmt.tm.sys.file.ssl_keys.ssl_key.load(name=key_name, partition=partition)
+        key_obj.delete()
+        logger.info(f"Deleted key '{key_name}' from {hostname}")
+        key_deleted = True
+    except (F5SDKError, iControlUnexpectedHTTPError) as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None) or (404 if '404' in str(e) else 0)
+        if status_code == 404:
+            # Key not found is OK - maybe it was shared or doesn't exist
+            logger.info(f"Key '{key_name}' not found on {hostname} (this is OK - may be shared or not exist)")
+            key_deleted = True  # Consider it success - no key to delete
+        else:
+            # Log warning but don't fail - the cert is deleted which is the main goal
+            logger.warning(f"Could not delete key '{key_name}': {e}")
+            key_deleted = False
     
-    if not key_deleted:
-        # None of the key names worked
-        logger.warning(f"[CLEANUP] Could not find/delete any associated key for '{cert_name}'. Tried: {possible_key_names}")
-        # Still return success for the overall operation - cert was deleted
-    
-    result_msg = f"Deletion completed for {actual_cert_name_deleted or cert_name}. Cert: {'✓' if cert_deleted else '✗'}, Key: {'✓' if key_deleted else '✗ (not found)'}"
-    logger.info(f"[CLEANUP] {result_msg}")
-    
-    return {
-        "status": "success", 
-        "message": result_msg, 
-        "cert_deleted": cert_deleted, 
-        "key_deleted": key_deleted,
-        "cert_name_used": actual_cert_name_deleted,
-        "key_names_tried": possible_key_names
-    }
+    return {"status": "success", "message": f"Deletion process for {cert_name} completed.", "cert_deleted": cert_deleted, "key_deleted": key_deleted}
 
 
 # NOTE: export_key_and_create_csr was REMOVED in v2.5 (Dec 2025)

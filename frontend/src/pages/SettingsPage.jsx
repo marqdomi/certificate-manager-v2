@@ -41,6 +41,8 @@ import {
   RestartAlt as ResetIcon,
 } from '@mui/icons-material';
 import { useThemeContext } from '../context/ThemeContext';
+import { LAYOUT } from '../constants/designTokens';
+import { SkeletonStatCard } from '../components/shared/SkeletonLoaders';
 import { getNotificationPreferences, updateNotificationPreferences } from '../services/adminApi';
 
 const SettingsPage = () => {
@@ -170,14 +172,16 @@ const SettingsPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
+      <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1200, mx: 'auto' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+          {[...Array(4)].map((_, i) => <SkeletonStatCard key={i} />)}
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1200, mx: 'auto' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
         <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />

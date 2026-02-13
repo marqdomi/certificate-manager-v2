@@ -31,6 +31,7 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import type { DeploymentPlan } from '../../types/renewal';
+import { MONO_FONT } from '../../constants/designTokens';
 
 // Local types for plan data - standalone interfaces to avoid type conflicts
 interface ProfileItem {
@@ -381,7 +382,7 @@ const PlanPreview: React.FC<PlanPreviewProps> = ({ plan }) => {
                     <TableCell sx={{ fontSize: '0.8125rem' }}>
                       {vs?.name || vs?.id || '—'}
                     </TableCell>
-                    <TableCell sx={{ fontSize: '0.8125rem', fontFamily: 'monospace' }}>
+                    <TableCell sx={{ fontSize: '0.8125rem', fontFamily: MONO_FONT }}>
                       {vs?.destination || '—'}
                     </TableCell>
                     <TableCell sx={{ fontSize: '0.8125rem' }}>

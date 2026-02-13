@@ -5,7 +5,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Box, 
   Typography, 
-  Skeleton, 
   Grid, 
   Paper, 
   IconButton, 
@@ -29,6 +28,7 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
+import { DashboardSkeleton } from '../components/shared';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -42,86 +42,10 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { TRANSITIONS, LAYOUT } from '../constants/designTokens';
 
 // Auto-refresh interval in milliseconds (60 seconds)
 const AUTO_REFRESH_INTERVAL = 60000;
-
-// Skeleton components for loading state
-const SkeletonStatCard = () => (
-  <Paper 
-    elevation={0}
-    sx={{ 
-      p: 2.5,
-      height: 120,
-      borderRadius: '16px',
-      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(26, 33, 51, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-      backdropFilter: 'blur(12px)',
-      border: '1px solid',
-      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}
-  >
-    <Skeleton variant="circular" width={32} height={32} sx={{ mb: 1 }} />
-    <Skeleton variant="text" width={80} height={20} />
-    <Skeleton variant="text" width={60} height={40} />
-  </Paper>
-);
-
-const SkeletonChart = ({ height = 300 }) => (
-  <Paper 
-    elevation={0}
-    sx={{ 
-      p: 2.5,
-      height,
-      borderRadius: '16px',
-      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(26, 33, 51, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-      backdropFilter: 'blur(12px)',
-      border: '1px solid',
-      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-    }}
-  >
-    <Skeleton variant="text" width={150} height={30} sx={{ mb: 2 }} />
-    <Skeleton variant="rectangular" width="100%" height={height - 80} sx={{ borderRadius: 2 }} />
-  </Paper>
-);
-
-const DashboardSkeleton = () => (
-  <Grid container spacing={3}>
-    {/* Top Stats Row */}
-    {[1, 2, 3, 4].map(i => (
-      <Grid item xs={6} sm={6} md={3} key={i}>
-        <SkeletonStatCard />
-      </Grid>
-    ))}
-    
-    {/* Health Score + Trend */}
-    <Grid item xs={12} md={4}>
-      <SkeletonChart height={280} />
-    </Grid>
-    <Grid item xs={12} md={8}>
-      <SkeletonChart height={280} />
-    </Grid>
-    
-    {/* Timeline + Devices */}
-    <Grid item xs={12} md={8}>
-      <SkeletonChart height={300} />
-    </Grid>
-    <Grid item xs={12} md={4}>
-      <SkeletonChart height={300} />
-    </Grid>
-    
-    {/* Critical + Activity */}
-    <Grid item xs={12} md={6}>
-      <SkeletonChart height={350} />
-    </Grid>
-    <Grid item xs={12} md={6}>
-      <SkeletonChart height={350} />
-    </Grid>
-  </Grid>
-);
 
 // ============================================
 // PHASE 4 - Widget Configuration
@@ -417,7 +341,7 @@ function DashboardPage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 }, flexGrow: 1 }}>
+    <Box sx={{ p: LAYOUT.pagePadding, flexGrow: 1 }}>
       {/* Header with refresh controls */}
       <Box sx={{ 
         display: 'flex', 
@@ -581,7 +505,7 @@ function DashboardPage() {
                     borderRadius: 2,
                     borderColor: config.visible ? 'primary.main' : 'divider',
                     bgcolor: config.visible ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
-                    transition: 'all 0.2s ease',
+                    transition: TRANSITIONS.fast,
                   }}
                 >
                   <FormControlLabel
@@ -621,7 +545,7 @@ function DashboardPage() {
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert 
           onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 

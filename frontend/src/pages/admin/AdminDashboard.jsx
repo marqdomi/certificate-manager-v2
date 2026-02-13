@@ -28,6 +28,8 @@ import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 
 import { getSystemHealth, getUsers } from '../../services/adminApi';
+import { TRANSITIONS } from '../../constants/designTokens';
+import { SkeletonStatCard } from '../../components/shared/SkeletonLoaders';
 
 const StatusChip = ({ status }) => {
   const getStatusProps = () => {
@@ -66,7 +68,7 @@ const AdminCard = ({ title, description, icon, path, stats, status }) => {
         height: '100%',
         border: `1px solid ${theme.palette.divider}`,
         borderRadius: 2,
-        transition: 'all 0.2s ease-in-out',
+        transition: TRANSITIONS.fast,
         '&:hover': {
           borderColor: theme.palette.primary.main,
           boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
@@ -121,8 +123,8 @@ const HealthOverviewCard = ({ health, loading }) => {
   if (loading) {
     return (
       <Paper sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+          {[...Array(3)].map((_, i) => <SkeletonStatCard key={i} />)}
         </Box>
       </Paper>
     );

@@ -14,7 +14,6 @@ import {
   Tabs, Tab, Switch, FormControlLabel, Snackbar, TablePagination,
   Checkbox, ListItemText, OutlinedInput
 } from '@mui/material';
-import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import { useTheme } from '@mui/material/styles';
 
 // Icons
@@ -40,6 +39,10 @@ import InfoIcon from '@mui/icons-material/Info';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import apiClient from '../services/api';
+import { TRANSITIONS, LAYOUT } from '../constants/designTokens';
+import EmptyState from '../components/shared/EmptyState';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { SkeletonTable } from '../components/shared/SkeletonLoaders';
 
 // Location type icons mapping
 const locationTypeIcons = {
@@ -92,7 +95,7 @@ const StatCard = ({ title, value, icon, color, onClick, subtitle, helpText }) =>
     <Card 
       sx={{ 
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s',
+        transition: TRANSITIONS.fast,
         '&:hover': onClick ? { transform: 'translateY(-2px)', boxShadow: 4 } : {}
       }}
       onClick={onClick}
@@ -196,25 +199,25 @@ const InstallationRow = ({ installation, onMarkUpdated, onVerify, onEdit, onDele
         <Stack direction="row" spacing={0.5}>
           {installation.status === 'pending' && (
             <Tooltip title="Mark as Installed">
-              <IconButton size="small" color="primary" onClick={() => onMarkUpdated(installation)}>
+              <IconButton size="small" color="primary" onClick={() => onMarkUpdated(installation)} aria-label="Mark as Installed">
                 <CheckCircleIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
           {installation.status === 'installed' && (
             <Tooltip title="Verify Installation">
-              <IconButton size="small" color="success" onClick={() => onVerify(installation)}>
+              <IconButton size="small" color="success" onClick={() => onVerify(installation)} aria-label="Verify Installation">
                 <VerifiedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => onEdit(installation)}>
+            <IconButton size="small" onClick={() => onEdit(installation)} aria-label="Edit">
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete">
-            <IconButton size="small" color="error" onClick={() => onDelete(installation)}>
+            <IconButton size="small" color="error" onClick={() => onDelete(installation)} aria-label="Delete">
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -255,6 +258,7 @@ const CertMasterPage = () => {
   const [selectedInstallation, setSelectedInstallation] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [syncing, setSyncing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, type: null, item: null });
   
   // Settings dialog state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -423,17 +427,8 @@ const CertMasterPage = () => {
     }
   };
 
-  const handleDeleteCert = async (cert) => {
-    if (!window.confirm(`Delete master record for "${cert.common_name}"? This will delete all installation records.`)) {
-      return;
-    }
-    try {
-      await apiClient.delete(`/cert-master/${cert.id}`);
-      setSnackbar({ open: true, message: 'Certificate master deleted', severity: 'success' });
-      handleRefresh();
-    } catch (error) {
-      setSnackbar({ open: true, message: 'Failed to delete', severity: 'error' });
-    }
+  const handleDeleteCert = (cert) => {
+    setConfirmDelete({ open: true, type: 'cert', item: cert });
   };
 
   const handleAddInstallation = async () => {
@@ -469,16 +464,45 @@ const CertMasterPage = () => {
     }
   };
 
-  const handleDeleteInstallation = async (installation) => {
-    if (!window.confirm(`Delete installation at "${installation.location_name}"?`)) {
-      return;
-    }
+  const handleDeleteInstallation = (installation) => {
+    setConfirmDelete({ open: true, type: 'installation', item: installation });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { type, item } = confirmDelete;
     try {
-      await apiClient.delete(`/cert-master/installations/${installation.id}`);
-      setSnackbar({ open: true, message: 'Installation deleted', severity: 'success' });
-      handleRefresh();
-    } catch (error) {
-      setSnackbar({ open: true, message: 'Failed to delete installation', severity: 'error' });
+      switch (type) {
+        case 'cert':
+          await apiClient.delete(`/cert-master/${item.id}`);
+          setSnackbar({ open: true, message: 'Certificate master deleted', severity: 'success' });
+          handleRefresh();
+          break;
+        case 'installation':
+          await apiClient.delete(`/cert-master/installations/${item.id}`);
+          setSnackbar({ open: true, message: 'Installation deleted', severity: 'success' });
+          handleRefresh();
+          break;
+        case 'team':
+          await apiClient.delete(`/teams/${item.id}`);
+          fetchTeams();
+          setSnackbar({ open: true, message: 'Team deleted', severity: 'success' });
+          break;
+        case 'locationType':
+          await apiClient.delete(`/location-types/${item.id}`);
+          fetchLocationTypes();
+          setSnackbar({ open: true, message: 'Location type deleted', severity: 'success' });
+          break;
+      }
+    } catch (err) {
+      const messages = {
+        cert: 'Failed to delete',
+        installation: 'Failed to delete installation',
+        team: err.response?.data?.detail || 'Failed to delete',
+        locationType: err.response?.data?.detail || 'Failed to delete',
+      };
+      setSnackbar({ open: true, message: messages[type], severity: 'error' });
+    } finally {
+      setConfirmDelete({ open: false, type: null, item: null });
     }
   };
 
@@ -560,7 +584,7 @@ const CertMasterPage = () => {
   }, [expandedRows, certificates]);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: LAYOUT.pagePadding }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
         <Box>
@@ -745,7 +769,7 @@ const CertMasterPage = () => {
           )}
           <Box sx={{ flexGrow: 1 }} />
           <Tooltip title="Manage Teams & Location Types">
-            <IconButton onClick={() => setSettingsOpen(true)}>
+            <IconButton onClick={() => setSettingsOpen(true)} aria-label="Manage Teams & Location Types">
               <SettingsIcon />
             </IconButton>
           </Tooltip>
@@ -755,15 +779,14 @@ const CertMasterPage = () => {
       {/* Certificates Table */}
       <Paper>
         {loading ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <CircularProgress />
-          </Box>
+          <SkeletonTable rows={6} columns={5} />
         ) : certificates.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography color="text.secondary">
-              No certificate master records found. Click "Sync from F5" to import certificates from F5 devices, 
-              or "Add Certificate" to create a new record.
-            </Typography>
+          <Box sx={{ p: 4 }}>
+            <EmptyState
+              icon={<SecurityIcon />}
+              title="No certificate master records found"
+              subtitle='Click "Sync from F5" to import certificates from F5 devices, or "Add Certificate" to create a new record.'
+            />
           </Box>
         ) : (
           <>
@@ -819,7 +842,7 @@ const CertMasterPage = () => {
                     <TableRow hover>
                       <TableCell>
                         <Tooltip title={expandedRows[cert.id] ? "Hide locations" : `View ${cert.total_installations} locations`}>
-                          <IconButton size="small" onClick={() => handleExpandRow(cert.id)}>
+                          <IconButton size="small" onClick={() => handleExpandRow(cert.id)} aria-label="Toggle locations">
                             {expandedRows[cert.id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                           </IconButton>
                         </Tooltip>
@@ -939,17 +962,17 @@ const CertMasterPage = () => {
                       <TableCell align="right">
                         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                           <Tooltip title="Add installation location (VM, Cloud, etc.)">
-                            <IconButton size="small" color="primary" onClick={() => openInstallationDialog(cert)}>
+                            <IconButton size="small" color="primary" onClick={() => openInstallationDialog(cert)} aria-label="Add installation location">
                               <AddIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Edit certificate info">
-                            <IconButton size="small" onClick={() => openEditDialog(cert)}>
+                            <IconButton size="small" onClick={() => openEditDialog(cert)} aria-label="Edit certificate info">
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete">
-                            <IconButton size="small" color="error" onClick={() => handleDeleteCert(cert)}>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteCert(cert)} aria-label="Delete">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -1335,23 +1358,14 @@ const CertMasterPage = () => {
                       <TableCell>{team.description || '—'}</TableCell>
                       <TableCell align="center">{team.certificate_count || 0}</TableCell>
                       <TableCell align="right">
-                        <IconButton size="small" onClick={() => setEditingTeam(team)}>
+                        <IconButton size="small" onClick={() => setEditingTeam(team)} aria-label="Edit team">
                           <EditIcon fontSize="small" />
                         </IconButton>
                         <IconButton 
                           size="small" 
                           color="error"
-                          onClick={async () => {
-                            if (window.confirm(`Delete team "${team.name}"?`)) {
-                              try {
-                                await apiClient.delete(`/teams/${team.id}`);
-                                fetchTeams();
-                                setSnackbar({ open: true, message: 'Team deleted', severity: 'success' });
-                              } catch (err) {
-                                setSnackbar({ open: true, message: err.response?.data?.detail || 'Failed to delete', severity: 'error' });
-                              }
-                            }
-                          }}
+                          onClick={() => setConfirmDelete({ open: true, type: 'team', item: team })}
+                          aria-label="Delete team"
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -1470,23 +1484,14 @@ const CertMasterPage = () => {
                       <TableCell>{lt.description || '—'}</TableCell>
                       <TableCell align="center">{lt.installation_count || 0}</TableCell>
                       <TableCell align="right">
-                        <IconButton size="small" onClick={() => setEditingLocationType(lt)}>
+                        <IconButton size="small" onClick={() => setEditingLocationType(lt)} aria-label="Edit location type">
                           <EditIcon fontSize="small" />
                         </IconButton>
                         <IconButton 
                           size="small" 
                           color="error"
-                          onClick={async () => {
-                            if (window.confirm(`Delete location type "${lt.name}"?`)) {
-                              try {
-                                await apiClient.delete(`/location-types/${lt.id}`);
-                                fetchLocationTypes();
-                                setSnackbar({ open: true, message: 'Location type deleted', severity: 'success' });
-                              } catch (err) {
-                                setSnackbar({ open: true, message: err.response?.data?.detail || 'Failed to delete', severity: 'error' });
-                              }
-                            }
-                          }}
+                          onClick={() => setConfirmDelete({ open: true, type: 'locationType', item: lt })}
+                          aria-label="Delete location type"
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -1585,6 +1590,28 @@ const CertMasterPage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmDelete.open}
+        severity={confirmDelete.type === 'cert' ? 'error' : 'warning'}
+        title={
+          { cert: 'Delete Certificate Master', installation: 'Delete Installation', team: 'Delete Team', locationType: 'Delete Location Type' }[confirmDelete.type] || 'Confirm Delete'
+        }
+        message={
+          confirmDelete.item
+            ? {
+                cert: `Delete master record for "${confirmDelete.item?.common_name}"? This will delete all installation records.`,
+                installation: `Delete installation at "${confirmDelete.item?.location_name}"?`,
+                team: `Delete team "${confirmDelete.item?.name}"?`,
+                locationType: `Delete location type "${confirmDelete.item?.name}"?`,
+              }[confirmDelete.type]
+            : ''
+        }
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDelete({ open: false, type: null, item: null })}
+      />
+
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
@@ -1592,7 +1619,7 @@ const CertMasterPage = () => {
         onClose={() => setSnackbar(s => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(s => ({ ...s, open: false }))}>
+        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar(s => ({ ...s, open: false }))}>
           {snackbar.message}
         </Alert>
       </Snackbar>

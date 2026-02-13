@@ -37,6 +37,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/api';
+import { LAYOUT } from '../constants/designTokens';
+import { SkeletonStatCard } from '../components/shared/SkeletonLoaders';
 import { changeMyPassword } from '../services/adminApi';
 
 const ProfilePage = () => {
@@ -207,14 +209,16 @@ const ProfilePage = () => {
 
   if (profileLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <CircularProgress />
+      <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1000, mx: 'auto' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+          {[...Array(4)].map((_, i) => <SkeletonStatCard key={i} />)}
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1000, mx: 'auto' }}>
+    <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1000, mx: 'auto' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
         <PersonIcon sx={{ fontSize: 32, color: 'primary.main' }} />
@@ -231,7 +235,7 @@ const ProfilePage = () => {
               title="Personal Information"
               action={
                 !editing ? (
-                  <IconButton onClick={() => setEditing(true)}>
+                  <IconButton onClick={() => setEditing(true)} aria-label="Edit profile">
                     <EditIcon />
                   </IconButton>
                 ) : (
@@ -240,12 +244,14 @@ const ProfilePage = () => {
                       color="primary" 
                       onClick={handleSaveProfile}
                       disabled={loading}
+                      aria-label="Save profile"
                     >
                       {loading ? <CircularProgress size={24} /> : <SaveIcon />}
                     </IconButton>
                     <IconButton 
                       onClick={() => setEditing(false)}
                       disabled={loading}
+                      aria-label="Cancel editing"
                     >
                       <CancelIcon />
                     </IconButton>
@@ -384,6 +390,7 @@ const ProfilePage = () => {
                           <IconButton
                             onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
                             edge="end"
+                            aria-label="Toggle current password visibility"
                           >
                             {showPasswords.current ? <VisibilityOffIcon /> : <VisibilityIcon />}
                           </IconButton>
@@ -412,6 +419,7 @@ const ProfilePage = () => {
                           <IconButton
                             onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
                             edge="end"
+                            aria-label="Toggle new password visibility"
                           >
                             {showPasswords.new ? <VisibilityOffIcon /> : <VisibilityIcon />}
                           </IconButton>
@@ -447,6 +455,7 @@ const ProfilePage = () => {
                           <IconButton
                             onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
                             edge="end"
+                            aria-label="Toggle confirm password visibility"
                           >
                             {showPasswords.confirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
                           </IconButton>

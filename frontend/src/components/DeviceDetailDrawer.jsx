@@ -17,38 +17,12 @@ import StarIcon from '@mui/icons-material/Star';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import EditIcon from '@mui/icons-material/Edit';
 import SecurityIcon from '@mui/icons-material/Security';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { InfoRow, StatusChip } from './shared';
+import { MONO_FONT } from '../constants/designTokens';
 
 dayjs.extend(relativeTime);
-
-// Helper component for info rows
-const InfoRow = ({ label, value, copyable = false, onCopy }) => (
-  <Box sx={{ mb: 1.5 }}>
-    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
-      {label}
-    </Typography>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-all' }}>
-        {value || '—'}
-      </Typography>
-      {copyable && value && (
-        <Tooltip title="Copy to clipboard">
-          <IconButton size="small" onClick={() => onCopy(value)}>
-            <ContentCopyIcon sx={{ fontSize: 14 }} />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Box>
-  </Box>
-);
-
-// Status chip with appropriate color
-const StatusChip = ({ label, status, colorMap }) => {
-  const color = colorMap?.[status] || 'default';
-  return <Chip label={label || '—'} color={color} size="small" sx={{ fontWeight: 600 }} />;
-};
 
 const DeviceDetailDrawer = ({
   open,
@@ -60,10 +34,6 @@ const DeviceDetailDrawer = ({
   onScan,
 }) => {
   if (!device) return null;
-
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-  };
 
   // Format dates nicely
   const formatDate = (dateStr) => {
@@ -143,7 +113,7 @@ const DeviceDetailDrawer = ({
             {device.ip_address}
           </Typography>
         </Box>
-        <IconButton onClick={onClose} size="small">
+        <IconButton onClick={onClose} size="small" aria-label="Close">
           <CloseIcon />
         </IconButton>
       </Box>
@@ -223,12 +193,12 @@ const DeviceDetailDrawer = ({
         <Typography variant="subtitle2" color="primary" sx={{ mb: 1.5, fontWeight: 600 }}>
           DEVICE INFO
         </Typography>
-        <InfoRow label="Hostname" value={device.hostname} copyable onCopy={handleCopy} />
-        <InfoRow label="IP Address" value={device.ip_address} copyable onCopy={handleCopy} />
+        <InfoRow label="Hostname" value={device.hostname} copyable />
+        <InfoRow label="IP Address" value={device.ip_address} copyable />
         <InfoRow label="Site" value={device.site} />
         <InfoRow label="Version" value={device.version} />
         <InfoRow label="Platform" value={device.platform} />
-        <InfoRow label="Serial Number" value={device.serial_number} copyable onCopy={handleCopy} />
+        <InfoRow label="Serial Number" value={device.serial_number} copyable />
 
         <Divider sx={{ my: 2 }} />
 
@@ -301,7 +271,7 @@ const DeviceDetailDrawer = ({
                 backgroundColor: 'error.light',
                 color: 'error.contrastText',
                 borderRadius: 1,
-                fontFamily: 'monospace',
+                fontFamily: MONO_FONT,
                 fontSize: '0.75rem',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-all',

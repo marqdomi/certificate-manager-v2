@@ -26,6 +26,7 @@ import {
   Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { validateDeployment } from '../../services/api';
+import { TRANSITIONS, MONO_FONT } from '../../constants/designTokens';
 import type { 
   UploadMode, 
   UploadPayload, 
@@ -177,7 +178,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
                   : 'transparent',
                 borderRadius: 2,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: TRANSITIONS.fast,
                 '&:hover': {
                   borderColor: 'primary.main',
                   bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
@@ -252,7 +253,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
               fullWidth
               sx={{
                 '& .MuiInputBase-input': {
-                  fontFamily: 'monospace',
+                  fontFamily: MONO_FONT,
                   fontSize: '0.85rem',
                 }
               }}
@@ -268,7 +269,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
               fullWidth
               sx={{
                 '& .MuiInputBase-input': {
-                  fontFamily: 'monospace',
+                  fontFamily: MONO_FONT,
                   fontSize: '0.85rem',
                 }
               }}
@@ -285,7 +286,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
               helperText="Include intermediate CA certificates if provided by your CA"
               sx={{
                 '& .MuiInputBase-input': {
-                  fontFamily: 'monospace',
+                  fontFamily: MONO_FONT,
                   fontSize: '0.85rem',
                 }
               }}

@@ -10,7 +10,10 @@ import {
   Tooltip,
   Typography,
   alpha,
+  useTheme,
 } from '@mui/material';
+import { dataGridStyles } from '../constants/styleMixins';
+import { STATUS_COLORS, MONO_FONT } from '../constants/designTokens';
 import DeleteIcon from '@mui/icons-material/Delete';
 import StarIcon from '@mui/icons-material/Star';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
@@ -76,13 +79,13 @@ interface HASyncCellProps {
 // Status Icon Component - compact status display
 const StatusIcon: FC<StatusIconProps> = ({ status, tooltipText, size = 20 }) => {
   const config: Record<string, { icon: typeof CheckCircleIcon; color: string }> = {
-    success: { icon: CheckCircleIcon, color: '#10b981' },
-    error: { icon: ErrorIcon, color: '#ef4444' },
-    failed: { icon: ErrorIcon, color: '#ef4444' },
-    warning: { icon: WarningIcon, color: '#f59e0b' },
-    pending: { icon: HelpOutlineIcon, color: '#6b7280' },
-    running: { icon: SyncIcon, color: '#3b82f6' },
-    default: { icon: HelpOutlineIcon, color: '#6b7280' },
+    success: { icon: CheckCircleIcon, color: STATUS_COLORS.success.light.main },
+    error: { icon: ErrorIcon, color: STATUS_COLORS.error.light.main },
+    failed: { icon: ErrorIcon, color: STATUS_COLORS.error.light.main },
+    warning: { icon: WarningIcon, color: STATUS_COLORS.warning.light.main },
+    pending: { icon: HelpOutlineIcon, color: STATUS_COLORS.neutral.light.main },
+    running: { icon: SyncIcon, color: STATUS_COLORS.info.light.main },
+    default: { icon: HelpOutlineIcon, color: STATUS_COLORS.neutral.light.main },
   };
   
   const { icon: Icon, color } = config[status?.toLowerCase()] || config.default;
@@ -96,23 +99,23 @@ const StatusIcon: FC<StatusIconProps> = ({ status, tooltipText, size = 20 }) => 
 
 // HA/Sync Combined Cell
 const HASyncCell: FC<HASyncCellProps> = ({ haState, syncStatus, syncColor }) => {
-  const defaultHa = { icon: HelpOutlineIcon, color: '#6b7280', bg: 'transparent' };
+  const defaultHa = { icon: HelpOutlineIcon, color: STATUS_COLORS.neutral.light.main, bg: 'transparent' };
   const haConfig: Record<string, { icon: typeof PlayArrowIcon; color: string; bg: string }> = {
-    ACTIVE: { icon: PlayArrowIcon, color: '#10b981', bg: alpha('#10b981', 0.1) },
-    STANDBY: { icon: PauseIcon, color: '#6b7280', bg: alpha('#6b7280', 0.1) },
-    STANDALONE: { icon: DevicesIcon, color: '#6366f1', bg: alpha('#6366f1', 0.1) },
+    ACTIVE: { icon: PlayArrowIcon, color: STATUS_COLORS.success.light.main, bg: alpha(STATUS_COLORS.success.light.main, 0.1) },
+    STANDBY: { icon: PauseIcon, color: STATUS_COLORS.neutral.light.main, bg: alpha(STATUS_COLORS.neutral.light.main, 0.1) },
+    STANDALONE: { icon: DevicesIcon, color: STATUS_COLORS.info.light.main, bg: alpha(STATUS_COLORS.info.light.main, 0.1) },
   };
   
   const syncColorMap: Record<string, string> = {
-    green: '#10b981',
-    yellow: '#f59e0b',
-    red: '#ef4444',
+    green: STATUS_COLORS.success.light.main,
+    yellow: STATUS_COLORS.warning.light.main,
+    red: STATUS_COLORS.error.light.main,
   };
   
   // Safely get HA config, fallback to default if haState is not in config
   const ha = (haState && haConfig[haState]) ? haConfig[haState] : defaultHa;
   const HaIcon = ha.icon || HelpOutlineIcon;
-  const syncColorValue = (syncColor && syncColorMap[syncColor]) ? syncColorMap[syncColor] : '#6b7280';
+  const syncColorValue = (syncColor && syncColorMap[syncColor]) ? syncColorMap[syncColor] : STATUS_COLORS.neutral.light.main;
   
   if (!haState && !syncStatus) {
     return <Typography color="text.disabled">—</Typography>;
@@ -185,6 +188,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
   favorites = [],      // Phase 3: Favorite device IDs
   onToggleFavorite,    // Phase 3: Toggle favorite callback
 }) => {
+  const theme = useTheme();
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectionModel, setSelectionModel] = useState<number[]>([]);
@@ -282,7 +286,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
               color: isFavorite ? 'warning.main' : 'action.disabled',
               '&:hover': {
                 color: 'warning.main',
-                backgroundColor: alpha('#f59e0b', 0.1),
+                backgroundColor: alpha(STATUS_COLORS.warning.light.main, 0.1),
               },
             }}
           >
@@ -375,7 +379,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
       minWidth: 90,
       
       renderCell: (params) => (
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+        <Typography variant="body2" sx={{ fontFamily: MONO_FONT, fontSize: '0.8rem' }}>
           {params.value || '—'}
         </Typography>
       ),
@@ -464,7 +468,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
                 }}
                 sx={{
                   color: 'primary.main',
-                  '&:hover': { backgroundColor: alpha('#6366f1', 0.1) },
+                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.1) },
                 }}
               >
                 <VpnKeyIcon fontSize="small" />
@@ -480,7 +484,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
                   }}
                   sx={{
                     color: 'error.main',
-                    '&:hover': { backgroundColor: alpha('#ef4444', 0.1) },
+                    '&:hover': { backgroundColor: alpha(theme.palette.error.main, 0.1) },
                   }}
                 >
                   <DeleteIcon fontSize="small" />
@@ -558,51 +562,7 @@ const DeviceTable: FC<DeviceTableProps> = ({
         // Enable column resize
         disableColumnResize={false}
         // Styling
-        sx={{
-          border: 'none',
-          '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          },
-          '& .MuiDataGrid-columnHeaderTitle': {
-            fontWeight: 600,
-            fontSize: '0.8rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            color: 'text.secondary',
-          },
-          '& .MuiDataGrid-columnSeparator': {
-            visibility: 'visible',
-            color: 'rgba(224, 224, 224, 0.3)',
-          },
-          '& .MuiDataGrid-columnHeader:hover .MuiDataGrid-columnSeparator': {
-            color: 'primary.main',
-          },
-          '& .MuiDataGrid-row': {
-            cursor: 'pointer',
-            '&:hover': {
-              backgroundColor: (theme) =>
-                theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-            },
-          },
-          '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid',
-            borderColor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-          },
-          '& .MuiDataGrid-cell:focus': {
-            outline: 'none',
-          },
-          '& .MuiDataGrid-cell:focus-within': {
-            outline: 'none',
-          },
-          '& .MuiDataGrid-footerContainer': {
-            borderTop: '1px solid',
-            borderColor: 'divider',
-          },
-        }}
+        sx={dataGridStyles(theme, { clickableRows: true })}
       />
     </Box>
   );

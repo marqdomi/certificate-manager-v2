@@ -1,0 +1,32 @@
+# Ignore local environment files - use Azure Container Apps env vars instead
+.env
+.env.local
+.env*.local
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Test files
+test_*.py
+tests/
+
+# Local development files
+*.sqlite3
+celerybeat-schedule
+celerybeat-schedule.db

@@ -46,6 +46,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 
 import { getUsers, createUser, updateUser, deleteUser, resetUserPassword } from '../../services/adminApi';
 import { useAuth } from '../../context/AuthContext';
+import EmptyState from '../../components/shared/EmptyState';
+import { SkeletonTable } from '../../components/shared/SkeletonLoaders';
 
 const ROLES = [
   { value: 'admin', label: 'Admin', icon: <AdminPanelSettingsIcon fontSize="small" />, color: 'error' },
@@ -435,7 +437,7 @@ const UserManagement = () => {
             </Select>
           </FormControl>
           <Tooltip title="Refresh">
-            <IconButton onClick={fetchUsers}>
+            <IconButton onClick={fetchUsers} aria-label="Refresh">
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -458,14 +460,17 @@ const UserManagement = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <CircularProgress />
+                  <TableCell colSpan={6} sx={{ p: 0, border: 'none' }}>
+                    <SkeletonTable rows={4} columns={6} />
                   </TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">No users found</Typography>
+                  <TableCell colSpan={6}>
+                    <EmptyState
+                      title="No users found"
+                      subtitle="Try adjusting your search or filters."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -518,6 +523,7 @@ const UserManagement = () => {
                         <IconButton
                           size="small"
                           onClick={() => setEditDialog({ open: true, user })}
+                          aria-label="Edit"
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
@@ -526,6 +532,7 @@ const UserManagement = () => {
                         <IconButton
                           size="small"
                           onClick={() => setResetDialog({ open: true, user })}
+                          aria-label="Reset Password"
                         >
                           <LockResetIcon fontSize="small" />
                         </IconButton>
@@ -537,6 +544,7 @@ const UserManagement = () => {
                             color="error"
                             onClick={() => setDeleteDialog({ open: true, user })}
                             disabled={user.id === currentUser?.id}
+                            aria-label="Delete"
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -586,7 +594,7 @@ const UserManagement = () => {
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >

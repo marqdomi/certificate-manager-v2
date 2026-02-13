@@ -47,6 +47,7 @@ import {
 import { generateCSR, completeCSR, getCSRDownloadUrl } from '../services/api';
 import apiClient from '../services/api';
 import CertificateSearchAutocomplete, { CertificateOption } from './CertificateSearchAutocomplete';
+import { MONO_FONT } from '../constants/designTokens';
 import type { 
   CSRFormData, 
   CSRGenerateResponse, 
@@ -592,7 +593,7 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
           value={csrData?.key_pem || ''}
           InputProps={{ 
             readOnly: true,
-            sx: { fontFamily: 'monospace', fontSize: '0.75rem' }
+            sx: { fontFamily: MONO_FONT, fontSize: '0.75rem' }
           }}
         />
         <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
@@ -630,7 +631,7 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
           value={csrData?.csr_pem || ''}
           InputProps={{ 
             readOnly: true,
-            sx: { fontFamily: 'monospace', fontSize: '0.75rem' }
+            sx: { fontFamily: MONO_FONT, fontSize: '0.75rem' }
           }}
         />
         <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
@@ -821,11 +822,14 @@ const CSRGeneratorWizard: FC<CSRGeneratorWizardProps> = ({
       
       <Snackbar
         open={!!copiedField}
-        autoHideDuration={2000}
+        autoHideDuration={4000}
         onClose={() => setCopiedField(null)}
-        message="Copied to clipboard!"
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      />
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setCopiedField(null)} severity="success" variant="filled">
+          Copied to clipboard!
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

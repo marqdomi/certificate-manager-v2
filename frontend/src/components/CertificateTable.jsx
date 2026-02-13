@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Button, CircularProgress, Tooltip, IconButton, useTheme, Typography, alpha } from '@mui/material';
+import { dataGridStyles } from '../constants/styleMixins';
+import { STATUS_COLORS, FAVORITE_COLOR } from '../constants/designTokens';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -69,7 +71,7 @@ const CertificateTable = ({
             onToggleFavorite(params.row.id);
           }}
           sx={{ 
-            color: isFavorite(params.row.id) ? '#f59e0b' : 'text.disabled',
+            color: isFavorite(params.row.id) ? FAVORITE_COLOR.active : 'text.disabled',
             opacity: isFavorite(params.row.id) ? 1 : 0.4,
             '&:hover': { opacity: 1 },
             transition: 'opacity 0.2s',
@@ -131,9 +133,9 @@ const CertificateTable = ({
           return <Typography variant="body2" color="text.secondary">—</Typography>;
         }
         // Color based on status - more subtle palette
-        let color = '#10b981'; // green for healthy
-        if (days <= 0) color = '#ef4444'; // red for expired
-        else if (days <= 30) color = '#f59e0b'; // amber for warning
+        let color = STATUS_COLORS.success.light.main; // green for healthy
+        if (days <= 0) color = STATUS_COLORS.error.light.main; // red for expired
+        else if (days <= 30) color = STATUS_COLORS.warning.light.main; // amber for warning
         
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -314,49 +316,7 @@ const CertificateTable = ({
         disableColumnResize={false}
         
         // Estilos mejorados con separadores de columna visibles
-        sx={{
-          border: 'none', // Quitamos el borde principal del DataGrid
-          backgroundColor: 'transparent', // Hacemos el fondo transparente para que se vea el "vidrio"
-          cursor: onRowClick ? 'pointer' : 'default',
-          
-          // Estilo de las cabeceras de columna
-          '& .MuiDataGrid-columnHeaders': {
-            borderBottom: '1px solid',
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.secondary,
-          },
-          // Estilo del texto de la cabecera
-          '& .MuiDataGrid-columnHeaderTitle': {
-            fontWeight: 'bold',
-          },
-          // Estilo de cada celda de la tabla
-          '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid',
-            borderColor: theme.palette.divider,
-          },
-          // Quitamos los bordes de los pies de la tabla
-          '& .MuiDataGrid-footerContainer': {
-            borderTop: 'none',
-          },
-          // Estilo de las filas al pasar el ratón
-          '& .MuiDataGrid-row:hover': {
-             backgroundColor: theme.palette.action.hover,
-          },
-          // Quitamos los bordes raros al hacer clic en una celda
-          '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
-             outline: 'none',
-          },
-          // Hacer visible el separador de columnas para redimensionar
-          '& .MuiDataGrid-columnSeparator': {
-            visibility: 'visible',
-            color: 'rgba(224, 224, 224, 0.5)',
-          },
-          '& .MuiDataGrid-columnHeader': {
-            '&:hover .MuiDataGrid-columnSeparator': {
-              color: 'primary.main',
-            },
-          },
-        }}
+        sx={dataGridStyles(theme, { clickableRows: !!onRowClick, transparentBg: true })}
       />
     </Box>
   );

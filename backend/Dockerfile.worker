@@ -6,7 +6,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    C_FORCE_ROOT=true
+    C_FORCE_ROOT=true \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -35,4 +36,4 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=40s --retries=3 \
   CMD celery -A core.celery_worker inspect ping -d celery@$HOSTNAME || exit 1
 
 # Ejecutar Celery worker
-CMD ["celery", "-A", "core.celery_worker", "worker", "--loglevel=info", "--concurrency=2"]
+CMD ["celery", "-A", "core.celery_worker", "worker", "--loglevel=info", "--concurrency=10"]

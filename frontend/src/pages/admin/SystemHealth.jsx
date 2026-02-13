@@ -30,6 +30,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CloudIcon from '@mui/icons-material/Cloud';
 
 import { getSystemHealth } from '../../services/adminApi';
+import { SkeletonStatCard } from '../../components/shared/SkeletonLoaders';
 
 const StatusIcon = ({ status, size = 'medium' }) => {
   switch (status) {
@@ -165,11 +166,10 @@ const OverallHealthCard = ({ health, loading }) => {
 
   if (loading) {
     return (
-      <Paper sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
-        <CircularProgress />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          Checking system health...
-        </Typography>
+      <Paper sx={{ p: 4, borderRadius: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          {[...Array(4)].map((_, i) => <SkeletonStatCard key={i} />)}
+        </Box>
       </Paper>
     );
   }
