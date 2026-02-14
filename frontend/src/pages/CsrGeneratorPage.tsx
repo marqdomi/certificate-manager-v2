@@ -15,7 +15,7 @@
 import React, { useState, FC } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-    Box, Typography, Paper, Alert, Button, 
+    Box, Paper, Alert, Button, useTheme,
     Tabs, Tab,
 } from '@mui/material';
 import {
@@ -24,27 +24,16 @@ import {
 } from '@mui/icons-material';
 import CSRGeneratorWizard from '../components/CSRGeneratorWizard';
 import PendingCSRsPanel from '../components/PendingCSRsPanel';
+import { PageHeader, TabPanel, PageTransition } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 import type { CertificateToRenew, CSRCompleteResponse } from '../types/csr';
-
-interface TabPanelProps {
-    children?: React.ReactNode;
-    value: number;
-    index: number;
-}
-
-const TabPanel: FC<TabPanelProps> = ({ children, value, index, ...other }) => {
-    return (
-        <div role="tabpanel" hidden={value !== index} {...other}>
-            {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-        </div>
-    );
-};
 
 interface LocationState {
     certificateToRenew?: CertificateToRenew;
 }
 
 const CsrGeneratorPage: FC = () => {
+    const theme = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -75,29 +64,28 @@ const CsrGeneratorPage: FC = () => {
     };
 
     return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1">
-                    CSR Generator
-                </Typography>
-                <Button 
-                    variant="contained" 
-                    startIcon={<AddIcon />}
-                    onClick={handleOpenWizard}
-                >
-                    Generate New CSR
-                </Button>
-            </Box>
+        <PageTransition>
+            <PageHeader
+                title="CSR Generator"
+                subtitle="Generate certificate signing requests and manage pending CSRs."
+                actions={
+                    <Button 
+                        variant="contained" 
+                        startIcon={<AddIcon />}
+                        onClick={handleOpenWizard}
+                    >
+                        Generate New CSR
+                    </Button>
+                }
+            />
 
             <Alert severity="info" sx={{ mb: 3 }}>
-                <Typography variant="body2">
-                    <strong>How it works:</strong> CMT generates the private key locally (not on F5). 
-                    Submit the CSR to your Certificate Authority, then complete the process here to get a PFX file 
-                    ready for deployment.
-                </Typography>
+                <strong>How it works:</strong> CMT generates the private key locally (not on F5). 
+                Submit the CSR to your Certificate Authority, then complete the process here to get a PFX file 
+                ready for deployment.
             </Alert>
 
-            <Paper sx={{ p: 0 }}>
+            <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 0 }}>
                 <Tabs 
                     value={tabValue} 
                     onChange={(_, v) => setTabValue(v)}
@@ -122,7 +110,7 @@ const CsrGeneratorPage: FC = () => {
                 certificate={certificateToRenew}
                 onCompleted={handleCompleted}
             />
-        </Box>
+        </PageTransition>
     );
 };
 

@@ -1,24 +1,16 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Typography, Paper, Alert, Tabs, Tab, Button, Snackbar, Collapse, List, ListItem, ListItemText } from '@mui/material';
+import { Box, Typography, Paper, Alert, Tabs, Tab, Button, Snackbar, Collapse, List, ListItem, ListItemText, useTheme } from '@mui/material';
 import { CheckCircleOutline, ErrorOutline } from '@mui/icons-material';
 import apiClient, { verifyInstalledCert } from '../services/api';
 import DeviceSelector from '../components/DeviceSelector'; 
-// Importamos los componentes de cada pestaña
 import DeployFromPfx from '../components/DeployFromPfx';
 import DeployFromFiles from '../components/DeployFromFiles';
-
-// Componente helper para mostrar el contenido de la pestaña activa
-function TabPanel(props) {
-    const { children, value, index, ...other } = props;
-    return (
-        <div role="tabpanel" hidden={value !== index} {...other}>
-            {value === index && <Box sx={{ p: 3, pt: 4 }}>{children}</Box>}
-        </div>
-    );
-}
+import { PageHeader, TabPanel, PageTransition } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 
 function DeployCenterPage() {
+    const theme = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
     
@@ -176,29 +168,24 @@ function DeployCenterPage() {
 
     // --- RENDERIZADO ---
     return (
-        <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-                Deployment Center
-            </Typography>
+        <PageTransition>
+            <PageHeader
+                title="Deployment Center"
+                subtitle={isRenewalMode
+                    ? `Renewing certificate: ${certificateToRenew.common_name}`
+                    : 'Upload a certificate and select the target devices to deploy.'}
+            />
             
             {/* Banner contextual que cambia según el modo */}
-            {isRenewalMode ? (
-                <Alert severity="info" sx={{ mb: 4 }}>
-                    <Typography>
-                        Renewing certificate: <strong>{certificateToRenew.common_name}</strong>
-                    </Typography>
-                    <Typography variant="caption">
-                        (ID: {certificateToRenew.id} | On F5: {certificateToRenew.f5_device_hostname})
-                    </Typography>
-                </Alert>
-            ) : (
-                <Alert severity="info" sx={{ mb: 4 }}>
-                    You are in <strong>New Deployment</strong> mode. Upload a certificate and select the target devices below.
+            {isRenewalMode && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    Renewing: <strong>{certificateToRenew.common_name}</strong>{' '}
+                    (ID: {certificateToRenew.id} | On F5: {certificateToRenew.f5_device_hostname})
                 </Alert>
             )}
 
             {showVerification && verification && (
-              <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+              <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
                   {String(verification.version) === '3' && (verification.san?.length || 0) > 0 ? (
                     <CheckCircleOutline color="success" />
@@ -232,7 +219,7 @@ function DeployCenterPage() {
               </Paper>
             )}
 
-            <Paper elevation={3}>
+            <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={activeTab} onChange={handleTabChange} aria-label="deployment methods" variant="fullWidth">
                         <Tab label="Deploy from PFX (Recommended)" id="tab-0" />
@@ -248,7 +235,7 @@ function DeployCenterPage() {
             </Paper>
 
             {!isRenewalMode && (
-                <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
+                <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 3, mt: 3 }}>
                     <Typography variant="h6" sx={{ mb: 2 }}>2. Select Target Devices</Typography>
                     <DeviceSelector 
                         selectedDevices={targetDevices}
@@ -273,7 +260,7 @@ function DeployCenterPage() {
               <Button variant="text" onClick={() => navigate(-1)}>Back</Button>
               <Button variant="contained" onClick={() => navigate('/certificates')}>Go to Inventory</Button>
             </Box>
-        </Box>
+        </PageTransition>
     );
 }
 

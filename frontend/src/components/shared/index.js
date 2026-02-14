@@ -9,6 +9,7 @@
 // ── Layout ──────────────────────────────────────────────────────────────────
 export { default as PageContainer } from './PageContainer';
 export { default as PageHeader } from './PageHeader';
+export { default as DashboardCard } from './DashboardCard';
 export { default as TabPanel, a11yProps } from './TabPanel';
 
 // ── Data Display ────────────────────────────────────────────────────────────

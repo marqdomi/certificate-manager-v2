@@ -36,6 +36,7 @@ import {
   Typography,
   alpha,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   Close as CloseIcon,
   Refresh as RefreshIcon,
@@ -161,6 +162,8 @@ function ImpactPreviewStep({
   timeoutSeconds = 30,
   onResolved,
 }: ImpactPreviewStepProps) {
+  const theme = useTheme();
+  const radii = theme.customRadii || {};
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [source, setSource] = useState<'none' | 'cache' | 'live'>('none');
   const [error, setError] = useState<string | null>(null);
@@ -249,7 +252,7 @@ function ImpactPreviewStep({
           bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: 2,
+          borderRadius: `${radii.sm ?? 8}px`,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -324,7 +327,7 @@ function ImpactPreviewStep({
             bgcolor: (theme) => alpha(theme.palette.info.main, 0.04),
             border: '1px dashed',
             borderColor: 'divider',
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
           }}
         >
           <InfoIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
@@ -360,7 +363,7 @@ function ImpactPreviewStep({
             component={Paper} 
             variant="outlined"
             sx={{ 
-              borderRadius: 2,
+              borderRadius: `${radii.sm ?? 8}px`,
               '& .MuiTableCell-head': {
                 bgcolor: (theme) => theme.palette.mode === 'dark' 
                   ? alpha(theme.palette.primary.main, 0.1) 
@@ -416,7 +419,7 @@ function ImpactPreviewStep({
           <Alert 
             severity="info" 
             icon={<InfoIcon />}
-            sx={{ mt: 2, borderRadius: 2 }}
+            sx={{ mt: 2, borderRadius: `${radii.sm ?? 8}px` }}
           >
             These SSL profiles will be automatically updated when you deploy the new certificate.
           </Alert>
@@ -446,6 +449,8 @@ export default function RenewWizardDialog({
   certificateId, 
   certificate 
 }: RenewWizardDialogProps) {
+  const theme = useTheme();
+  
   // Method selection state
   const [renewalMethod, setRenewalMethod] = useState<RenewalMethod | null>(null);
   const [pendingCSR, setPendingCSR] = useState<PendingCSRRequest | null>(null);
@@ -577,7 +582,7 @@ export default function RenewWizardDialog({
       fullWidth 
       maxWidth="md"
       PaperProps={{
-        sx: { borderRadius: 3 }
+        sx: { borderRadius: `${theme.customRadii?.md ?? 12}px` }
       }}
     >
       <DialogTitle sx={{ 

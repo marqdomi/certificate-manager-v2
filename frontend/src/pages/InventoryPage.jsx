@@ -56,9 +56,7 @@ import RenewalWizardDialog from '../components/wizard/RenewWizardDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ExportButton from '../components/ExportButton';
 import CertificateDetailDrawer from '../components/CertificateDetailDrawer';
-import SharedStatCard from '../components/shared/StatCard';
-import EmptyState from '../components/shared/EmptyState';
-import { SkeletonKpiBar, SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { StatCard as SharedStatCard, EmptyState, SkeletonKpiBar, SkeletonTable, PageHeader, PageTransition } from '../components/shared';
 import { glassmorphicCard } from '../constants/styleMixins';
 import { STATUS_COLORS, FAVORITE_COLOR, TRANSITIONS } from '../constants/designTokens';
 
@@ -434,28 +432,26 @@ function InventoryPage() {
 
   if (loading && allCerts.length === 0) {
     return (
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <PageTransition>
+        <PageHeader
+          title="Certificate Inventory"
+          subtitle="Manage and monitor SSL/TLS certificates across your F5 infrastructure"
+        />
         <SkeletonKpiBar count={4} />
         <SkeletonTable rows={8} columns={5} sx={{ mt: 3 }} />
-      </Box>
+      </PageTransition>
     );
   }
 
   return (
-    <Box>
-      <Paper elevation={0} sx={glassmorphicStyle}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-              Certificate Inventory
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Manage and monitor SSL/TLS certificates across your F5 infrastructure
-            </Typography>
-          </Box>
-        </Box>
+    <PageTransition>
+      {/* Header */}
+      <PageHeader
+        title="Certificate Inventory"
+        subtitle="Manage and monitor SSL/TLS certificates across your F5 infrastructure"
+      />
 
+      <Paper elevation={0} sx={glassmorphicStyle}>
         {/* KPI Stats Bar */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <StatCard
@@ -942,7 +938,7 @@ function InventoryPage() {
         isFavorite={selectedCertForDetail ? isFavorite(selectedCertForDetail.id) : false}
         onToggleFavorite={() => selectedCertForDetail && toggleFavorite(selectedCertForDetail.id)}
       />
-    </Box>
+    </PageTransition>
   );
 }
 export default InventoryPage;

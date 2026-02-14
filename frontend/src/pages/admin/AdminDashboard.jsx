@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
-  Card,
-  CardContent,
   CardActionArea,
   Typography,
   Chip,
@@ -29,7 +27,8 @@ import WarningIcon from '@mui/icons-material/Warning';
 
 import { getSystemHealth, getUsers } from '../../services/adminApi';
 import { TRANSITIONS } from '../../constants/designTokens';
-import { SkeletonStatCard } from '../../components/shared/SkeletonLoaders';
+import { glassmorphicCard } from '../../constants/styleMixins';
+import { SkeletonStatCard, PageHeader, PageTransition } from '../../components/shared';
 
 const StatusChip = ({ status }) => {
   const getStatusProps = () => {
@@ -62,12 +61,11 @@ const AdminCard = ({ title, description, icon, path, stats, status }) => {
   const navigate = useNavigate();
 
   return (
-    <Card
+    <Paper
       elevation={0}
       sx={{
+        ...glassmorphicCard(theme),
         height: '100%',
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: 2,
         transition: TRANSITIONS.fast,
         '&:hover': {
           borderColor: theme.palette.primary.main,
@@ -77,7 +75,7 @@ const AdminCard = ({ title, description, icon, path, stats, status }) => {
       }}
     >
       <CardActionArea onClick={() => navigate(path)} sx={{ height: '100%' }}>
-        <CardContent sx={{ p: 3 }}>
+        <Box sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
             <Box
               sx={{
@@ -111,9 +109,9 @@ const AdminCard = ({ title, description, icon, path, stats, status }) => {
               ))}
             </Box>
           )}
-        </CardContent>
+        </Box>
       </CardActionArea>
-    </Card>
+    </Paper>
   );
 };
 
@@ -122,7 +120,7 @@ const HealthOverviewCard = ({ health, loading }) => {
 
   if (loading) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 3 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
           {[...Array(3)].map((_, i) => <SkeletonStatCard key={i} />)}
         </Box>
@@ -147,7 +145,7 @@ const HealthOverviewCard = ({ health, loading }) => {
   ] : [];
 
   return (
-    <Paper sx={{ p: 3, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }} elevation={0}>
+    <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h6" fontWeight={600}>
           System Health Overview
@@ -260,15 +258,12 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Admin Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage your Certificate Management Tool system settings and users.
-        </Typography>
-      </Box>
+    <PageTransition>
+      <PageHeader
+        title="Admin Dashboard"
+        subtitle="Manage your Certificate Management Tool system settings and users."
+        icon={<SecurityIcon />}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -287,7 +282,7 @@ const AdminDashboard = () => {
           </Grid>
         ))}
       </Grid>
-    </Box>
+    </PageTransition>
   );
 };
 

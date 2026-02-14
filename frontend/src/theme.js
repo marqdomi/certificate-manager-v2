@@ -80,7 +80,7 @@ const neutralDark = {
 // ---------------------------------------------------------------------------
 const radius = {
   xs: 4,
-  sm: 8,
+  sm: 4,
   md: 12,   // theme.shape.borderRadius default
   lg: 16,
   xl: 24,
@@ -163,7 +163,7 @@ export const getDesignTokens = (mode) => {
       brand,
     },
 
-    shape: { borderRadius: radius.md },
+    shape: { borderRadius: radius.sm },
 
     // Custom tokens accessible via theme.customRadii, theme.customShadows, etc.
     customRadii: radius,
@@ -182,9 +182,16 @@ export const getDesignTokens = (mode) => {
 
     // ----- Component Overrides -----
     components: {
-      // --- CssBaseline ---
+      // --- CssBaseline (scrollbar + a11y focus ring) ---
       MuiCssBaseline: {
         styleOverrides: {
+          // Global focus-visible ring for keyboard navigation
+          '*, *::before, *::after': { boxSizing: 'border-box' },
+          'a:focus-visible, button:focus-visible, [tabindex]:focus-visible': {
+            outline: `2px solid ${brand.teal}`,
+            outlineOffset: 2,
+            borderRadius: radius.xs,
+          },
           body: {
             scrollbarWidth: 'thin',
             scrollbarColor: isDark
@@ -200,19 +207,6 @@ export const getDesignTokens = (mode) => {
               borderRadius: radius.full,
               '&:hover': { background: isDark ? neutral[500] : neutral[500] },
             },
-          },
-        },
-      },
-
-      // --- CssBaseline (global a11y focus ring) ---
-      MuiCssBaseline: {
-        styleOverrides: {
-          // Global focus-visible ring for keyboard navigation
-          '*, *::before, *::after': { boxSizing: 'border-box' },
-          'a:focus-visible, button:focus-visible, [tabindex]:focus-visible': {
-            outline: `2px solid ${brand.teal}`,
-            outlineOffset: 2,
-            borderRadius: radius.xs,
           },
         },
       },
@@ -268,7 +262,7 @@ export const getDesignTokens = (mode) => {
         styleOverrides: {
           root: {
             backgroundImage: 'none', // Remove MUI default gradient overlay in dark mode
-            borderRadius: radius.md,
+            borderRadius: radius.sm,
           },
           elevation0: ({ theme }) => ({
             border: `1px solid ${theme.palette.divider}`,
@@ -281,7 +275,7 @@ export const getDesignTokens = (mode) => {
         defaultProps: { elevation: 0 },
         styleOverrides: {
           root: ({ theme }) => ({
-            borderRadius: radius.lg,
+            borderRadius: radius.sm,
             border: `1px solid ${theme.palette.divider}`,
             transition: transitions.standard,
           }),
@@ -326,7 +320,7 @@ export const getDesignTokens = (mode) => {
         styleOverrides: {
           root: ({ theme }) => ({
             border: 'none',
-            borderRadius: radius.md,
+            borderRadius: radius.sm,
             '& .MuiDataGrid-columnHeaders': {
               backgroundColor: isDark
                 ? alpha(theme.palette.primary.main, 0.08)

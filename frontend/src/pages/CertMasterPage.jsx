@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Typography, Paper, Grid, Card, CardContent, Button, IconButton,
+  Box, Typography, Paper, Grid, Button, IconButton,
   Chip, TextField, InputAdornment, Dialog, DialogTitle, DialogContent,
   DialogActions, FormControl, InputLabel, Select, MenuItem, Alert,
   Tooltip, CircularProgress, Collapse, Divider, Stack, LinearProgress,
@@ -39,10 +39,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import apiClient from '../services/api';
-import { TRANSITIONS, LAYOUT } from '../constants/designTokens';
-import EmptyState from '../components/shared/EmptyState';
-import ConfirmDialog from '../components/shared/ConfirmDialog';
-import { SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { TRANSITIONS } from '../constants/designTokens';
+import { glassmorphicCard } from '../constants/styleMixins';
+import { EmptyState, ConfirmDialog, SkeletonTable, PageHeader, PageTransition } from '../components/shared';
 
 // Location type icons mapping
 const locationTypeIcons = {
@@ -90,17 +89,19 @@ const helpTexts = {
 };
 
 // Stat Card Component with tooltip
-const StatCard = ({ title, value, icon, color, onClick, subtitle, helpText }) => (
+const StatCard = ({ title, value, icon, color, onClick, subtitle, helpText, theme }) => (
   <Tooltip title={helpText || ''} arrow placement="top">
-    <Card 
+    <Paper 
+      elevation={0}
       sx={{ 
+        ...glassmorphicCard(theme),
         cursor: onClick ? 'pointer' : 'default',
         transition: TRANSITIONS.fast,
         '&:hover': onClick ? { transform: 'translateY(-2px)', boxShadow: 4 } : {}
       }}
       onClick={onClick}
     >
-      <CardContent>
+      <Box sx={{ p: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center">
           <Box sx={{ 
             p: 1.5, 
@@ -122,8 +123,8 @@ const StatCard = ({ title, value, icon, color, onClick, subtitle, helpText }) =>
             )}
           </Box>
         </Stack>
-      </CardContent>
-    </Card>
+      </Box>
+    </Paper>
   </Tooltip>
 );
 
@@ -584,48 +585,46 @@ const CertMasterPage = () => {
   }, [expandedRows, certificates]);
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding }}>
+    <PageTransition>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Certificate Master Table
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Track certificates across F5, VMs, and Cloud. Know who to contact when certs expire.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Tooltip title={helpTexts.syncFromF5} arrow placement="bottom">
-            <span>
-              <Button 
-                startIcon={syncing ? <CircularProgress size={18} /> : <SyncIcon />}
-                onClick={handleSyncFromF5}
-                disabled={syncing}
-                variant="outlined"
-              >
-                Sync from F5
+      <PageHeader
+        title="Certificate Master Table"
+        subtitle="Track certificates across F5, VMs, and Cloud. Know who to contact when certs expire."
+        icon={<DnsIcon />}
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Tooltip title={helpTexts.syncFromF5} arrow placement="bottom">
+              <span>
+                <Button 
+                  startIcon={syncing ? <CircularProgress size={18} /> : <SyncIcon />}
+                  onClick={handleSyncFromF5}
+                  disabled={syncing}
+                  variant="outlined"
+                >
+                  Sync from F5
+                </Button>
+              </span>
+            </Tooltip>
+            <Tooltip title="Actualizar la lista de certificados" arrow>
+              <Button startIcon={<RefreshIcon />} onClick={handleRefresh}>
+                Refresh
               </Button>
-            </span>
-          </Tooltip>
-          <Tooltip title="Actualizar la lista de certificados" arrow>
-            <Button startIcon={<RefreshIcon />} onClick={handleRefresh}>
-              Refresh
-            </Button>
-          </Tooltip>
-          <Tooltip title="Add a certificate manually (for certs not on F5)" arrow>
-            <Button startIcon={<AddIcon />} variant="contained" onClick={openCreateDialog}>
-              Add Certificate
-            </Button>
-          </Tooltip>
-        </Stack>
-      </Box>
+            </Tooltip>
+            <Tooltip title="Add a certificate manually (for certs not on F5)" arrow>
+              <Button startIcon={<AddIcon />} variant="contained" onClick={openCreateDialog}>
+                Add Certificate
+              </Button>
+            </Tooltip>
+          </Stack>
+        }
+      />
 
       {/* Dashboard Stats */}
       {dashboard && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard 
+              theme={theme}
               title="Total Certificates" 
               value={dashboard.active_certificates}
               icon={<DnsIcon />}
@@ -635,6 +634,7 @@ const CertMasterPage = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard 
+              theme={theme}
               title="Pending Updates" 
               value={dashboard.pending_installations}
               icon={<PendingIcon />}
@@ -646,6 +646,7 @@ const CertMasterPage = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard 
+              theme={theme}
               title="Expiring in 30 days" 
               value={dashboard.certificates_expiring_30_days}
               icon={<WarningIcon />}
@@ -655,6 +656,7 @@ const CertMasterPage = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard 
+              theme={theme}
               title="Verified Installations" 
               value={dashboard.verified_installations}
               icon={<VerifiedIcon />}
@@ -667,7 +669,7 @@ const CertMasterPage = () => {
 
       {/* Team Summary */}
       {dashboard && dashboard.by_team.length > 0 && (
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, mb: 3 }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
             <GroupsIcon />
             <Typography variant="subtitle1" fontWeight="medium">
@@ -696,7 +698,7 @@ const CertMasterPage = () => {
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, mb: 3 }}>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
           <TextField
             size="small"
@@ -777,13 +779,13 @@ const CertMasterPage = () => {
       </Paper>
 
       {/* Certificates Table */}
-      <Paper>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
         {loading ? (
           <SkeletonTable rows={6} columns={5} />
         ) : certificates.length === 0 ? (
           <Box sx={{ p: 4 }}>
             <EmptyState
-              icon={<SecurityIcon />}
+              icon={<DnsIcon />}
               title="No certificate master records found"
               subtitle='Click "Sync from F5" to import certificates from F5 devices, or "Add Certificate" to create a new record.'
             />
@@ -1377,7 +1379,7 @@ const CertMasterPage = () => {
 
               {/* Edit/Create Team Form */}
               {editingTeam && (
-                <Paper sx={{ p: 2, mt: 2 }}>
+                <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, mt: 2 }}>
                   <Typography variant="subtitle2" sx={{ mb: 2 }}>
                     {editingTeam.id ? 'Edit Team' : 'Add New Team'}
                   </Typography>
@@ -1503,7 +1505,7 @@ const CertMasterPage = () => {
 
               {/* Edit/Create Location Type Form */}
               {editingLocationType && (
-                <Paper sx={{ p: 2, mt: 2 }}>
+                <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, mt: 2 }}>
                   <Typography variant="subtitle2" sx={{ mb: 2 }}>
                     {editingLocationType.id ? 'Edit Location Type' : 'Add New Location Type'}
                   </Typography>
@@ -1623,7 +1625,7 @@ const CertMasterPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageTransition>
   );
 };
 

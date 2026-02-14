@@ -75,9 +75,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import SearchIcon from '@mui/icons-material/Search';
 
 import apiClient from '../services/api';
-import { TabPanel } from '../components/shared';
-import SharedStatCard from '../components/shared/StatCard';
-import { dataGridStyles } from '../constants/styleMixins';
+import { TabPanel, PageHeader, PageTransition, StatCard as SharedStatCard } from '../components/shared';
+import { dataGridStyles, glassmorphicCard } from '../constants/styleMixins';
 
 // Stats card wrapper using accent variant
 const StatsCard = (props) => <SharedStatCard variant="accent" {...props} />;
@@ -535,88 +534,12 @@ const CertificateCleanupPage = () => {
   const selectedDevice = devices.find(d => d.id === selectedDeviceId);
 
   return (
-    <Box>
-      {/* Breadcrumb Navigation */}
-      <Breadcrumbs 
-        separator={<NavigateNextIcon fontSize="small" />}
-        sx={{ mb: 2 }}
-      >
-        <Link
-          component={RouterLink}
-          to="/"
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 0.5,
-            textDecoration: 'none',
-            color: 'text.secondary',
-            '&:hover': { color: 'primary.main' }
-          }}
-        >
-          <HomeIcon fontSize="small" />
-          Home
-        </Link>
-        <Link
-          component={RouterLink}
-          to="/dashboard"
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 0.5,
-            textDecoration: 'none',
-            color: 'text.secondary',
-            '&:hover': { color: 'primary.main' }
-          }}
-        >
-          <DashboardIcon fontSize="small" />
-          Dashboard
-        </Link>
-        <Typography 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 0.5,
-            color: 'primary.main',
-            fontWeight: 500
-          }}
-        >
-          <CleaningServicesIcon fontSize="small" />
-          Certificate Cleanup
-        </Typography>
-      </Breadcrumbs>
-
+    <PageTransition>
       {/* Page Header */}
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 3, 
-          mb: 3, 
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box 
-              sx={{ 
-                p: 1.5, 
-                borderRadius: 2, 
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                color: 'primary.main'
-              }}
-            >
-              <CleaningServicesIcon sx={{ fontSize: 32 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" fontWeight={700}>
-                Certificate Cleanup
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Analyze and remove expired certificates from F5 devices with rollback support
-              </Typography>
-            </Box>
-          </Box>
+      <PageHeader
+        title="Certificate Cleanup"
+        subtitle="Analyze and remove expired certificates from F5 devices with rollback support"
+        actions={
           <Tooltip title="View Operation Snapshots" arrow>
             <Button
               variant="outlined"
@@ -630,8 +553,8 @@ const CertificateCleanupPage = () => {
               Snapshots
             </Button>
           </Tooltip>
-        </Box>
-      </Paper>
+        }
+      />
 
       {/* Alerts */}
       {error && (
@@ -657,10 +580,9 @@ const CertificateCleanupPage = () => {
       <Paper 
         elevation={0} 
         sx={{ 
+          ...glassmorphicCard(theme),
           p: 3, 
           mb: 3, 
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
@@ -778,11 +700,9 @@ const CertificateCleanupPage = () => {
         <Paper 
           elevation={0} 
           sx={{ 
+            ...glassmorphicCard(theme),
             p: 4, 
             textAlign: 'center',
-            borderRadius: 2,
-            border: `1px dashed ${theme.palette.divider}`,
-            bgcolor: alpha(theme.palette.info.main, 0.02),
           }}
         >
           <TipsAndUpdatesIcon sx={{ fontSize: 48, color: 'info.main', mb: 2 }} />
@@ -843,8 +763,7 @@ const CertificateCleanupPage = () => {
           <Paper 
             elevation={0} 
             sx={{ 
-              borderRadius: 2,
-              border: `1px solid ${theme.palette.divider}`,
+              ...glassmorphicCard(theme),
               overflow: 'hidden',
             }}
           >
@@ -1170,19 +1089,19 @@ const CertificateCleanupPage = () => {
             <>
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={4}>
-                  <Paper sx={{ p: 2, textAlign: 'center', bgcolor: alpha(theme.palette.background.default, 0.5), borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">Total</Typography>
                     <Typography variant="h5" fontWeight={600}>{previewDialog.data.total_certificates}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={4}>
-                  <Paper sx={{ p: 2, textAlign: 'center', bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, textAlign: 'center', bgcolor: alpha(theme.palette.success.main, 0.1) }}>
                     <Typography variant="body2" color="text.secondary">Can Proceed</Typography>
                     <Typography variant="h5" fontWeight={600} color="success.main">{previewDialog.data.can_proceed}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={4}>
-                  <Paper sx={{ p: 2, textAlign: 'center', bgcolor: alpha(theme.palette.error.main, 0.1), borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, textAlign: 'center', bgcolor: alpha(theme.palette.error.main, 0.1) }}>
                     <Typography variant="body2" color="text.secondary">Blocked</Typography>
                     <Typography variant="h5" fontWeight={600} color="error.main">{previewDialog.data.blocked}</Typography>
                   </Paper>
@@ -1331,7 +1250,7 @@ const CertificateCleanupPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageTransition>
   );
 };
 

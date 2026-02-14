@@ -36,6 +36,7 @@ import {
   refreshDeviceCerts 
 } from '../../services/api';
 import PlanPreview from './PlanPreview';
+import { useTheme } from '@mui/material/styles';
 import { MONO_FONT } from '../../constants/designTokens';
 import type { 
   DeviceInfo, 
@@ -80,6 +81,8 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
   const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const theme = useTheme();
+  const radii = theme.customRadii || {};
 
   const isValidated = uploadPayload?.validated === true;
   const profileCount = previewData?.profiles?.length || 0;
@@ -198,7 +201,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
   // Not validated state
   if (!uploadPayload || !isValidated) {
     return (
-      <Alert severity="warning" sx={{ borderRadius: 2 }}>
+      <Alert severity="warning" sx={{ borderRadius: `${radii.sm ?? 8}px` }}>
         Please complete the certificate upload and validation step before deploying.
       </Alert>
     );
@@ -215,7 +218,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
             bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
             border: '1px solid',
             borderColor: 'success.main',
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             textAlign: 'center',
           }}
         >
@@ -238,7 +241,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
         </Paper>
 
         {/* Verification section */}
-        <Paper variant="outlined" sx={{ mt: 3, p: 2.5, borderRadius: 2 }}>
+        <Paper variant="outlined" sx={{ mt: 3, p: 2.5, borderRadius: `${radii.sm ?? 8}px` }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <VerifiedIcon color="primary" />
@@ -260,7 +263,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
           </Box>
 
           {verifyResult && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: `${radii.xs ?? 4}px` }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">Subject</Typography>
@@ -304,7 +307,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
         sx={{ 
           p: 2.5, 
           mb: 3, 
-          borderRadius: 2,
+          borderRadius: `${radii.sm ?? 8}px`,
           bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02),
         }}
       >
@@ -337,7 +340,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
       {/* Target Device */}
       <Paper 
         variant="outlined" 
-        sx={{ p: 2.5, mb: 3, borderRadius: 2 }}
+        sx={{ p: 2.5, mb: 3, borderRadius: `${radii.sm ?? 8}px` }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <StorageIcon color="primary" />
@@ -360,7 +363,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
       </Paper>
 
       {/* Deployment Options */}
-      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
+      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: `${radii.sm ?? 8}px` }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <SettingsIcon fontSize="small" color="action" />
@@ -463,7 +466,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
 
       {/* Error */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: `${radii.sm ?? 8}px` }}>
           {error}
         </Alert>
       )}
@@ -490,7 +493,7 @@ const ConfirmDeploymentStep: React.FC<ConfirmDeploymentStepProps> = ({
 
       {/* Plan Preview */}
       {plan && (
-        <Paper variant="outlined" sx={{ mt: 3, p: 2.5, borderRadius: 2 }}>
+        <Paper variant="outlined" sx={{ mt: 3, p: 2.5, borderRadius: `${radii.sm ?? 8}px` }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
             Deployment Plan Preview
           </Typography>

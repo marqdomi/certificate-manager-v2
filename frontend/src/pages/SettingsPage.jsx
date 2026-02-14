@@ -7,9 +7,6 @@ import {
   Paper,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  CardHeader,
   Switch,
   FormControlLabel,
   FormGroup,
@@ -28,6 +25,7 @@ import {
   RadioGroup,
   Radio,
   FormLabel,
+  useTheme,
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
@@ -41,12 +39,13 @@ import {
   RestartAlt as ResetIcon,
 } from '@mui/icons-material';
 import { useThemeContext } from '../context/ThemeContext';
-import { LAYOUT } from '../constants/designTokens';
-import { SkeletonStatCard } from '../components/shared/SkeletonLoaders';
+import { PageHeader, PageTransition, SkeletonStatCard } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 import { getNotificationPreferences, updateNotificationPreferences } from '../services/adminApi';
 
 const SettingsPage = () => {
   const { mode, toggleTheme } = useThemeContext();
+  const theme = useTheme();
   
   // Notification preferences state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -172,7 +171,7 @@ const SettingsPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1200, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
           {[...Array(4)].map((_, i) => <SkeletonStatCard key={i} />)}
         </Box>
@@ -181,26 +180,27 @@ const SettingsPage = () => {
   }
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1200, mx: 'auto' }}>
+    <PageTransition>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-        <SettingsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-        <Typography variant="h4" fontWeight="bold">
-          Settings
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Settings"
+        subtitle="Customize appearance, notifications, and display preferences."
+      />
 
       <Grid container spacing={3}>
         {/* Appearance Card */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader
-              title="Appearance"
-              subheader="Customize the look and feel of the application"
-              avatar={mode === 'dark' ? <DarkModeIcon /> : <LightModeIcon />}
-            />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 2 }}>
+              {mode === 'dark' ? <DarkModeIcon /> : <LightModeIcon />}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600}>Appearance</Typography>
+                <Typography variant="caption" color="text.secondary">Customize the look and feel</Typography>
+              </Box>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <FormGroup>
                 <Box sx={{ mb: 3 }}>
                   <FormLabel component="legend" sx={{ mb: 1 }}>Theme</FormLabel>
@@ -257,20 +257,22 @@ const SettingsPage = () => {
                   label="Show Tooltips"
                 />
               </FormGroup>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         {/* Display Settings Card */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader
-              title="Display"
-              subheader="Configure tables and automatic updates"
-              avatar={<FormatSizeIcon />}
-            />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 2 }}>
+              <FormatSizeIcon />
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600}>Display</Typography>
+                <Typography variant="caption" color="text.secondary">Configure tables and automatic updates</Typography>
+              </Box>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Box sx={{ mb: 3 }}>
                 <Typography gutterBottom>
                   Rows per page in tables
@@ -324,30 +326,32 @@ const SettingsPage = () => {
                   Reset
                 </Button>
               </Stack>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         {/* Notification Settings Card */}
         <Grid item xs={12}>
-          <Card>
-            <CardHeader
-              title="Notifications"
-              subheader="Configure which notifications you want to receive"
-              avatar={<NotificationsIcon />}
-              action={
-                <Button
-                  variant="contained"
-                  startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-                  onClick={handleSaveNotificationSettings}
-                  disabled={saving}
-                >
-                  Save
-                </Button>
-              }
-            />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <NotificationsIcon />
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={600}>Notifications</Typography>
+                  <Typography variant="caption" color="text.secondary">Configure which notifications you want to receive</Typography>
+                </Box>
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+                onClick={handleSaveNotificationSettings}
+                disabled={saving}
+              >
+                Save
+              </Button>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Grid container spacing={4}>
                 {/* Email Settings */}
                 <Grid item xs={12} md={4}>
@@ -461,19 +465,19 @@ const SettingsPage = () => {
                   </Grid>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         {/* System Info Card */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader
-              title="System Information"
-              avatar={<LanguageIcon />}
-            />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 2 }}>
+              <LanguageIcon />
+              <Typography variant="subtitle1" fontWeight={600}>System Information</Typography>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
@@ -500,16 +504,18 @@ const SettingsPage = () => {
                   <Typography variant="body1">{Intl.DateTimeFormat().resolvedOptions().timeZone}</Typography>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         {/* Keyboard Shortcuts Card */}
         <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="Keyboard Shortcuts" />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ px: 2, pt: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Keyboard Shortcuts</Typography>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Grid container spacing={1}>
                 {[
                   { keys: 'Ctrl + K', action: 'Quick Search' },
@@ -526,8 +532,8 @@ const SettingsPage = () => {
                   </Grid>
                 ))}
               </Grid>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -546,7 +552,8 @@ const SettingsPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+      </Box>
+    </PageTransition>
   );
 };
 

@@ -88,7 +88,7 @@ def check_database(db: Session) -> ComponentHealth:
 
 def check_redis() -> ComponentHealth:
     """Check Redis connectivity and latency."""
-    redis_url = os.getenv("REDIS_URL")
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
     if not redis_url:
         return ComponentHealth(
             name="Redis",

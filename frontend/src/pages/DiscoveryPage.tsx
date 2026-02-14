@@ -70,9 +70,11 @@ import {
 } from '@mui/icons-material';
 import { authProvider } from './LoginPage';
 import api from '../services/api';
-import { TRANSITIONS, MONO_FONT, LAYOUT } from '../constants/designTokens';
+import { TRANSITIONS, MONO_FONT } from '../constants/designTokens';
+import { glassmorphicCard } from '../constants/styleMixins';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
-import { SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { SkeletonTable, PageHeader, PageTransition } from '../components/shared';
+import { useTheme, alpha } from '@mui/material/styles';
 
 // ============================================================================
 // Types
@@ -166,6 +168,7 @@ const DEVICE_STATUS_CONFIG = {
 // ============================================================================
 
 export default function DiscoveryPage() {
+  const theme = useTheme();
   const token = authProvider.getToken();
   
   // ─────────────────────────────────────────────────────────────────────────
@@ -459,12 +462,13 @@ export default function DiscoveryPage() {
             </Box>
           ) : credentialTemplates.length === 0 ? (
             <Paper 
-              variant="outlined" 
+              elevation={0}
               sx={{ 
                 p: 4, 
                 textAlign: 'center',
-                bgcolor: 'action.hover',
-                borderStyle: 'dashed'
+                bgcolor: alpha(theme.palette.action.hover, 0.5),
+                border: `2px dashed ${theme.palette.divider}`,
+                borderRadius: theme.customRadii?.sm ?? 8,
               }}
             >
               <VpnKeyIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
@@ -573,7 +577,7 @@ export default function DiscoveryPage() {
           
           <Stack spacing={2}>
             {credentials.map((cred, index) => (
-              <Paper key={index} variant="outlined" sx={{ p: 2 }}>
+              <Paper key={index} elevation={0} sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: theme.customRadii?.sm ?? 8 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Credential Set {index + 1}
@@ -719,7 +723,7 @@ export default function DiscoveryPage() {
           </FormControl>
           
           {selectedPreset && (
-            <Paper variant="outlined" sx={{ mt: 2, p: 2, bgcolor: 'action.hover' }}>
+            <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: 'action.hover', border: `1px solid ${theme.palette.divider}`, borderRadius: theme.customRadii?.sm ?? 8 }}>
               <Typography variant="caption" color="text.secondary">Subnets to scan:</Typography>
               <Typography variant="body2" sx={{ fontFamily: MONO_FONT, mt: 0.5 }}>
                 {presets.find(p => p.key === selectedPreset)?.subnets.join(', ')}
@@ -837,7 +841,7 @@ export default function DiscoveryPage() {
             <Typography variant="subtitle1">Review & Start</Typography>
           </StepLabel>
           <StepContent>
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+            <Paper elevation={0} sx={{ p: 2, mb: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: theme.customRadii?.sm ?? 8 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="caption" color="text.secondary">Credentials</Typography>
@@ -916,14 +920,14 @@ export default function DiscoveryPage() {
       </Box>
       
       {jobs.length === 0 ? (
-        <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
+        <Paper elevation={0} sx={{ p: 4, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, borderRadius: theme.customRadii?.sm ?? 8 }}>
           <SearchIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
           <Typography color="text.secondary">
             No discovery jobs yet. Start a new scan to discover F5 devices.
           </Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper} variant="outlined">
+        <TableContainer component={Paper} elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: theme.customRadii?.sm ?? 8 }}>
           <Table size="small">
             <TableHead>
               <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -1167,17 +1171,13 @@ export default function DiscoveryPage() {
   // ─────────────────────────────────────────────────────────────────────────
   
   return (
-    <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1200, mx: 'auto' }}>
+    <PageTransition>
+      <Box>
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-          <RadarIcon sx={{ fontSize: 36 }} color="primary" />
-          Network Discovery
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Scan network ranges to automatically discover and import F5 BIG-IP devices into inventory.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Network Discovery"
+        subtitle="Scan network ranges to automatically discover and import F5 BIG-IP devices into inventory."
+      />
       
       {/* Alerts */}
       <Collapse in={!!error}>
@@ -1193,7 +1193,7 @@ export default function DiscoveryPage() {
       </Collapse>
       
       {/* Main Content */}
-      <Paper variant="outlined">
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
         <Tabs
           value={activeTab}
           onChange={(_, v) => setActiveTab(v)}
@@ -1235,6 +1235,7 @@ export default function DiscoveryPage() {
         onConfirm={() => confirmDelete.jobId && deleteJob(confirmDelete.jobId)}
         onCancel={() => setConfirmDelete({ open: false, jobId: null })}
       />
-    </Box>
+      </Box>
+    </PageTransition>
   );
 }

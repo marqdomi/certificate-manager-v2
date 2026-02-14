@@ -46,8 +46,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 
 import { getUsers, createUser, updateUser, deleteUser, resetUserPassword } from '../../services/adminApi';
 import { useAuth } from '../../context/AuthContext';
-import EmptyState from '../../components/shared/EmptyState';
-import { SkeletonTable } from '../../components/shared/SkeletonLoaders';
+import { glassmorphicCard } from '../../constants/styleMixins';
+import { EmptyState, SkeletonTable, PageHeader, PageTransition } from '../../components/shared';
 
 const ROLES = [
   { value: 'admin', label: 'Admin', icon: <AdminPanelSettingsIcon fontSize="small" />, color: 'error' },
@@ -388,26 +388,23 @@ const UserManagement = () => {
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            User Management
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage user accounts, roles, and permissions
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setEditDialog({ open: true, user: null })}
-        >
-          Add User
-        </Button>
-      </Box>
+    <PageTransition>
+      <PageHeader
+        title="User Management"
+        subtitle="Manage user accounts, roles, and permissions"
+        icon={<PersonIcon />}
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setEditDialog({ open: true, user: null })}
+          >
+            Add User
+          </Button>
+        }
+      />
 
-      <Paper sx={{ mb: 3, p: 2, borderRadius: 2, border: `1px solid ${theme.palette.divider}` }} elevation={0}>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme), mb: 3, p: 2 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
             placeholder="Search users..."
@@ -444,7 +441,7 @@ const UserManagement = () => {
         </Box>
       </Paper>
 
-      <Paper sx={{ borderRadius: 2, border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }} elevation={0}>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
         <TableContainer>
           <Table>
             <TableHead>
@@ -606,7 +603,7 @@ const UserManagement = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageTransition>
   );
 };
 

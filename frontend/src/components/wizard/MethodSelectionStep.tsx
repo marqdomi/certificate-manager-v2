@@ -27,6 +27,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import SecurityIcon from '@mui/icons-material/Security';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import WarningIcon from '@mui/icons-material/Warning';
+import { useTheme } from '@mui/material/styles';
 import apiClient from '../../services/api';
 import { TRANSITIONS } from '../../constants/designTokens';
 import type { 
@@ -56,6 +57,8 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
   const [pendingCSR, setPendingCSR] = useState<PendingCSRRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const theme = useTheme();
+  const radii = theme.customRadii || {};
 
   // Check for pending CSR on mount
   useEffect(() => {
@@ -128,7 +131,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
           variant="outlined"
           sx={{
             p: 2.5,
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             bgcolor: (theme) => alpha(theme.palette.info.main, 0.04),
             borderColor: (theme) => alpha(theme.palette.info.main, 0.3),
           }}
@@ -181,7 +184,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
             p: 2.5,
             mb: 2,
             cursor: 'pointer',
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             borderColor: method === 'pfx' ? 'primary.main' : 'divider',
             borderWidth: method === 'pfx' ? 2 : 1,
             bgcolor: method === 'pfx' 
@@ -229,7 +232,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
             p: 2.5,
             mb: 2,
             cursor: 'pointer',
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             borderColor: method === 'csr' ? 'primary.main' : 'divider',
             borderWidth: method === 'csr' ? 2 : 1,
             bgcolor: method === 'csr'
@@ -262,7 +265,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
                   sx={{
                     mt: 1.5,
                     p: 1.5,
-                    borderRadius: 1,
+                    borderRadius: `${radii.xs ?? 4}px`,
                     bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                   }}
                 >
@@ -284,7 +287,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
               p: 2.5,
               mb: 2,
               cursor: 'pointer',
-              borderRadius: 2,
+              borderRadius: `${radii.sm ?? 8}px`,
               borderColor: method === 'continue' ? 'warning.main' : 'divider',
               borderWidth: method === 'continue' ? 2 : 1,
               bgcolor: method === 'continue'
@@ -324,7 +327,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
                     sx={{
                       mt: 1.5,
                       p: 1.5,
-                      borderRadius: 1,
+                    borderRadius: `${radii.xs ?? 4}px`,
                       bgcolor: (theme) => alpha(theme.palette.warning.main, 0.08),
                       display: 'flex',
                       gap: 3,
@@ -347,7 +350,7 @@ const MethodSelectionStep: React.FC<MethodSelectionStepProps> = ({
 
       {/* Error Display */}
       {error && (
-        <Alert severity="error" sx={{ borderRadius: 2 }}>
+        <Alert severity="error" sx={{ borderRadius: `${radii.sm ?? 8}px` }}>
           {error}
         </Alert>
       )}

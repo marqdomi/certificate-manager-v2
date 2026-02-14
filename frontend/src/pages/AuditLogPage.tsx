@@ -19,6 +19,9 @@ import {
   Button,
   Menu,
   Snackbar,
+  Paper,
+  CircularProgress,
+  useTheme,
 } from '@mui/material';
 import {
   Timeline as TimelineIcon,
@@ -33,9 +36,8 @@ import AuditLogTable from '../components/AuditLogTable';
 import { fetchAuditStats } from '../api/audit';
 import { exportAuditCsv, exportAuditExcel, downloadBlob } from '../services/adminApi';
 import type { AuditStatsResponse } from '../types/audit';
-import SharedStatCard from '../components/shared/StatCard';
-import { SkeletonStatCard } from '../components/shared/SkeletonLoaders';
-import { LAYOUT } from '../constants/designTokens';
+import { StatCard as SharedStatCard, SkeletonStatCard, PageHeader, PageTransition } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 
 const StatCard: React.FC<{
   title: string;
@@ -53,6 +55,7 @@ const StatCard: React.FC<{
 );
 
 const AuditLogPage: React.FC = () => {
+  const theme = useTheme();
   const [stats, setStats] = useState<AuditStatsResponse | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
@@ -110,55 +113,51 @@ const AuditLogPage: React.FC = () => {
   const failureCount = (stats?.by_result?.failure || 0) + (stats?.by_result?.partial || 0);
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding }}>
+    <PageTransition>
       {/* Page Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Audit Log
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Track all certificate operations, deployments, and user activity for compliance.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Button
-            variant="outlined"
-            startIcon={exporting ? <CircularProgress size={18} /> : <DownloadIcon />}
-            onClick={(e) => setExportAnchor(e.currentTarget)}
-            disabled={exporting}
-          >
-            Export
-          </Button>
-          <Menu
-            anchorEl={exportAnchor}
-            open={Boolean(exportAnchor)}
-            onClose={() => setExportAnchor(null)}
-          >
-            <MenuItem onClick={() => handleExport('csv')}>
-              <CsvIcon sx={{ mr: 1 }} fontSize="small" />
-              Export as CSV
-            </MenuItem>
-            <MenuItem onClick={() => handleExport('excel')}>
-              <ExcelIcon sx={{ mr: 1 }} fontSize="small" />
-              Export as Excel
-            </MenuItem>
-          </Menu>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Period</InputLabel>
-            <Select
-              value={statsDays}
-              label="Period"
-              onChange={(e) => setStatsDays(Number(e.target.value))}
+      <PageHeader
+        title="Audit Log"
+        subtitle="Track all certificate operations, deployments, and user activity for compliance."
+        actions={
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Button
+              variant="outlined"
+              startIcon={exporting ? <CircularProgress size={18} /> : <DownloadIcon />}
+              onClick={(e) => setExportAnchor(e.currentTarget)}
+              disabled={exporting}
             >
-              <MenuItem value={1}>Last 24h</MenuItem>
-              <MenuItem value={7}>Last 7 days</MenuItem>
-              <MenuItem value={30}>Last 30 days</MenuItem>
-              <MenuItem value={90}>Last 90 days</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
-      </Box>
+              Export
+            </Button>
+            <Menu
+              anchorEl={exportAnchor}
+              open={Boolean(exportAnchor)}
+              onClose={() => setExportAnchor(null)}
+            >
+              <MenuItem onClick={() => handleExport('csv')}>
+                <CsvIcon sx={{ mr: 1 }} fontSize="small" />
+                Export as CSV
+              </MenuItem>
+              <MenuItem onClick={() => handleExport('excel')}>
+                <ExcelIcon sx={{ mr: 1 }} fontSize="small" />
+                Export as Excel
+              </MenuItem>
+            </Menu>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Period</InputLabel>
+              <Select
+                value={statsDays}
+                label="Period"
+                onChange={(e) => setStatsDays(Number(e.target.value))}
+              >
+                <MenuItem value={1}>Last 24h</MenuItem>
+                <MenuItem value={7}>Last 7 days</MenuItem>
+                <MenuItem value={30}>Last 30 days</MenuItem>
+                <MenuItem value={90}>Last 90 days</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        }
+      />
 
       {/* Stats Cards */}
       {statsError && <Alert severity="error" sx={{ mb: 3 }}>{statsError}</Alert>}
@@ -216,8 +215,7 @@ const AuditLogPage: React.FC = () => {
 
       {/* Action Breakdown */}
       {stats && Object.keys(stats.by_action).length > 0 && (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
+        <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: { xs: 2, sm: 3 }, mb: 3 }}>
             <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
               Activity by Type
             </Typography>
@@ -234,8 +232,7 @@ const AuditLogPage: React.FC = () => {
                   />
                 ))}
             </Stack>
-          </CardContent>
-        </Card>
+        </Paper>
       )}
 
       {/* Audit Log Table */}
@@ -256,7 +253,7 @@ const AuditLogPage: React.FC = () => {
           {exportError}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageTransition>
   );
 };
 

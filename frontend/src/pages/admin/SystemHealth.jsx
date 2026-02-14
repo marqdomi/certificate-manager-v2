@@ -5,8 +5,6 @@ import {
   Grid,
   Paper,
   Typography,
-  Card,
-  CardContent,
   Chip,
   CircularProgress,
   Alert,
@@ -30,7 +28,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CloudIcon from '@mui/icons-material/Cloud';
 
 import { getSystemHealth } from '../../services/adminApi';
-import { SkeletonStatCard } from '../../components/shared/SkeletonLoaders';
+import { glassmorphicCard } from '../../constants/styleMixins';
+import { TRANSITIONS } from '../../constants/designTokens';
+import { SkeletonStatCard, PageHeader, PageTransition } from '../../components/shared';
 
 const StatusIcon = ({ status, size = 'medium' }) => {
   switch (status) {
@@ -98,16 +98,16 @@ const ServiceCard = ({ title, icon, status, details, latency }) => {
     : {};
 
   return (
-    <Card
+    <Paper
       elevation={0}
       sx={{
+        ...glassmorphicCard(theme),
         height: '100%',
         bgcolor: getBgColor(),
-        border: `1px solid ${getBorderColor()}`,
-        borderRadius: 2,
+        borderColor: getBorderColor(),
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      <Box sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box
@@ -156,8 +156,8 @@ const ServiceCard = ({ title, icon, status, details, latency }) => {
             ))}
           </Box>
         )}
-      </CardContent>
-    </Card>
+      </Box>
+    </Paper>
   );
 };
 
@@ -166,7 +166,7 @@ const OverallHealthCard = ({ health, loading }) => {
 
   if (loading) {
     return (
-      <Paper sx={{ p: 4, borderRadius: 2 }}>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 4 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
           {[...Array(4)].map((_, i) => <SkeletonStatCard key={i} />)}
         </Box>
@@ -187,8 +187,8 @@ const OverallHealthCard = ({ health, loading }) => {
     <Paper
       elevation={0}
       sx={{
+        ...glassmorphicCard(theme),
         p: 4,
-        borderRadius: 2,
         border: `2px solid ${getStatusColor()}`,
         bgcolor: alpha(getStatusColor(), 0.05),
         textAlign: 'center',
@@ -342,29 +342,26 @@ const SystemHealth = () => {
   ];
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            System Health
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Monitor the health and performance of all system components
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {lastRefresh && (
-            <Typography variant="caption" color="text.secondary">
-              Last refresh: {lastRefresh.toLocaleTimeString()}
-            </Typography>
-          )}
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchHealth} disabled={loading}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
+    <PageTransition>
+      <PageHeader
+        title="System Health"
+        subtitle="Monitor the health and performance of all system components"
+        icon={<SpeedIcon />}
+        actions={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {lastRefresh && (
+              <Typography variant="caption" color="text.secondary">
+                Last refresh: {lastRefresh.toLocaleTimeString()}
+              </Typography>
+            )}
+            <Tooltip title="Refresh">
+              <IconButton onClick={fetchHealth} disabled={loading}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -382,9 +379,8 @@ const SystemHealth = () => {
           <Paper
             elevation={0}
             sx={{
+              ...glassmorphicCard(theme),
               p: 3,
-              borderRadius: 2,
-              border: `1px solid ${theme.palette.divider}`,
               height: '100%',
             }}
           >
@@ -453,7 +449,7 @@ const SystemHealth = () => {
           </Grid>
         ))}
       </Grid>
-    </Box>
+    </PageTransition>
   );
 };
 

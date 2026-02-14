@@ -28,7 +28,7 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import { DashboardSkeleton } from '../components/shared';
+import { DashboardSkeleton, PageHeader, PageTransition } from '../components/shared';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -42,7 +42,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { TRANSITIONS, LAYOUT } from '../constants/designTokens';
+import { TRANSITIONS } from '../constants/designTokens';
 
 // Auto-refresh interval in milliseconds (60 seconds)
 const AUTO_REFRESH_INTERVAL = 60000;
@@ -341,122 +341,103 @@ function DashboardPage() {
   };
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding, flexGrow: 1 }}>
+    <PageTransition>
       {/* Header with refresh controls */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        mb: 3,
-        flexWrap: 'wrap',
-        gap: 2
-      }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}>
-          Dashboard Overview
-        </Typography>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          {/* Last refresh indicator */}
-          <Chip
-            size="small"
-            label={`Updated ${formatLastRefresh()}`}
-            sx={{ 
-              bgcolor: alpha(theme.palette.info.main, 0.1),
-              color: 'text.secondary',
-              fontSize: '0.75rem',
-              display: { xs: 'none', sm: 'flex' }
-            }}
-          />
-          
-          {/* Auto-refresh countdown */}
-          {autoRefresh && (
-            <Tooltip title="Next auto-refresh">
-              <Chip
-                size="small"
-                label={`${nextRefreshIn}s`}
-                color="primary"
-                variant="outlined"
-                sx={{ minWidth: 50, fontSize: '0.75rem' }}
-              />
-            </Tooltip>
-          )}
-          
-          {/* Toggle auto-refresh */}
-          <Tooltip title={autoRefresh ? 'Pause auto-refresh' : 'Resume auto-refresh'}>
-            <IconButton 
-              size="small" 
-              onClick={toggleAutoRefresh}
-              sx={{ 
-                bgcolor: alpha(autoRefresh ? theme.palette.success.main : theme.palette.grey[500], 0.1),
-                '&:hover': {
-                  bgcolor: alpha(autoRefresh ? theme.palette.success.main : theme.palette.grey[500], 0.2),
-                }
-              }}
-            >
-              {autoRefresh ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-          
-          {/* Manual refresh button */}
-          <Tooltip title="Refresh now">
-            <IconButton 
-              size="small" 
-              onClick={handleManualRefresh}
-              disabled={refreshing}
-              sx={{ 
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                '&:hover': {
-                  bgcolor: alpha(theme.palette.primary.main, 0.2),
-                }
-              }}
-            >
-              <RefreshIcon 
-                fontSize="small" 
+      <PageHeader
+        title="Dashboard Overview"
+        subtitle={`Updated ${formatLastRefresh()}`}
+        actions={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            {/* Auto-refresh countdown */}
+            {autoRefresh && (
+              <Tooltip title="Next auto-refresh">
+                <Chip
+                  size="small"
+                  label={`${nextRefreshIn}s`}
+                  color="primary"
+                  variant="outlined"
+                  sx={{ minWidth: 50, fontSize: '0.75rem' }}
+                />
+              </Tooltip>
+            )}
+            
+            {/* Toggle auto-refresh */}
+            <Tooltip title={autoRefresh ? 'Pause auto-refresh' : 'Resume auto-refresh'}>
+              <IconButton 
+                size="small" 
+                onClick={toggleAutoRefresh}
                 sx={{ 
-                  animation: refreshing ? 'spin 1s linear infinite' : 'none',
-                  '@keyframes spin': {
-                    '0%': { transform: 'rotate(0deg)' },
-                    '100%': { transform: 'rotate(360deg)' },
+                  bgcolor: alpha(autoRefresh ? theme.palette.success.main : theme.palette.grey[500], 0.1),
+                  '&:hover': {
+                    bgcolor: alpha(autoRefresh ? theme.palette.success.main : theme.palette.grey[500], 0.2),
                   }
-                }} 
-              />
-            </IconButton>
-          </Tooltip>
+                }}
+              >
+                {autoRefresh ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+            
+            {/* Manual refresh button */}
+            <Tooltip title="Refresh now">
+              <IconButton 
+                size="small" 
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                sx={{ 
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.2),
+                  }
+                }}
+              >
+                <RefreshIcon 
+                  fontSize="small" 
+                  sx={{ 
+                    animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' },
+                    }
+                  }} 
+                />
+              </IconButton>
+            </Tooltip>
 
-          {/* Phase 4: Export button */}
-          <Tooltip title="Export Dashboard">
-            <IconButton 
-              size="small" 
-              onClick={handleExportMenuOpen}
-              disabled={exporting || loading}
-              sx={{ 
-                bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                '&:hover': {
-                  bgcolor: alpha(theme.palette.secondary.main, 0.2),
-                }
-              }}
-            >
-              <DownloadIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+            {/* Phase 4: Export button */}
+            <Tooltip title="Export Dashboard">
+              <IconButton 
+                size="small" 
+                onClick={handleExportMenuOpen}
+                disabled={exporting || loading}
+                sx={{ 
+                  bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                  }
+                }}
+              >
+                <DownloadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
 
-          {/* Phase 4: Widget config button */}
-          <Tooltip title="Configure Widgets">
-            <IconButton 
-              size="small" 
-              onClick={() => setWidgetConfigOpen(true)}
-              sx={{ 
-                bgcolor: alpha(theme.palette.grey[500], 0.1),
-                '&:hover': {
-                  bgcolor: alpha(theme.palette.grey[500], 0.2),
-                }
-              }}
-            >
-              <ViewModuleIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
+            {/* Phase 4: Widget config button */}
+            <Tooltip title="Configure Widgets">
+              <IconButton 
+                size="small" 
+                onClick={() => setWidgetConfigOpen(true)}
+                sx={{ 
+                  bgcolor: alpha(theme.palette.grey[500], 0.1),
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.grey[500], 0.2),
+                  }
+                }}
+              >
+                <ViewModuleIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        }
+      />
 
       {/* Export Menu */}
       <Menu
@@ -575,7 +556,7 @@ function DashboardPage() {
           <Dashboard stats={stats} onFilterSelect={handleDashboardFilter} widgetConfig={widgetConfig} />
         )}
       </Box>
-    </Box>
+    </PageTransition>
   );
 }
 

@@ -31,6 +31,7 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import type { DeploymentPlan } from '../../types/renewal';
+import { useTheme } from '@mui/material/styles';
 import { MONO_FONT } from '../../constants/designTokens';
 
 // Local types for plan data - standalone interfaces to avoid type conflicts
@@ -108,6 +109,8 @@ function formatAction(a: ActionItem): { type: string; description: string } {
 
 const PlanPreview: React.FC<PlanPreviewProps> = ({ plan }) => {
   const [showVirtualServers, setShowVirtualServers] = React.useState(false);
+  const theme = useTheme();
+  const radii = theme.customRadii || {};
 
   if (!plan) return null;
 
@@ -135,7 +138,7 @@ const PlanPreview: React.FC<PlanPreviewProps> = ({ plan }) => {
         variant="outlined"
         sx={{
           p: 2,
-          borderRadius: 2,
+          borderRadius: `${radii.sm ?? 8}px`,
           bgcolor: (theme) => alpha(theme.palette.background.paper, 0.5),
         }}
       >
@@ -233,7 +236,7 @@ const PlanPreview: React.FC<PlanPreviewProps> = ({ plan }) => {
         <Paper
           variant="outlined"
           sx={{
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             overflow: 'hidden',
           }}
         >
@@ -299,7 +302,7 @@ const PlanPreview: React.FC<PlanPreviewProps> = ({ plan }) => {
         <Paper
           variant="outlined"
           sx={{
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             overflow: 'hidden',
           }}
         >
@@ -336,7 +339,7 @@ const PlanPreview: React.FC<PlanPreviewProps> = ({ plan }) => {
         <Paper
           variant="outlined"
           sx={{
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             overflow: 'hidden',
           }}
         >

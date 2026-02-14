@@ -26,6 +26,7 @@ import {
   Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { validateDeployment } from '../../services/api';
+import { useTheme } from '@mui/material/styles';
 import { TRANSITIONS, MONO_FONT } from '../../constants/designTokens';
 import type { 
   UploadMode, 
@@ -56,6 +57,8 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ValidationResult | null>(null);
+  const theme = useTheme();
+  const radii = theme.customRadii || {};
 
   const handleModeChange = (_: React.MouseEvent<HTMLElement>, newMode: UploadMode | null) => {
     if (newMode) {
@@ -160,7 +163,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
           variant="outlined"
           sx={{
             p: 3,
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02),
           }}
         >
@@ -176,7 +179,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
                 bgcolor: pfxFile 
                   ? (theme) => alpha(theme.palette.success.main, 0.04)
                   : 'transparent',
-                borderRadius: 2,
+                borderRadius: `${radii.sm ?? 8}px`,
                 cursor: 'pointer',
                 transition: TRANSITIONS.fast,
                 '&:hover': {
@@ -237,7 +240,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
           variant="outlined"
           sx={{
             p: 3,
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02),
           }}
         >
@@ -320,7 +323,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
       {error && (
         <Alert 
           severity="error" 
-          sx={{ mt: 2, borderRadius: 2 }}
+          sx={{ mt: 2, borderRadius: `${radii.sm ?? 8}px` }}
           icon={<WarningIcon />}
         >
           {error}
@@ -334,7 +337,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
           sx={{ 
             mt: 3, 
             p: 2.5, 
-            borderRadius: 2,
+            borderRadius: `${radii.sm ?? 8}px`,
             borderColor: 'success.main',
             bgcolor: (theme) => alpha(theme.palette.success.main, 0.04),
           }}
@@ -399,7 +402,7 @@ const UploadCertStep: React.FC<UploadCertStepProps> = ({
           })()}
 
           {result.warnings && result.warnings.length > 0 && (
-            <Alert severity="warning" sx={{ mt: 2, borderRadius: 1 }} icon={<WarningIcon />}>
+            <Alert severity="warning" sx={{ mt: 2, borderRadius: `${radii.xs ?? 4}px` }} icon={<WarningIcon />}>
               <Typography variant="body2">
                 {result.warnings.join(' • ')}
               </Typography>

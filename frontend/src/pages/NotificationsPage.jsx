@@ -45,10 +45,8 @@ import {
 } from '@mui/icons-material';
 import { getNotifications, markNotificationsRead, deleteNotifications } from '../services/adminApi';
 import useWebSocketNotifications from '../hooks/useWebSocketNotifications';
-import { LAYOUT } from '../constants/designTokens';
-import EmptyState from '../components/shared/EmptyState';
-import ConfirmDialog from '../components/shared/ConfirmDialog';
-import { SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { glassmorphicCard } from '../constants/styleMixins';
+import { EmptyState, ConfirmDialog, SkeletonTable, PageHeader, PageTransition } from '../components/shared';
 
 // Helper function to calculate time difference in relative format
 const getRelativeTime = (dateString) => {
@@ -272,44 +270,37 @@ const NotificationsPage = () => {
   const hasActiveFilters = searchTerm || typeFilter !== 'all' || priorityFilter !== 'all' || readFilter !== 'all';
   
   return (
-    <Box sx={{ p: LAYOUT.pagePadding }}>
+    <PageTransition>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <NotificationsIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Typography variant="h4" fontWeight="bold">
-            Notificaciones
-          </Typography>
-          {isConnected && (
-            <Chip
-              size="small"
-              color="success"
-              variant="outlined"
-              icon={<CircleIcon sx={{ fontSize: '10px !important' }} />}
-              label="Tiempo real"
-            />
-          )}
-        </Box>
-        <Stack direction="row" spacing={1}>
-          <Tooltip title="Marcar todas como leídas">
-            <Button
-              variant="outlined"
-              startIcon={<ClearAllIcon />}
-              onClick={handleMarkAllRead}
-            >
-              Marcar todas
-            </Button>
-          </Tooltip>
-          <Tooltip title="Actualizar">
-            <IconButton onClick={fetchNotifications} color="primary" aria-label="Refresh notifications">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Box>
+      <PageHeader
+        title="Notificaciones"
+        subtitle="Centro de alertas y eventos del sistema"
+        badge={isConnected ? {
+          label: 'Tiempo real',
+          color: 'success',
+        } : undefined}
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Tooltip title="Marcar todas como leídas">
+              <Button
+                variant="outlined"
+                startIcon={<ClearAllIcon />}
+                onClick={handleMarkAllRead}
+              >
+                Marcar todas
+              </Button>
+            </Tooltip>
+            <Tooltip title="Actualizar">
+              <IconButton onClick={fetchNotifications} color="primary" aria-label="Refresh notifications">
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        }
+      />
       
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2, mb: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
           <TextField
             size="small"
@@ -389,7 +380,7 @@ const NotificationsPage = () => {
       )}
       
       {/* Table */}
-      <Paper>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
         {/* Selection toolbar */}
         {selected.length > 0 && (
           <Toolbar
@@ -593,7 +584,7 @@ const NotificationsPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageTransition>
   );
 };
 

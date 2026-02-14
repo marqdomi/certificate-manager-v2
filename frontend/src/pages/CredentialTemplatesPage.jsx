@@ -57,9 +57,8 @@ import InfoIcon from '@mui/icons-material/Info';
 import DevicesIcon from '@mui/icons-material/Devices';
 
 import apiClient from '../services/api';
-import { LAYOUT } from '../constants/designTokens';
-import EmptyState from '../components/shared/EmptyState';
-import { SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { PageHeader, PageTransition, EmptyState, SkeletonTable } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 
 const CredentialTemplatesPage = () => {
   const theme = useTheme();
@@ -231,47 +230,31 @@ const CredentialTemplatesPage = () => {
   }
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding }}>
+    <PageTransition>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              color: 'primary.main',
-            }}
-          >
-            <VpnKeyIcon sx={{ fontSize: 32 }} />
+      <PageHeader
+        title="Credential Templates"
+        subtitle="Manage reusable credential sets for F5 devices."
+        actions={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={loadTemplates}
+              disabled={loading}
+            >
+              Refresh
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+            >
+              New Template
+            </Button>
           </Box>
-          <Box>
-            <Typography variant="h4" fontWeight={600}>
-              Credential Templates
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Manage reusable credential sets for F5 devices
-            </Typography>
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={loadTemplates}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreate}
-          >
-            New Template
-          </Button>
-        </Box>
-      </Box>
+        }
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -287,7 +270,7 @@ const CredentialTemplatesPage = () => {
       </Alert>
 
       {/* Templates Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+      <TableContainer component={Paper} elevation={0} sx={{ ...glassmorphicCard(theme) }}>
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
@@ -562,7 +545,7 @@ const CredentialTemplatesPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </PageTransition>
   );
 };
 

@@ -10,6 +10,7 @@ import {
   Box,
   Typography,
   Paper,
+  useTheme,
   Table,
   TableBody,
   TableCell,
@@ -47,10 +48,8 @@ import {
 } from '@mui/icons-material';
 import { fetchWildcardGroups, fetchWildcardDetails, startBatchDeploy, fetchBatchDeployStatus } from '../api/batch';
 import type { WildcardGroup, WildcardInstance, BatchDeployResponse, BatchDeployStatus } from '../types/batch';
-import { StatCard as SharedStatCard, PageHeader } from '../components/shared';
-import { LAYOUT } from '../constants/designTokens';
-import EmptyState from '../components/shared/EmptyState';
-import { SkeletonTable } from '../components/shared/SkeletonLoaders';
+import { StatCard as SharedStatCard, PageHeader, PageTransition, EmptyState, SkeletonTable } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 
 // Days until expiration to show warning
 const EXPIRY_WARNING_DAYS = 30;
@@ -367,6 +366,7 @@ const BatchDeployDialog: React.FC<BatchDeployDialogProps> = ({
 
 // Main Page Component
 const BatchRenewalPage: React.FC = () => {
+  const theme = useTheme();
   const [groups, setGroups] = useState<WildcardGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -413,7 +413,7 @@ const BatchRenewalPage: React.FC = () => {
   }).length;
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding }}>
+    <PageTransition>
       {/* Header */}
       <PageHeader
         title="Batch Renewal"
@@ -462,7 +462,7 @@ const BatchRenewalPage: React.FC = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {/* Table */}
-      <Paper>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
         <TableContainer>
           <Table>
             <TableHead>
@@ -515,7 +515,7 @@ const BatchRenewalPage: React.FC = () => {
         wildcardName={deployDialog.wildcardName}
         devices={deployDialog.devices}
       />
-    </Box>
+    </PageTransition>
   );
 };
 

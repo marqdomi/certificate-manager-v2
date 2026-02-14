@@ -88,9 +88,7 @@ import BulkActionsBar from '../components/BulkActionsBar';
 import BulkCredentialsDialog from '../components/BulkCredentialsDialog';
 import { useDeviceWebSocket } from '../hooks/useDeviceWebSocket';
 import type { Device, DeviceCredentials, DeviceCreate } from '../types/device';
-import SharedStatCard from '../components/shared/StatCard';
-import EmptyState from '../components/shared/EmptyState';
-import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { StatCard as SharedStatCard, EmptyState, ConfirmDialog, PageHeader, PageTransition } from '../components/shared';
 import { glassmorphicCard } from '../constants/styleMixins';
 import { STATUS_COLORS, FAVORITE_COLOR, TRANSITIONS, MONO_FONT } from '../constants/designTokens';
 
@@ -794,32 +792,26 @@ const DevicesPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <Paper elevation={0} sx={glassmorphicStyle}>
-        {/* Header */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  Device Inventory
-                </Typography>
-                <Chip
-                  icon={wsConnected ? <WifiIcon /> : <WifiOffIcon />}
-                  label={wsConnected ? 'Live' : 'Offline'}
-                  color={wsConnected ? 'success' : 'default'}
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontWeight: 500 }}
-                />
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Manage and monitor your F5 BIG-IP devices
-              </Typography>
-            </Box>
-          </Box>
+    <PageTransition>
+      {/* Header */}
+      <PageHeader
+        title="Device Inventory"
+        subtitle="Manage and monitor your F5 BIG-IP devices"
+        badge={
+          <Chip
+            icon={wsConnected ? <WifiIcon /> : <WifiOffIcon />}
+            label={wsConnected ? 'Live' : 'Offline'}
+            color={wsConnected ? 'success' : 'default'}
+            size="small"
+            variant="outlined"
+            sx={{ fontWeight: 500 }}
+          />
+        }
+      />
 
-          {/* Stats */}
+      <Paper elevation={0} sx={glassmorphicStyle}>
+        {/* Stats */}
+        <Box sx={{ mb: 3 }}>
           <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 1.5 }}>
             <StatCard
               icon={<DevicesIcon />}
@@ -1215,7 +1207,7 @@ const DevicesPage: React.FC = () => {
         onConfirm={executeDeleteDevice}
         onCancel={() => setConfirmDeleteId(null)}
       />
-    </Box>
+    </PageTransition>
   );
 };
 

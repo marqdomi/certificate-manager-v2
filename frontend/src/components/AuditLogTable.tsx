@@ -27,9 +27,9 @@ import {
   Stack,
   Alert,
   CircularProgress,
-  Card,
-  CardContent,
+  useTheme,
 } from '@mui/material';
+import { glassmorphicCard } from '../constants/styleMixins';
 import {
   Refresh as RefreshIcon,
   FilterList as FilterIcon,
@@ -186,10 +186,11 @@ const AuditLogTable: React.FC<AuditLogTableProps> = ({
     );
   };
 
+  const theme = useTheme();
+
   if (compact) {
     return (
-      <Card variant="outlined">
-        <CardContent>
+      <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6">Recent Activity</Typography>
             <IconButton onClick={loadLogs} size="small" disabled={loading}>
@@ -234,13 +235,12 @@ const AuditLogTable: React.FC<AuditLogTableProps> = ({
               ))}
             </Stack>
           )}
-        </CardContent>
-      </Card>
+      </Paper>
     );
   }
 
   return (
-    <Paper sx={{ p: 2 }}>
+    <Paper elevation={0} sx={{ ...glassmorphicCard(theme), p: 2 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">Audit Log</Typography>

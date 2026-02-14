@@ -14,13 +14,11 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
-  Card,
-  CardContent,
-  CardHeader,
   IconButton,
   InputAdornment,
   Chip,
   Stack,
+  useTheme,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -37,12 +35,13 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/api';
-import { LAYOUT } from '../constants/designTokens';
-import { SkeletonStatCard } from '../components/shared/SkeletonLoaders';
+import { PageHeader, PageTransition, SkeletonStatCard } from '../components/shared';
+import { glassmorphicCard } from '../constants/styleMixins';
 import { changeMyPassword } from '../services/adminApi';
 
 const ProfilePage = () => {
   const { user, refreshUser } = useAuth();
+  const theme = useTheme();
   
   // Profile state
   const [profileData, setProfileData] = useState({
@@ -209,7 +208,7 @@ const ProfilePage = () => {
 
   if (profileLoading) {
     return (
-      <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1000, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
           {[...Array(4)].map((_, i) => <SkeletonStatCard key={i} />)}
         </Box>
@@ -218,23 +217,21 @@ const ProfilePage = () => {
   }
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding, maxWidth: 1000, mx: 'auto' }}>
+    <PageTransition>
+      <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
-        <PersonIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-        <Typography variant="h4" fontWeight="bold">
-          My Profile
-        </Typography>
-      </Box>
+      <PageHeader
+        title="My Profile"
+        subtitle="Manage your personal information and security settings."
+      />
 
       <Grid container spacing={3}>
         {/* Profile Card */}
         <Grid item xs={12} md={8}>
-          <Card>
-            <CardHeader
-              title="Personal Information"
-              action={
-                !editing ? (
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Personal Information</Typography>
+              {!editing ? (
                   <IconButton onClick={() => setEditing(true)} aria-label="Edit profile">
                     <EditIcon />
                   </IconButton>
@@ -258,9 +255,9 @@ const ProfilePage = () => {
                   </Stack>
                 )
               }
-            />
-            <Divider />
-            <CardContent>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -327,13 +324,13 @@ const ProfilePage = () => {
                   />
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         {/* Avatar and Info Card */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ textAlign: 'center', py: 3 }}>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme), textAlign: 'center', py: 3 }}>
             <Avatar
               sx={{
                 width: 120,
@@ -364,18 +361,18 @@ const ProfilePage = () => {
                 </Typography>
               </Box>
             )}
-          </Card>
+          </Paper>
         </Grid>
 
         {/* Password Change Card */}
         <Grid item xs={12} md={8}>
-          <Card>
-            <CardHeader
-              title="Change Password"
-              avatar={<LockIcon color="action" />}
-            />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 2 }}>
+              <LockIcon color="action" />
+              <Typography variant="subtitle1" fontWeight={600}>Change Password</Typography>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <TextField
@@ -481,16 +478,18 @@ const ProfilePage = () => {
                   </Button>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
 
         {/* Security Info Card */}
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardHeader title="Security" />
-            <Divider />
-            <CardContent>
+          <Paper elevation={0} sx={{ ...glassmorphicCard(theme) }}>
+            <Box sx={{ px: 2, pt: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Security</Typography>
+            </Box>
+            <Divider sx={{ mt: 1 }} />
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography variant="body2" color="text.secondary" paragraph>
                 <strong>Password Requirements:</strong>
               </Typography>
@@ -516,8 +515,8 @@ const ProfilePage = () => {
                   </Typography>
                 </li>
               </Box>
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -536,7 +535,8 @@ const ProfilePage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+      </Box>
+    </PageTransition>
   );
 };
 

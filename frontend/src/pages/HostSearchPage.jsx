@@ -34,8 +34,6 @@ import {
   FormControlLabel,
   Autocomplete,
   Divider,
-  Card,
-  CardContent,
   Stack,
   IconButton,
   Tooltip,
@@ -69,8 +67,9 @@ import {
   Groups as GroupsIcon,
 } from '@mui/icons-material';
 import apiClient from '../services/api';
-import SharedStatCard from '../components/shared/StatCard';
-import { HOST_COMPONENT_COLORS, MONO_FONT, LAYOUT } from '../constants/designTokens';
+import { StatCard as SharedStatCard, PageHeader, PageTransition } from '../components/shared';
+import { HOST_COMPONENT_COLORS, MONO_FONT } from '../constants/designTokens';
+import { glassmorphicCard } from '../constants/styleMixins';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -208,7 +207,7 @@ const DeviceResultsAccordion = ({ device, enabledComponents }) => {
       onChange={() => setExpanded(!expanded)}
       sx={{
         border: `1px solid ${theme.palette.divider}`,
-        borderRadius: '8px !important',
+        borderRadius: `${theme.customRadii?.sm ?? 8}px !important`,
         mb: 1,
         '&:before': { display: 'none' },
         '&.Mui-expanded': { margin: '0 0 8px 0' },
@@ -802,30 +801,20 @@ export default function HostSearchPage() {
   const activeComponentCount = Object.values(enabledComponents).filter(Boolean).length;
 
   return (
-    <Box sx={{ p: LAYOUT.pagePadding }}>
+    <PageTransition>
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <TravelExploreIcon sx={{ fontSize: 32, color: 'primary.main' }} />
-          <Box>
-            <Typography variant="h4" fontWeight={700}>
-              Infrastructure Search
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Find hostnames, IPs, and patterns across your F5 infrastructure
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+      <PageHeader
+        title="Infrastructure Search"
+        subtitle="Find hostnames, IPs, and patterns across your F5 infrastructure"
+      />
 
       {/* Main Search Card */}
       <Paper 
         elevation={0} 
         sx={{ 
+          ...glassmorphicCard(theme),
           p: 3, 
           mb: 3, 
-          border: `1px solid ${theme.palette.divider}`,
-          borderRadius: 2,
         }}
       >
         {/* Search Terms Input */}
@@ -1290,10 +1279,9 @@ export default function HostSearchPage() {
         <Paper 
           elevation={0} 
           sx={{ 
+            ...glassmorphicCard(theme),
             p: 2, 
             mb: 3, 
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 2,
           }}
         >
           <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2 }}>
@@ -1349,10 +1337,9 @@ export default function HostSearchPage() {
         <Paper 
           elevation={0} 
           sx={{ 
+            ...glassmorphicCard(theme),
             p: 6, 
             textAlign: 'center',
-            border: `1px dashed ${theme.palette.divider}`,
-            borderRadius: 2,
           }}
         >
           <TravelExploreIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
@@ -1365,6 +1352,6 @@ export default function HostSearchPage() {
           </Typography>
         </Paper>
       )}
-    </Box>
+    </PageTransition>
   );
 }

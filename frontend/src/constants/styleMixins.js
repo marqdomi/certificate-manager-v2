@@ -27,7 +27,7 @@ import { alpha } from '@mui/material/styles';
  */
 export function glassmorphicCard(theme, { blur = 12, opacity } = {}) {
   const isDark = theme.palette.mode === 'dark';
-  const bgOpacity = opacity ?? (isDark ? 0.55 : 0.65);
+  const bgOpacity = opacity ?? (isDark ? 0.72 : 0.88);
 
   return {
     backdropFilter: `blur(${blur}px)`,
@@ -35,8 +35,8 @@ export function glassmorphicCard(theme, { blur = 12, opacity } = {}) {
     backgroundColor: isDark
       ? `rgba(26, 33, 51, ${bgOpacity})`
       : `rgba(255, 255, 255, ${bgOpacity})`,
-    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
-    borderRadius: theme.customRadii?.lg ?? 16,
+    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.10)'}`,
+    borderRadius: theme.customRadii?.sm ?? 2,
     transition: theme.customTransitions?.standard ?? 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 }
@@ -56,7 +56,7 @@ export function accentCard(theme, accentColor) {
   return {
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: theme.customRadii?.lg ?? 16,
+    borderRadius: theme.customRadii?.sm ?? 8,
     border: `1px solid ${theme.palette.divider}`,
     transition: theme.customTransitions?.standard ?? 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
     '&::before': {
@@ -230,7 +230,7 @@ export function sectionHeader() {
 export function gradientHeader(theme) {
   return {
     background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.03)} 100%)`,
-    borderRadius: theme.customRadii?.lg ?? 16,
+    borderRadius: theme.customRadii?.sm ?? 8,
     p: { xs: 2, sm: 3 },
     mb: 3,
     border: `1px solid ${theme.palette.divider}`,

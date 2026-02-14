@@ -89,7 +89,7 @@ const KpiStat = ({ icon, label, value, color, onClick, active, animated, tooltip
         gap: 1.5,
         px: 2.5,
         py: 1.5,
-        borderRadius: theme.customRadii?.lg ?? 16,
+        borderRadius: theme.customRadii?.sm ?? 8,
         cursor: onClick ? 'pointer' : 'default',
         transition: theme.customTransitions?.fast ?? 'all 0.15s ease',
         border: '2px solid',
@@ -274,8 +274,22 @@ const SimpleStat = ({ icon, title, label, value, subtitle, color, onClick, anima
   const displayTitle = title || label;
 
   const content = (
-    <Card sx={{ height: '100%', cursor: onClick ? 'pointer' : 'default' }} onClick={onClick}>
-      <CardContent>
+    <Paper
+      elevation={0}
+      onClick={onClick}
+      sx={{
+        ...glassmorphicCard(theme),
+        height: '100%',
+        cursor: onClick ? 'pointer' : 'default',
+        p: 2,
+        '&:hover': onClick
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: theme.customShadows?.elevated ?? '0 4px 24px rgba(0,0,0,0.08)',
+            }
+          : {},
+      }}
+    >
         <Stack direction="row" spacing={2} alignItems="center">
           {icon && (
             <Box
@@ -304,8 +318,7 @@ const SimpleStat = ({ icon, title, label, value, subtitle, color, onClick, anima
             )}
           </Box>
         </Stack>
-      </CardContent>
-    </Card>
+    </Paper>
   );
 
   return tooltip ? (

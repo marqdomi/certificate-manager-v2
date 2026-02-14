@@ -1,18 +1,18 @@
 // frontend/src/components/Dashboard.jsx
-// Enhanced Dashboard with detailed metrics - Phase 1, 2 & 3 Improvements
+// Enhanced Dashboard with detailed metrics - Phase 1, 2, 3 & 6 DashboardCard
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { 
   Grid, Paper, Typography, Box, useTheme, Divider, Button, Chip, 
-  LinearProgress, Avatar, alpha, Tooltip as MuiTooltip, IconButton 
+  LinearProgress, Avatar, alpha 
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { 
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  LineChart, Line, Area, AreaChart,
+  Area, AreaChart,
   RadialBarChart, RadialBar,
-  Treemap,
+  Line,
 } from 'recharts';
 import SecurityIcon from '@mui/icons-material/Security';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -20,7 +20,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DevicesIcon from '@mui/icons-material/Dns';
 import StorageIcon from '@mui/icons-material/Storage';
-import PendingActionsIcon from '@mui/icons-material/PendingActions';
+
 import HistoryIcon from '@mui/icons-material/History';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -39,18 +39,10 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import SharedStatCard, { useCountUp, AnimatedValue as AnimatedNumber } from './shared/StatCard';
-import { glassmorphicCard } from '../constants/styleMixins';
-import { CHART_COLORS, TRANSITIONS, getChartColors } from '../constants/designTokens';
+import SharedStatCard, { AnimatedValue as AnimatedNumber } from './shared/StatCard';
+import DashboardCard from './shared/DashboardCard';
+import { TRANSITIONS, getChartColors } from '../constants/designTokens';
 import { StaggerContainer, StaggerItem } from './shared/AnimationWrappers';
-
-const glassmorphicStyle = (theme) => ({
-  p: { xs: 2, sm: 2.5 },
-  height: '100%',
-  ...glassmorphicCard(theme),
-});
 
 const StatCard = ({ title, value, color, icon: Icon, onClick, subtitle, animated = true, tooltip }) => (
   <SharedStatCard
@@ -99,22 +91,11 @@ const HealthScoreGauge = ({ score, theme }) => {
   const data = [{ value: score, fill: color }];
 
   return (
-    <Paper elevation={0} sx={glassmorphicStyle}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <SpeedIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-          Health Score
-        </Typography>
-        <MuiTooltip 
-          title="Overall certificate health score (0-100). Calculated based on the ratio of healthy, warning, and expired certificates. Higher is better."
-          arrow
-          placement="top"
-        >
-          <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Health score info">
-            <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-          </IconButton>
-        </MuiTooltip>
-      </Box>
+    <DashboardCard
+      title="Health Score"
+      icon={<SpeedIcon />}
+      tooltip="Overall certificate health score (0-100). Calculated based on the ratio of healthy, warning, and expired certificates. Higher is better."
+    >
       <Box sx={{ width: '100%', height: 200, position: 'relative' }}>
         <ResponsiveContainer>
           <RadialBarChart
@@ -169,7 +150,7 @@ const HealthScoreGauge = ({ score, theme }) => {
           <Typography variant="caption" color="text.secondary">0-39</Typography>
         </Box>
       </Box>
-    </Paper>
+    </DashboardCard>
   );
 };
 
@@ -212,30 +193,19 @@ const ExpirationTrendChart = ({ certificates, theme }) => {
   const maxExpiring = Math.max(...trendData.map(d => d.expiring), 1);
 
   return (
-    <Paper elevation={0} sx={glassmorphicStyle}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <TrendingUpIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-          <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            Expiration Forecast
-          </Typography>
-          <MuiTooltip 
-            title="12-month forecast showing certificates expiring each month. The dashed line shows cumulative expiring certificates. Plan renewals accordingly."
-            arrow
-            placement="top"
-          >
-            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Expiration forecast info">
-              <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            </IconButton>
-          </MuiTooltip>
-        </Box>
+    <DashboardCard
+      title="Expiration Forecast"
+      icon={<TrendingUpIcon />}
+      tooltip="12-month forecast showing certificates expiring each month. The dashed line shows cumulative expiring certificates. Plan renewals accordingly."
+      action={
         <Chip 
           label={`${trendData.reduce((sum, d) => sum + d.expiring, 0)} in 12mo`}
           size="small"
           color="warning"
           variant="outlined"
         />
-      </Box>
+      }
+    >
       <Box sx={{ width: '100%', height: { xs: 200, sm: 250 } }}>
         <ResponsiveContainer>
           <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
@@ -297,7 +267,7 @@ const ExpirationTrendChart = ({ certificates, theme }) => {
           <Typography variant="caption" color="text.secondary">Cumulative</Typography>
         </Box>
       </Box>
-    </Paper>
+    </DashboardCard>
   );
 };
 
@@ -345,23 +315,11 @@ const ActivityTimeline = ({ auditStats, theme, navigate }) => {
   };
 
   return (
-    <Paper elevation={0} sx={glassmorphicStyle}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <TimelineIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-          <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            Recent Activity
-          </Typography>
-          <MuiTooltip 
-            title="Latest system activities including scans, renewals, deployments, and certificate cleanup operations. Color-coded by action type."
-            arrow
-            placement="top"
-          >
-            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Recent activity info">
-              <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            </IconButton>
-          </MuiTooltip>
-        </Box>
+    <DashboardCard
+      title="Recent Activity"
+      icon={<TimelineIcon />}
+      tooltip="Latest system activities including scans, renewals, deployments, and certificate cleanup operations. Color-coded by action type."
+      action={
         <Button 
           size="small" 
           onClick={() => navigate('/audit-log')}
@@ -369,8 +327,9 @@ const ActivityTimeline = ({ auditStats, theme, navigate }) => {
         >
           View All
         </Button>
-      </Box>
-      <Divider sx={{ mb: 2 }} />
+      }
+      divider
+    >
       
       {recentActivities.length > 0 ? (
         <Box sx={{ maxHeight: 280, overflow: 'auto' }}>
@@ -429,7 +388,7 @@ const ActivityTimeline = ({ auditStats, theme, navigate }) => {
           </Typography>
         </Box>
       )}
-    </Paper>
+    </DashboardCard>
   );
 };
 
@@ -461,32 +420,22 @@ const CriticalCertificates = ({ certificates, theme, navigate }) => {
   };
 
   return (
-    <Paper elevation={0} sx={glassmorphicStyle}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <PriorityHighIcon sx={{ mr: 1, color: theme.palette.error.main }} />
-          <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            Critical Expired
-          </Typography>
-          <MuiTooltip 
-            title="Top 5 most critical expired certificates, prioritized by the number of profiles/services using them. Higher usage = higher priority for renewal."
-            arrow
-            placement="top"
-          >
-            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Critical expired info">
-              <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            </IconButton>
-          </MuiTooltip>
-        </Box>
-        {criticalCerts.length > 0 && (
+    <DashboardCard
+      title="Critical Expired"
+      icon={<PriorityHighIcon />}
+      iconColor="error"
+      tooltip="Top 5 most critical expired certificates, prioritized by the number of profiles/services using them. Higher usage = higher priority for renewal."
+      action={
+        criticalCerts.length > 0 ? (
           <Chip 
             label={`${criticalCerts.length} urgent`}
             size="small"
             color="error"
           />
-        )}
-      </Box>
-      <Divider sx={{ mb: 2 }} />
+        ) : null
+      }
+      divider
+    >
       
       {criticalCerts.length > 0 ? (
         <Box>
@@ -565,7 +514,7 @@ const CriticalCertificates = ({ certificates, theme, navigate }) => {
           </Typography>
         </Box>
       )}
-    </Paper>
+    </DashboardCard>
   );
 };
 
@@ -684,30 +633,19 @@ const CertificatesBySite = ({ certificates, devices, theme, navigate }) => {
   };
 
   return (
-    <Paper elevation={0} sx={glassmorphicStyle}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <LocationOnIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-          <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            Certificates by Site
-          </Typography>
-          <MuiTooltip 
-            title="Distribution of SSL certificates across different data center sites. Shows certificate count and health status per location."
-            arrow
-            placement="top"
-          >
-            <IconButton size="small" sx={{ ml: 0.5 }} aria-label="Certificates by site info">
-              <InfoOutlinedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            </IconButton>
-          </MuiTooltip>
-        </Box>
+    <DashboardCard
+      title="Certificates by Site"
+      icon={<LocationOnIcon />}
+      tooltip="Distribution of SSL certificates across different data center sites. Shows certificate count and health status per location."
+      action={
         <Chip 
           label={`${siteData.length} sites`}
           size="small"
           color="primary"
           variant="outlined"
         />
-      </Box>
+      }
+    >
 
       {siteData.length > 0 ? (
         <>
@@ -785,27 +723,9 @@ const CertificatesBySite = ({ certificates, devices, theme, navigate }) => {
           </Typography>
         </Box>
       )}
-    </Paper>
+    </DashboardCard>
   );
 };
-
-// ============================================
-// PHASE 3 - Helper: Info Tooltip Component
-// ============================================
-const InfoTooltip = ({ title, children }) => (
-  <MuiTooltip 
-    title={title}
-    arrow
-    placement="top"
-    enterDelay={300}
-    leaveDelay={100}
-  >
-    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help' }}>
-      {children}
-      <HelpOutlineIcon sx={{ fontSize: 14, ml: 0.5, color: 'text.secondary', opacity: 0.7 }} />
-    </Box>
-  </MuiTooltip>
-);
 
 // ============================================
 // MAIN DASHBOARD COMPONENT
@@ -938,53 +858,43 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
       {/* Expiration Timeline (existing) - Phase 4: Conditional visibility */}
       {isWidgetVisible('expirationTimeline') && (
         <Grid item xs={12} md={8}>
-        <Paper elevation={0} sx={glassmorphicStyle}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-            Expiration Timeline
-          </Typography>
-          <Box sx={{ width: '100%', height: { xs: 200, sm: 250 } }}>
-            <ResponsiveContainer>
-              <BarChart data={expirationBarData} layout="vertical" margin={{ left: 10, right: 30 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                <XAxis type="number" stroke={theme.palette.text.secondary} />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  width={60} 
-                  stroke={theme.palette.text.secondary}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: theme.palette.background.paper,
-                    borderColor: theme.palette.divider,
-                    borderRadius: 8
-                  }}
-                  formatter={(value) => [value, 'Certificates']}
-                />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {expirationBarData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
-      </Grid>
+          <DashboardCard title="Expiration Timeline">
+            <Box sx={{ width: '100%', height: { xs: 200, sm: 250 } }}>
+              <ResponsiveContainer>
+                <BarChart data={expirationBarData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                  <XAxis type="number" stroke={theme.palette.text.secondary} />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    width={60} 
+                    stroke={theme.palette.text.secondary}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      borderColor: theme.palette.divider,
+                      borderRadius: 8
+                    }}
+                    formatter={(value) => [value, 'Certificates']}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {expirationBarData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          </DashboardCard>
+        </Grid>
       )}
 
       {/* Device Stats (existing) - Phase 4: Conditional visibility */}
       {isWidgetVisible('deviceStats') && (
         <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={glassmorphicStyle}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                F5 Devices
-              </Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
+          <DashboardCard title="F5 Devices" icon={<DevicesIcon />} divider>
             <Grid container>
               <Grid item xs={4}>
                 <MiniStatCard title="Total" value={deviceStats.total || 0} color={theme.palette.text.primary} />
@@ -1011,20 +921,18 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                 px: 1,
                 borderRadius: 1,
                 transition: 'background-color 0.2s ease',
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover
-              }
-            }}>
-              <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }}>
-                {device.name}
-              </Typography>
-              <Typography variant="body2" fontWeight="bold" color="primary">
-                <AnimatedNumber value={device.count} duration={600 + idx * 100} />
-              </Typography>
-            </Box>
-          ))}
-        </Paper>
-      </Grid>
+                '&:hover': { backgroundColor: theme.palette.action.hover },
+              }}>
+                <Typography variant="body2" noWrap sx={{ maxWidth: '70%' }}>
+                  {device.name}
+                </Typography>
+                <Typography variant="body2" fontWeight="bold" color="primary">
+                  <AnimatedNumber value={device.count} duration={600 + idx * 100} />
+                </Typography>
+              </Box>
+            ))}
+          </DashboardCard>
+        </Grid>
       )}
 
       {/* Critical Expired Certificates - Phase 4: Conditional visibility */}
@@ -1051,55 +959,49 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
       {/* Health Pie Chart - Phase 4: Conditional visibility */}
       {isWidgetVisible('certificateHealth') && (
         <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={glassmorphicStyle}>
-            <Typography variant="h6" align="center" sx={{ fontWeight: 'bold', mb: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              Certificate Health
-            </Typography>
+          <DashboardCard
+            title="Certificate Health"
+            icon={<SecurityIcon />}
+            tooltip="Overall distribution of certificate statuses: healthy (>30 days), warning (<30 days), and expired."
+          >
             <Box sx={{ width: '100%', height: { xs: 220, sm: 280 } }}>
               <ResponsiveContainer>
                 <PieChart>
                   <Pie 
-                  data={healthPieData} 
-                  dataKey="value" 
-                  nameKey="name" 
-                  cx="50%" 
-                  cy="50%" 
-                  outerRadius="75%"
-                  innerRadius="45%"
-                  labelLine={false}
-                  label={renderCustomizedLabel}
-                >
-                  {healthPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke={theme.palette.background.paper} strokeWidth={2} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: theme.palette.background.paper,
-                    borderColor: theme.palette.divider,
-                    borderRadius: 8
-                  }}
-                  formatter={(value) => [value, 'Certificates']} 
-                />
-                <Legend iconSize={10} verticalAlign="bottom" wrapperStyle={{paddingTop: 10}} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Box>
-        </Paper>
-      </Grid>
+                    data={healthPieData} 
+                    dataKey="value" 
+                    nameKey="name" 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius="75%"
+                    innerRadius="45%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                  >
+                    {healthPieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke={theme.palette.background.paper} strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      borderColor: theme.palette.divider,
+                      borderRadius: 8
+                    }}
+                    formatter={(value) => [value, 'Certificates']} 
+                  />
+                  <Legend iconSize={10} verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+          </DashboardCard>
+        </Grid>
       )}
 
       {/* Quick Actions Widget - Phase 4: Conditional visibility */}
       {isWidgetVisible('quickActions') && (
         <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={glassmorphicStyle}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <AssignmentIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                Quick Actions
-              </Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
+          <DashboardCard title="Quick Actions" icon={<AssignmentIcon />} divider>
             <Grid container spacing={1.5}>
               <Grid item xs={6}>
                 <Button
@@ -1113,7 +1015,7 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                     borderColor: 'divider',
                     fontSize: { xs: '0.7rem', sm: '0.875rem' },
                     '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                    transition: TRANSITIONS.fast
+                    transition: TRANSITIONS.fast,
                   }}
                 >
                   Generate CSR
@@ -1123,65 +1025,65 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                 <Button
                   fullWidth
                   variant="outlined"
-                startIcon={<UploadFileIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
-                onClick={() => navigate('/pfx-generator')}
-                sx={{ 
-                  py: { xs: 1, sm: 1.5 }, 
-                  justifyContent: 'flex-start',
-                  borderColor: 'divider',
-                  fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                  '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: TRANSITIONS.fast
-                }}
-              >
-                Upload PFX
-              </Button>
+                  startIcon={<UploadFileIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
+                  onClick={() => navigate('/pfx-generator')}
+                  sx={{ 
+                    py: { xs: 1, sm: 1.5 }, 
+                    justifyContent: 'flex-start',
+                    borderColor: 'divider',
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                    '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                    transition: TRANSITIONS.fast,
+                  }}
+                >
+                  Upload PFX
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<SyncIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
+                  onClick={() => navigate('/batch-renewal')}
+                  sx={{ 
+                    py: { xs: 1, sm: 1.5 }, 
+                    justifyContent: 'flex-start',
+                    borderColor: 'divider',
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                    '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                    transition: TRANSITIONS.fast,
+                  }}
+                >
+                  Batch Renewal
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<HistoryIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
+                  onClick={() => navigate('/audit-log')}
+                  sx={{ 
+                    py: { xs: 1, sm: 1.5 }, 
+                    justifyContent: 'flex-start',
+                    borderColor: 'divider',
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                    '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
+                    transition: TRANSITIONS.fast,
+                  }}
+                >
+                  Audit Log
+                </Button>
+              </Grid>
             </Grid>
-            <Grid item xs={6}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<SyncIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
-                onClick={() => navigate('/batch-renewal')}
-                sx={{ 
-                  py: { xs: 1, sm: 1.5 }, 
-                  justifyContent: 'flex-start',
-                  borderColor: 'divider',
-                  fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                  '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: TRANSITIONS.fast
-                }}
-              >
-                Batch Renewal
-              </Button>
-            </Grid>
-            <Grid item xs={6}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<HistoryIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />}
-                onClick={() => navigate('/audit-log')}
-                sx={{ 
-                  py: { xs: 1, sm: 1.5 }, 
-                  justifyContent: 'flex-start',
-                  borderColor: 'divider',
-                  fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                  '&:hover': { borderColor: 'primary.main', backgroundColor: 'action.hover' },
-                  transition: TRANSITIONS.fast
-                }}
-              >
-                Audit Log
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-      </Grid>
+          </DashboardCard>
+        </Grid>
       )}
 
       {/* Quick Stats Row - Phase 4: Conditional visibility */}
       {isWidgetVisible('quickStats') && (
         <Grid item xs={12}>
-          <Paper elevation={0} sx={(theme) => ({ ...glassmorphicStyle(theme), py: 2 })}>
+          <DashboardCard title="Expiration Bands" tooltip="Breakdown of certificates by how soon they expire.">
             <Grid container spacing={2} justifyContent="center">
               <Grid item xs={6} sm={4} md={3}>
                 <MiniStatCard title="Critical (< 7d)" value={expirationBands.critical || 0} color={theme.palette.error.main} />
@@ -1196,95 +1098,93 @@ const Dashboard = ({ stats, onFilterSelect, widgetConfig = {} }) => {
                 <MiniStatCard title="OK (61-90d)" value={expirationBands.ok || 0} color={theme.palette.info.main} />
               </Grid>
             </Grid>
-          </Paper>
+          </DashboardCard>
         </Grid>
       )}
 
       {/* Device HA Status - Phase 4: Conditional visibility */}
       {isWidgetVisible('deviceHaStatus') && (
         <Grid item xs={12}>
-          <Paper elevation={0} sx={(theme) => ({ ...glassmorphicStyle(theme), py: 2 })}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-            <DevicesIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-            <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              Device HA Status
-            </Typography>
-          </Box>
-          <Grid container spacing={2} justifyContent="center">
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
-                  <PlayArrowIcon sx={{ color: theme.palette.success.main, mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
-                  <Typography variant="caption" color="text.secondary">Active</Typography>
+          <DashboardCard
+            title="Device HA Status"
+            icon={<DevicesIcon />}
+            tooltip="High availability status of F5 devices and credential coverage."
+          >
+            <Grid container spacing={2} justifyContent="center">
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', p: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                    <PlayArrowIcon sx={{ color: theme.palette.success.main, mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
+                    <Typography variant="caption" color="text.secondary">Active</Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.success.main, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                    <AnimatedNumber value={deviceStats.active || 0} duration={700} />
+                  </Typography>
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.success.main, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                  <AnimatedNumber value={deviceStats.active || 0} duration={700} />
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
-                  <PauseIcon sx={{ color: theme.palette.grey[500], mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
-                  <Typography variant="caption" color="text.secondary">Standby</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', p: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                    <PauseIcon sx={{ color: theme.palette.grey[500], mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
+                    <Typography variant="caption" color="text.secondary">Standby</Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.grey[500], fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                    <AnimatedNumber value={deviceStats.standby || 0} duration={700} />
+                  </Typography>
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.grey[500], fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                  <AnimatedNumber value={deviceStats.standby || 0} duration={700} />
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
-                  <CheckCircleIcon sx={{ color: theme.palette.success.main, mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>With Credentials</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', p: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                    <CheckCircleIcon sx={{ color: theme.palette.success.main, mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>With Credentials</Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.success.main, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                    <AnimatedNumber value={deviceStats.withCreds || 0} duration={700} />
+                  </Typography>
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.success.main, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                  <AnimatedNumber value={deviceStats.withCreds || 0} duration={700} />
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
-                  <WarningAmberIcon sx={{ color: theme.palette.warning.main, mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>No Credentials</Typography>
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Box sx={{ textAlign: 'center', p: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
+                    <WarningAmberIcon sx={{ color: theme.palette.warning.main, mr: 0.5, fontSize: { xs: 18, sm: 24 } }} />
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>No Credentials</Typography>
+                  </Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.warning.main, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                    <AnimatedNumber value={deviceStats.withoutCreds || 0} duration={700} />
+                  </Typography>
                 </Box>
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.palette.warning.main, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                  <AnimatedNumber value={deviceStats.withoutCreds || 0} duration={700} />
-                </Typography>
-              </Box>
+              </Grid>
             </Grid>
-          </Grid>
-          {/* Progress bar showing credential coverage */}
-          {deviceStats.total > 0 && (
-            <Box sx={{ px: { xs: 2, sm: 3 }, mt: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Credential Coverage
-                </Typography>
-                <Typography variant="caption" fontWeight="bold">
-                  <AnimatedNumber value={Math.round((deviceStats.withCreds / deviceStats.total) * 100)} duration={800} />%
-                </Typography>
-              </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={(deviceStats.withCreds / deviceStats.total) * 100}
-                sx={{ 
-                  height: 8, 
-                  borderRadius: 4,
-                  backgroundColor: theme.palette.grey[300],
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: theme.palette.success.main,
+            {/* Progress bar showing credential coverage */}
+            {deviceStats.total > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Credential Coverage
+                  </Typography>
+                  <Typography variant="caption" fontWeight="bold">
+                    <AnimatedNumber value={Math.round((deviceStats.withCreds / deviceStats.total) * 100)} duration={800} />%
+                  </Typography>
+                </Box>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={(deviceStats.withCreds / deviceStats.total) * 100}
+                  sx={{ 
+                    height: 8, 
                     borderRadius: 4,
-                    transition: 'transform 1s ease-out',
-                  }
-                }}
-              />
-            </Box>
-          )}
-        </Paper>
-      </Grid>
+                    backgroundColor: theme.palette.grey[300],
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: theme.palette.success.main,
+                      borderRadius: 4,
+                      transition: 'transform 1s ease-out',
+                    }
+                  }}
+                />
+              </Box>
+            )}
+          </DashboardCard>
+        </Grid>
       )}
     </Grid>
   );
