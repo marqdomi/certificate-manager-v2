@@ -57,20 +57,20 @@ const getRelativeTime = (dateString) => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (seconds < 60) return 'hace unos segundos';
-  if (minutes < 60) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`;
-  if (hours < 24) return `hace ${hours} hora${hours > 1 ? 's' : ''}`;
-  if (days < 7) return `hace ${days} día${days > 1 ? 's' : ''}`;
-  return date.toLocaleDateString('es-ES');
+  if (seconds < 60) return 'a few seconds ago';
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+  return date.toLocaleDateString('en-US');
 };
 
 // Priority chip component
 const PriorityChip = ({ priority }) => {
   const config = {
-    critical: { color: 'error', label: 'Crítico' },
-    high: { color: 'warning', label: 'Alto' },
-    medium: { color: 'info', label: 'Medio' },
-    low: { color: 'default', label: 'Bajo' },
+    critical: { color: 'error', label: 'Critical' },
+    high: { color: 'warning', label: 'High' },
+    medium: { color: 'info', label: 'Medium' },
+    low: { color: 'default', label: 'Low' },
   };
   const { color, label } = config[priority] || config.medium;
   return <Chip size="small" color={color} label={label} />;
@@ -134,7 +134,7 @@ const NotificationsPage = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching notifications:', err);
-      setError('Error al cargar las notificaciones');
+      setError('Error loading notifications');
     } finally {
       setLoading(false);
     }
@@ -194,7 +194,7 @@ const NotificationsPage = () => {
       await markNotificationsRead(ids);
       setSnackbar({
         open: true,
-        message: `${ids.length} notificación(es) marcada(s) como leída(s)`,
+        message: `${ids.length} notification(s) marked as read`,
         severity: 'success',
       });
       setSelected([]);
@@ -202,7 +202,7 @@ const NotificationsPage = () => {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: 'Error al marcar como leídas',
+        message: 'Error marking as read',
         severity: 'error',
       });
     }
@@ -214,7 +214,7 @@ const NotificationsPage = () => {
       if (unreadIds.length === 0) {
         setSnackbar({
           open: true,
-          message: 'No hay notificaciones sin leer',
+          message: 'No unread notifications',
           severity: 'info',
         });
         return;
@@ -222,14 +222,14 @@ const NotificationsPage = () => {
       await markNotificationsRead(unreadIds);
       setSnackbar({
         open: true,
-        message: 'Todas las notificaciones marcadas como leídas',
+        message: 'All notifications marked as read',
         severity: 'success',
       });
       fetchNotifications();
     } catch (err) {
       setSnackbar({
         open: true,
-        message: 'Error al marcar todas como leídas',
+        message: 'Error marking all as read',
         severity: 'error',
       });
     }
@@ -240,7 +240,7 @@ const NotificationsPage = () => {
       await deleteNotifications(ids);
       setSnackbar({
         open: true,
-        message: `${ids.length} notificación(es) eliminada(s)`,
+        message: `${ids.length} notification(s) deleted`,
         severity: 'success',
       });
       setSelected([]);
@@ -248,7 +248,7 @@ const NotificationsPage = () => {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: 'Error al eliminar notificaciones',
+        message: 'Error deleting notifications',
         severity: 'error',
       });
     } finally {
@@ -273,24 +273,24 @@ const NotificationsPage = () => {
     <PageTransition>
       {/* Header */}
       <PageHeader
-        title="Notificaciones"
-        subtitle="Centro de alertas y eventos del sistema"
+        title="Notifications"
+        subtitle="System alerts and events center"
         badge={isConnected ? {
-          label: 'Tiempo real',
+          label: 'Real-time',
           color: 'success',
         } : undefined}
         actions={
           <Stack direction="row" spacing={1}>
-            <Tooltip title="Marcar todas como leídas">
+            <Tooltip title="Mark all as read">
               <Button
                 variant="outlined"
                 startIcon={<ClearAllIcon />}
                 onClick={handleMarkAllRead}
               >
-                Marcar todas
+                Mark all
               </Button>
             </Tooltip>
-            <Tooltip title="Actualizar">
+            <Tooltip title="Refresh">
               <IconButton onClick={fetchNotifications} color="primary" aria-label="Refresh notifications">
                 <RefreshIcon />
               </IconButton>
@@ -304,7 +304,7 @@ const NotificationsPage = () => {
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
           <TextField
             size="small"
-            placeholder="Buscar notificaciones..."
+            placeholder="Search notifications..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ minWidth: 250 }}
@@ -318,45 +318,45 @@ const NotificationsPage = () => {
           />
           
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Tipo</InputLabel>
+            <InputLabel>Type</InputLabel>
             <Select
               value={typeFilter}
-              label="Tipo"
+              label="Type"
               onChange={(e) => setTypeFilter(e.target.value)}
             >
-              <MenuItem value="all">Todos</MenuItem>
+              <MenuItem value="all">All</MenuItem>
               <MenuItem value="info">Info</MenuItem>
-              <MenuItem value="warning">Advertencia</MenuItem>
+              <MenuItem value="warning">Warning</MenuItem>
               <MenuItem value="error">Error</MenuItem>
-              <MenuItem value="success">Éxito</MenuItem>
+              <MenuItem value="success">Success</MenuItem>
             </Select>
           </FormControl>
           
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Prioridad</InputLabel>
+            <InputLabel>Priority</InputLabel>
             <Select
               value={priorityFilter}
-              label="Prioridad"
+              label="Priority"
               onChange={(e) => setPriorityFilter(e.target.value)}
             >
-              <MenuItem value="all">Todas</MenuItem>
-              <MenuItem value="critical">Crítica</MenuItem>
-              <MenuItem value="high">Alta</MenuItem>
-              <MenuItem value="medium">Media</MenuItem>
-              <MenuItem value="low">Baja</MenuItem>
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="critical">Critical</MenuItem>
+              <MenuItem value="high">High</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="low">Low</MenuItem>
             </Select>
           </FormControl>
           
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Estado</InputLabel>
+            <InputLabel>Status</InputLabel>
             <Select
               value={readFilter}
-              label="Estado"
+              label="Status"
               onChange={(e) => setReadFilter(e.target.value)}
             >
-              <MenuItem value="all">Todos</MenuItem>
-              <MenuItem value="unread">No leídas</MenuItem>
-              <MenuItem value="read">Leídas</MenuItem>
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="unread">Unread</MenuItem>
+              <MenuItem value="read">Read</MenuItem>
             </Select>
           </FormControl>
           
@@ -366,7 +366,7 @@ const NotificationsPage = () => {
               onClick={handleResetFilters}
               startIcon={<FilterIcon />}
             >
-              Limpiar filtros
+              Clear filters
             </Button>
           )}
         </Stack>
@@ -390,14 +390,14 @@ const NotificationsPage = () => {
             }}
           >
             <Typography sx={{ flex: 1 }} color="primary" variant="subtitle1">
-              {selected.length} seleccionada(s)
+              {selected.length} selected
             </Typography>
-            <Tooltip title="Marcar como leídas">
+            <Tooltip title="Mark as read">
               <IconButton onClick={() => handleMarkRead()} color="primary" aria-label="Mark as read">
                 <MarkReadIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Eliminar">
+            <Tooltip title="Delete">
               <IconButton onClick={() => setConfirmDeleteIds(selected)} color="error" aria-label="Delete">
                 <DeleteIcon />
               </IconButton>
@@ -416,13 +416,13 @@ const NotificationsPage = () => {
                     onChange={handleSelectAll}
                   />
                 </TableCell>
-                <TableCell sx={{ width: 50 }}>Tipo</TableCell>
-                <TableCell>Título</TableCell>
-                <TableCell>Mensaje</TableCell>
-                <TableCell>Prioridad</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell sx={{ width: 50 }}>Type</TableCell>
+                <TableCell>Title</TableCell>
+                <TableCell>Message</TableCell>
+                <TableCell>Priority</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -437,10 +437,10 @@ const NotificationsPage = () => {
                   <TableCell colSpan={8}>
                     <EmptyState
                       icon={<NotificationsIcon />}
-                      title="No hay notificaciones"
+                      title="No notifications"
                       subtitle={hasActiveFilters 
-                        ? 'Prueba ajustando los filtros'
-                        : 'Las nuevas notificaciones aparecerán aquí'
+                        ? 'Try adjusting the filters'
+                        : 'New notifications will appear here'
                       }
                     />
                   </TableCell>
@@ -497,7 +497,7 @@ const NotificationsPage = () => {
                         <PriorityChip priority={notification.priority} />
                       </TableCell>
                       <TableCell>
-                        <Tooltip title={new Date(notification.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}>
+                        <Tooltip title={new Date(notification.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}>
                           <Typography variant="body2" color="text.secondary">
                             {getRelativeTime(notification.created_at)}
                           </Typography>
@@ -505,15 +505,15 @@ const NotificationsPage = () => {
                       </TableCell>
                       <TableCell>
                         {notification.is_read ? (
-                          <Chip size="small" label="Leída" variant="outlined" />
+                          <Chip size="small" label="Read" variant="outlined" />
                         ) : (
-                          <Chip size="small" label="Nueva" color="primary" />
+                          <Chip size="small" label="New" color="primary" />
                         )}
                       </TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={0} justifyContent="flex-end">
                           {!notification.is_read && (
-                            <Tooltip title="Marcar como leída">
+                            <Tooltip title="Mark as read">
                               <IconButton
                                 size="small"
                                 onClick={() => handleMarkRead([notification.id])}
@@ -523,7 +523,7 @@ const NotificationsPage = () => {
                               </IconButton>
                             </Tooltip>
                           )}
-                          <Tooltip title="Eliminar">
+                          <Tooltip title="Delete">
                             <IconButton
                               size="small"
                               color="error"
@@ -551,9 +551,9 @@ const NotificationsPage = () => {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={[10, 25, 50, 100]}
-          labelRowsPerPage="Filas por página:"
+          labelRowsPerPage="Rows per page:"
           labelDisplayedRows={({ from, to, count }) => 
-            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+            `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
           }
         />
       </Paper>
@@ -562,9 +562,9 @@ const NotificationsPage = () => {
       <ConfirmDialog
         open={confirmDeleteIds !== null}
         severity="warning"
-        title="Eliminar Notificaciones"
-        message={confirmDeleteIds?.length === 1 ? '¿Eliminar esta notificación?' : `¿Eliminar ${confirmDeleteIds?.length || 0} notificación(es) seleccionada(s)?`}
-        confirmLabel="Eliminar"
+        title="Delete Notifications"
+        message={confirmDeleteIds?.length === 1 ? 'Delete this notification?' : `Delete ${confirmDeleteIds?.length || 0} selected notification(s)?`}
+        confirmLabel="Delete"
         onConfirm={() => handleDelete(confirmDeleteIds)}
         onCancel={() => setConfirmDeleteIds(null)}
       />
