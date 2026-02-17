@@ -129,13 +129,18 @@ def get_certificates(
 
     # Optionally de-duplicate within cluster by cert name
     if dedupe:
-        # key: (cluster_key_or_empty, cert_name) -> pick best
+        # key: (cluster_key, cert_name) -> pick best within same cluster
         best_by_key = {}
         for cert, rid, rstatus in filtered_rows:
             dev = devices_by_id.get(cert.device_id) if cert else None
             if not dev:
                 continue
-            key = ((dev.cluster_key or "").strip(), cert.name)
+            ck = (dev.cluster_key or "").strip()
+            # CRITICAL: if cluster_key is empty, use a per-device fallback
+            # to avoid collapsing ALL devices into a single dedupe group
+            if not ck:
+                ck = f"__device_{dev.id}"
+            key = (ck, cert.name)
             # choose preferred: primary first, then newest last_scan_timestamp, then smallest device_id
             score = (
                 0 if dev.is_primary_preferred else 1,

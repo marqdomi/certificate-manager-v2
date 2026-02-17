@@ -105,6 +105,49 @@ def get_all_devices(
 import re
 from fastapi import status
 
+
+def _derive_cluster_key(hostname: str) -> str:
+    """
+    Derive a cluster key from an F5 hostname to group HA pairs.
+
+    Handles multiple naming conventions:
+      New format:    eudc01-lb-001-black.network.axadmin.net  →  eudc01-lb-black
+      Legacy format: USDC01-LB02-BLACK-SEC.solera.farm        →  usdc01-lb-black
+      With fab:      usdc01-fab1-lb-001-black-nonprod.net     →  usdc01-lb-black-nonprod
+      Bare chassis:  usdc01-fab1-lb-001.network.axadmin.net   →  usdc01-lb
+      Old Russian:   axrudc10lb150.network.axadmin.net        →  axrudc10lb
+      Omnitracs:     dc1-f5-xrs-prod-01.mgmt.omnitracs.com   →  dc1-f5-xrs-prod
+      AWS standalone: ip-10-32-0-115.monitor.smartdrive...    →  ip-10-32-0-115
+    """
+    h = hostname.lower().strip()
+
+    # 1. Strip domain (everything after first dot)
+    dot_idx = h.find('.')
+    if dot_idx > 0:
+        h = h[:dot_idx]
+
+    # 2. Remove HA role suffix: -pri, -sec
+    h = re.sub(r'-(pri|sec)$', '', h)
+
+    # 3. Remove fabric identifier (e.g., -fab1-) to normalize across naming conventions
+    h = re.sub(r'-fab\d+-', '-', h)
+
+    # 4. Normalize lb instance numbers to group HA pairs:
+    #    -lb-001, -lb-002 → -lb   (new format: eudc01-lb-001-black)
+    #    -lb01,  -lb02    → -lb   (legacy format: USDC01-LB01-BLUE)
+    h = re.sub(r'(-lb)-?\d{2,3}', r'\1', h)
+
+    # 5. Handle old format without dash before lb: axrudc10lb150 → axrudc10lb
+    h = re.sub(r'(lb)\d{2,3}$', r'\1', h)
+
+    # 6. For non-F5 naming (Omnitracs): strip trailing -NN instance number
+    #    dc1-f5-xrs-prod-01 → dc1-f5-xrs-prod
+    if 'lb' not in h:
+        h = re.sub(r'-(\d{2})$', '', h)
+
+    return h
+
+
 @router.post("/cluster/auto-assign", status_code=200)
 def auto_assign_clusters(
     db: Session = Depends(get_db),
@@ -112,36 +155,49 @@ def auto_assign_clusters(
 ):
     """
     Recorre los devices, deriva cluster_key heurística y marca is_primary_preferred por cluster.
-    cluster_key: hostname normalizado quitando sufijos tipo -LB0x-PRI/SEC
+    Uses hostname normalization to group HA pairs automatically.
     """
     devices = db.query(Device).all()
-    # 1. Derivar cluster_key
-    cluster_map = {}
-    regex = re.compile(r"(-LB0\d+-(PRI|SEC))$", re.IGNORECASE)
+
+    # 1. Derive cluster_key for each device
+    cluster_map: dict[str, list] = {}
     for dev in devices:
-        # Normalizamos el hostname quitando sufijos -LB0x-PRI/SEC
-        base = regex.sub("", dev.hostname)
-        dev.cluster_key = base
-        if base not in cluster_map:
-            cluster_map[base] = []
-        cluster_map[base].append(dev)
-    # 2. Por cada cluster, marcar is_primary_preferred
+        key = _derive_cluster_key(dev.hostname)
+        dev.cluster_key = key
+        cluster_map.setdefault(key, []).append(dev)
+
+    # 2. For each cluster, assign is_primary_preferred
     updated = 0
     for cluster, devs in cluster_map.items():
-        # Elegir el device con ha_state=ACTIVE y sync_status ILIKE 'In Sync%'
+        # Pick the device with ha_state=ACTIVE and sync_status starting with 'In Sync'
         primary = None
         for d in devs:
             if (d.ha_state or "").upper() == "ACTIVE" and (d.sync_status or "").lower().startswith("in sync"):
                 primary = d
                 break
-        # Si no hay, dejar todos en False
+        # If no ACTIVE+InSync found, try just ACTIVE
+        if not primary:
+            for d in devs:
+                if (d.ha_state or "").upper() == "ACTIVE":
+                    primary = d
+                    break
+        # If still no primary and the cluster has only one device (standalone), mark it
+        if not primary and len(devs) == 1:
+            primary = devs[0]
+
         for d in devs:
             d.is_primary_preferred = False
         if primary:
             primary.is_primary_preferred = True
             updated += 1
+
     db.commit()
-    return {"clusters": len(cluster_map), "primaries_assigned": updated}
+    return {
+        "clusters": len(cluster_map),
+        "primaries_assigned": updated,
+        "total_devices": len(devices),
+        "sample_keys": {dev.hostname: dev.cluster_key for dev in devices[:10]}
+    }
 
 @router.post("/", response_model=DeviceResponse, status_code=201)
 def create_device(

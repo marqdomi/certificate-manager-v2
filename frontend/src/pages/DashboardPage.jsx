@@ -198,7 +198,7 @@ function DashboardPage() {
     try {
       // Fetch all data in parallel
       const [certsRes, devicesRes, csrRes, auditRes] = await Promise.all([
-        apiClient.get('/certificates/'),
+        apiClient.get('/certificates/?primaries_only=1&dedupe=1'),
         apiClient.get('/devices/'),
         apiClient.get('/csr/pending').catch(() => ({ data: { pending_requests: [] } })),
         apiClient.get('/audit/stats?days=7').catch(() => ({ data: null })),
