@@ -75,7 +75,7 @@ AZURE_AD_CLIENT_ID = os.getenv("AZURE_AD_CLIENT_ID")
 # Validate Azure AD config if enabled
 if AUTH_MODE in ('azure_ad', 'hybrid'):
     if not AZURE_AD_TENANT_ID or not AZURE_AD_CLIENT_ID:
-        print("\n⚠️  WARNING: AUTH_MODE is set to '{AUTH_MODE}' but Azure AD is not configured.", file=sys.stderr)
+        print(f"\n⚠️  WARNING: AUTH_MODE is set to '{AUTH_MODE}' but Azure AD is not configured.", file=sys.stderr)
         print("   Set AZURE_AD_TENANT_ID and AZURE_AD_CLIENT_ID environment variables.", file=sys.stderr)
         print("   Falling back to local authentication only.\n", file=sys.stderr)
         AUTH_MODE = "local"

@@ -78,7 +78,9 @@ import {
   refreshFacts,
   refreshCache,
   scanAllDevices,
+  autoAssignClusters,
 } from '../api/devices';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DeviceTable from '../components/DeviceTable';
 import DeviceDetailDrawer from '../components/DeviceDetailDrawer';
 import EditDeviceDialog from '../components/EditDeviceDialog';
@@ -643,6 +645,21 @@ const DevicesPage: React.FC = () => {
       .catch((err: Error) => setNotification({ open: true, message: `Failed: ${err.message}`, severity: 'error' }));
   };
 
+  const handleAutoAssignClusters = (): void => {
+    setActionsMenuAnchor(null);
+    autoAssignClusters()
+      .then((res) => {
+        setNotification({
+          open: true,
+          message: `Clusters assigned: ${res.updated} devices updated, ${res.clusters_formed} clusters formed.`,
+          severity: 'success',
+        });
+        // Refresh device list to show updated cluster keys
+        window.location.reload();
+      })
+      .catch((err: Error) => setNotification({ open: true, message: `Auto-assign failed: ${err.message}`, severity: 'error' }));
+  };
+
   const handleSaveCredentials = (credentials: DeviceCredentials): void => {
     if (!selectedDevice) return;
     
@@ -1000,6 +1017,12 @@ const DevicesPage: React.FC = () => {
                   <ListItemIcon><RefreshIcon fontSize="small" /></ListItemIcon>
                   <ListItemText>Scan All Devices</ListItemText>
                 </MenuItem>
+                {userRole === 'admin' && (
+                  <MenuItem onClick={handleAutoAssignClusters}>
+                    <ListItemIcon><AccountTreeIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText>Auto-assign Clusters</ListItemText>
+                  </MenuItem>
+                )}
                 <Divider />
                 <MenuItem onClick={handleExportCSV} disabled={allDevices.length === 0}>
                   <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>

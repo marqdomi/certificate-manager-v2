@@ -81,3 +81,11 @@ export async function scanAllDevices(deviceIds?: number[]): Promise<{message: st
   const res = await api.post('/f5/scan-all', deviceIds ? { device_ids: deviceIds } : {});
   return res.data;
 }
+
+/**
+ * Auto-assign cluster keys and primary-preferred flags for all devices
+ */
+export async function autoAssignClusters(): Promise<{updated: number; clusters_formed: number; sample_keys?: string[]}> {
+  const res = await api.post('/devices/cluster/auto-assign');
+  return res.data;
+}

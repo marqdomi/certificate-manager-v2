@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // --- COMPONENTES PRINCIPALES ---
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // --- PÁGINAS DE LA APLICACIÓN ---
 import LoginPage from './pages/LoginPage';
@@ -23,6 +24,8 @@ import HostSearchPage from './pages/HostSearchPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import CredentialTemplatesPage from './pages/CredentialTemplatesPage';
+import CertMasterPage from './pages/CertMasterPage';
+import AuthCallback from './pages/AuthCallback';
 
 // --- PÁGINAS DE ADMINISTRACIÓN ---
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -36,11 +39,13 @@ function App() {
   const basename = import.meta.env.VITE_ROUTER_BASENAME || '/';
 
   return (
+    <ErrorBoundary>
     <Router basename={basename}>
       <AuthProvider>
         <Routes>
-          {/* Ruta pública para Login */}
+          {/* Rutas públicas */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Todo lo demás, detrás de auth y dentro del layout */}
           <Route
@@ -64,6 +69,7 @@ function App() {
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/cert-master" element={<CertMasterPage />} />
                     
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminDashboard />} />
@@ -81,6 +87,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+    </ErrorBoundary>
   );
 }
 

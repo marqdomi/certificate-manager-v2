@@ -143,7 +143,7 @@ export function useWebSocketNotifications(onNotification) {
   // Reconnect when token changes
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'cm_token') {
+      if (e.key === 'user_token') {
         disconnect();
         if (e.newValue) {
           setTimeout(connect, 500);

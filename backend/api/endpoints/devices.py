@@ -27,10 +27,7 @@ async def _notify_ws(event_type: str, device_id: int = None, data: dict = None):
 
 def notify_device_event(background_tasks: BackgroundTasks, event_type: str, device_id: int = None, data: dict = None):
     """Schedule a WebSocket notification in the background."""
-    import asyncio
-    async def _send():
-        await _notify_ws(event_type, device_id, data)
-    background_tasks.add_task(asyncio.run, _send())
+    background_tasks.add_task(_notify_ws, event_type, device_id, data)
 
 # --- Schemas para la data de entrada ---
 class DeviceCreate(BaseModel):
