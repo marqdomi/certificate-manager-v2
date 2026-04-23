@@ -1,10 +1,13 @@
 # backend/api/endpoints/devices.py
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
+import logging
+from datetime import datetime
 
 from db.base import get_db
 from db.models import Device, Certificate, User, UserRole
@@ -13,6 +16,7 @@ from services import encryption_service, auth_service
 from services import f5_service_logic
 from schemas.certificate import CertificateResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # --- Schemas para la data de entrada ---
@@ -74,7 +78,29 @@ def get_all_devices(
                     if not getattr(clusters[key], "is_primary_preferred", False):
                         clusters[key] = dev
         devices = list(clusters.values())
-    return devices
+    
+    # Agregar campo has_credentials a cada dispositivo
+    device_responses = []
+    for device in devices:
+        # Crear el objeto DeviceResponse con has_credentials calculado
+        device_data = {}
+        
+        # Copiar todos los campos del modelo original
+        for field_name in DeviceResponse.model_fields.keys():
+            if hasattr(device, field_name):
+                value = getattr(device, field_name)
+                # Convertir ip_address a string si es un objeto IP
+                if field_name == 'ip_address' and value is not None:
+                    value = str(value)
+                device_data[field_name] = value
+        
+        # Agregar el campo has_credentials calculado
+        device_data['has_credentials'] = bool(device.encrypted_password)
+        
+        device_response = DeviceResponse(**device_data)
+        device_responses.append(device_response)
+    
+    return device_responses
 
 # --- Endpoint para auto-asignar cluster_key e is_primary_preferred ---
 import re
@@ -116,7 +142,214 @@ def auto_assign_clusters(
             primary.is_primary_preferred = True
             updated += 1
     db.commit()
-    return {"clusters": len(cluster_map), "primaries_assigned": updated}
+
+
+# --- Endpoint para discovery real de clusters consultando F5 ---
+@router.post("/cluster/discover", status_code=200)
+def discover_clusters_from_f5(
+    device_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Descubre clusters consultando directamente los F5 en lugar de usar heurísticas de nombres.
+    
+    Args:
+        device_id: Si se especifica, solo descubre cluster para ese dispositivo.
+                   Si no se especifica, descubre todos los clusters.
+    
+    Returns:
+        JSON con información detallada de clusters obtenida directamente de los F5
+    """
+    from services.f5_cluster_discovery import discover_cluster_from_f5, discover_all_clusters
+    
+    try:
+        if device_id:
+            # Descubrir cluster para un dispositivo específico
+            result = discover_cluster_from_f5(device_id)
+            
+            if result['status'] != 'success':
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content=result
+                )
+                
+            return {
+                "status": "success",
+                "message": f"Cluster discovery completed for device {device_id}",
+                "discovery_result": result
+            }
+            
+        else:
+            # Descubrir todos los clusters
+            result = discover_all_clusters()
+            
+            # Actualizar la base de datos con la información descubierta
+            updated_devices = 0
+            
+            for cluster in result['discovered_clusters']:
+                cluster_id = cluster['cluster_id']
+                trust_domain = cluster.get('trust_domain', '')
+                sync_status = cluster.get('sync_status')
+
+                # Actualizar cluster_key para todos los dispositivos del cluster
+                for device_info in cluster['devices']:
+                    device = db.get(Device, device_info.get('device_id')) if device_info.get('device_id') else None
+                    if device:
+                        device.cluster_key = cluster_id
+                        device.trust_domain = trust_domain
+                        if sync_status:
+                            device.sync_status = sync_status
+                        if device_info.get('ha_state'):
+                            device.ha_state = device_info['ha_state']
+                        elif device_info.get('failover_state'):
+                            device.ha_state = str(device_info['failover_state']).upper()
+
+                        device.is_primary_preferred = (device.ha_state or '').upper() == 'ACTIVE'
+                        device.last_cluster_discovery = datetime.utcnow()
+                        device.cluster_discovery_source = 'f5_api'
+
+                        updated_devices += 1
+                        
+            # Marcar dispositivos standalone
+            for device_id in result['standalone_devices']:
+                device = db.get(Device, device_id)
+                if device:
+                    device.cluster_key = None
+                    device.sync_status = 'N/A'
+                    device.is_primary_preferred = False
+                    device.last_cluster_discovery = datetime.utcnow()
+                    device.cluster_discovery_source = 'f5_api'
+                    updated_devices += 1
+                    
+            db.commit()
+            
+            return {
+                "status": result['status'],
+                "message": result['message'],
+                "discovered_clusters": result['discovered_clusters'],
+                "standalone_devices": result['standalone_devices'],
+                "failed_devices": result['failed_devices'],
+                "total_processed": result['total_processed'],
+                "updated_devices": updated_devices
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in cluster discovery endpoint: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "status": "error",
+                "message": f"Cluster discovery failed: {str(e)}"
+            }
+        )
+
+# --- Endpoint para discovery unificado (facts + clusters) ---
+@router.post("/unified-discovery", status_code=200)
+def unified_discovery_operation(
+    device_ids: Optional[List[int]] = None,
+    discovery_type: str = "full",  # "full", "delta", "health", "cluster"
+    include_performance: bool = False,
+    max_concurrent: int = 5,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth_service.require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Unified discovery operation that combines facts scanning and cluster discovery
+    following Microsoft monitoring best practices.
+    
+    Args:
+        device_ids: List of device IDs to process. If None, processes all devices.
+        discovery_type: Type of discovery ('full', 'delta', 'health', 'cluster')
+        include_performance: Whether to include performance metrics collection
+        max_concurrent: Maximum concurrent operations
+    
+    Returns:
+        JSON with detailed operation results and performance metrics
+    """
+    from services.f5_unified_discovery import unified_discovery_service
+    import asyncio
+    
+    try:
+        # If no device_ids specified, get all devices based on discovery type
+        if device_ids is None:
+            if discovery_type == "full":
+                # For full discovery, get all active devices
+                devices = db.query(Device).filter(Device.is_active == True).all()
+            else:
+                # For other types, get devices that need discovery based on intervals
+                devices = []
+                all_devices = db.query(Device).filter(Device.is_active == True).all()
+                for device in all_devices:
+                    if unified_discovery_service.should_perform_discovery(device, discovery_type):
+                        devices.append(device)
+            
+            device_ids = [device.id for device in devices]
+        
+        if not device_ids:
+            return {
+                "status": "success",
+                "message": "No devices require discovery at this time",
+                "operation": "unified_discovery",
+                "discovery_type": discovery_type,
+                "total_devices": 0,
+                "results": []
+            }
+        
+        logger.info(f"Starting unified discovery for {len(device_ids)} devices, type: {discovery_type}")
+        
+        # Execute unified discovery operation
+        if len(device_ids) == 1:
+            # Single device operation
+            result = asyncio.run(
+                unified_discovery_service.unified_discovery_operation(
+                    device_ids[0], db, discovery_type, include_performance
+                )
+            )
+            
+            return {
+                "status": "success" if result['success'] else "partial_success",
+                "message": f"Unified discovery completed for device {device_ids[0]}",
+                "operation": "unified_discovery",
+                "discovery_type": discovery_type,
+                "total_devices": 1,
+                "result": result
+            }
+        else:
+            # Bulk operation for multiple devices
+            result = asyncio.run(
+                unified_discovery_service.bulk_unified_discovery(
+                    device_ids, db, discovery_type, max_concurrent
+                )
+            )
+            
+            return {
+                "status": "success" if result['success_rate'] == 100 else "partial_success",
+                "message": f"Unified discovery completed for {result['successful']}/{result['total_devices']} devices",
+                "operation": "bulk_unified_discovery",
+                "discovery_type": discovery_type,
+                "total_devices": result['total_devices'],
+                "successful": result['successful'],
+                "failed": result['failed'],
+                "success_rate": result['success_rate'],
+                "duration": result['duration'],
+                "results": {
+                    "successful_operations": result['successful_operations'],
+                    "failed_operations": result['failed_operations']
+                }
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in unified discovery endpoint: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "status": "error",
+                "message": f"Unified discovery failed: {str(e)}",
+                "operation": "unified_discovery",
+                "discovery_type": discovery_type
+            }
+        )
 
 @router.post("/", response_model=DeviceResponse, status_code=201)
 def create_device(

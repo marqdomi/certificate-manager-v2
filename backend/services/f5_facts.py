@@ -66,7 +66,7 @@ def _get_ha_state(mgmt: ManagementRoot) -> Optional[str]:
     return None
 
 
-def _get_sync_status(mgmt: ManagementRoot) -> (Optional[str], Optional[str]):
+def _get_sync_status(mgmt: ManagementRoot) -> tuple[Optional[str], Optional[str]]:
     # cm/sync-status (nestedStats has status + color)
     try:
         ss = mgmt.tm.cm.sync_status.load()
@@ -159,3 +159,76 @@ def fetch_and_store_device_facts(device_id: int) -> dict:
         return {"status": "error", "message": str(e), "device_id": device_id}
     finally:
         s.close()
+
+
+# --- Additional functions required by Celery tasks ---
+
+def refresh_device_facts(device_id: int) -> dict:
+    """
+    Wrapper function for fetch_and_store_device_facts to match expected Celery task signature.
+    This function is called by the Celery task 'devices.refresh_facts'.
+    """
+    return fetch_and_store_device_facts(device_id)
+
+
+def refresh_all_device_facts(device_ids: Optional[list[int]] = None) -> dict:
+    """
+    Refresh facts for all devices or a subset of devices.
+    This function is called by the Celery task 'devices.refresh_facts_all'.
+    
+    Args:
+        device_ids: Optional list of device IDs. If None, refresh all active devices.
+        
+    Returns:
+        Dict with status and summary information
+    """
+    from core.celery_worker import celery_app
+    
+    db = SessionLocal()
+    try:
+        # Get devices to process
+        if device_ids:
+            devices = db.query(Device).filter(Device.id.in_(device_ids)).all()
+        else:
+            devices = db.query(Device).filter(Device.active == True).all()
+        
+        if not devices:
+            return {
+                'status': 'success',
+                'message': 'No devices found to refresh',
+                'devices_queued': 0
+            }
+        
+        # Queue individual tasks for each device
+        queued_count = 0
+        failed_count = 0
+        
+        for device in devices:
+            try:
+                celery_app.send_task("devices.refresh_facts", args=[device.id])
+                queued_count += 1
+            except Exception as e:
+                print(f"Failed to queue facts refresh for device {device.hostname}: {e}")
+                failed_count += 1
+        
+        return {
+            'status': 'success',
+            'message': f'Queued facts refresh for {queued_count} devices ({failed_count} failed)',
+            'devices_queued': queued_count,
+            'devices_failed': failed_count,
+            'total_devices': len(devices)
+        }
+        
+    except Exception as e:
+        return {
+            'status': 'failed',
+            'message': str(e),
+            'devices_queued': 0
+        }
+    finally:
+        db.close()
+
+
+# Backward compatibility aliases
+refresh_device_facts_all = refresh_all_device_facts
+refresh_device_facts_task = refresh_device_facts

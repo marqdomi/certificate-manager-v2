@@ -6,7 +6,7 @@ from typing import Optional
 class DeviceResponse(BaseModel):
     id: int
     hostname: str
-    ip_address: IPvAnyAddress | str  # permite IP o FQDN IP-like si llega a variar
+    ip_address: str  # cambiado de IPvAnyAddress a str para evitar problemas de serialización
     site: Optional[str] = None
     version: Optional[str] = None
 
@@ -29,6 +29,14 @@ class DeviceResponse(BaseModel):
     cluster_key: Optional[str] = None
     is_primary_preferred: bool = False
 
+    @computed_field
+    @property
+    def cluster_label(self) -> Optional[str]:
+        if not self.cluster_key:
+            return None
+        parts = self.cluster_key.split("::", 1)
+        return parts[1] if len(parts) == 2 else self.cluster_key
+
     # Campo computado para compatibilidad con la GUI (si espera last_sync)
     @computed_field
     @property
@@ -36,6 +44,9 @@ class DeviceResponse(BaseModel):
         if self.last_scan_timestamp is None:
             return None
         return self.last_scan_timestamp.isoformat()
+
+    # Campo computado para verificar si el dispositivo tiene credenciales
+    has_credentials: bool = False
 
     model_config = ConfigDict(
         from_attributes=True,

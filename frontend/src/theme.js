@@ -32,29 +32,43 @@ export const getDesignTokens = (mode) => ({
   components: {
     MuiAppBar: {
       styleOverrides: {
-        root: ({ theme }) => ({
-          backdropFilter: 'blur(10px)',
+        root: {
+          // Simplified styling to avoid theme issues
+          backdropFilter: 'blur(12px)',
           boxShadow: 'none',
-          ...(theme.palette.mode === 'dark'
-            ? {
-                backgroundColor: 'rgba(26, 33, 51, 0.7)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                color: theme.palette.text.primary,
-              }
-            : {
-                background: `linear-gradient(90deg, ${soleraPurple} 0%, ${soleraTealDark} 100%)`,
-                borderBottom: 'none',
-                color: '#ffffff',
-              }),
-        }),
+          background: 'transparent',
+        },
       },
     },
     MuiButton: {
       styleOverrides: {
-        root: { textTransform: 'none', fontWeight: 'bold' },
+        root: { 
+          textTransform: 'none', 
+          fontWeight: 'bold',
+          borderRadius: 8,
+        },
         contained: {
           boxShadow: 'none',
-          '&:hover': { boxShadow: 'none' },
+          '&:hover': { 
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            transform: 'translateY(-1px)'
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          borderRadius: 12,
+          border: '1px solid rgba(0,0,0,0.12)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
         },
       },
     },

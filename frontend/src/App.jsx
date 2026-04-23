@@ -20,6 +20,15 @@ import VipsSearchPage from './pages/vips/VipsSearchPage';
 
 // --- PÁGINAS DE ADMINISTRACIÓN ---
 import { AdminDashboard, UserManagement, SystemConfiguration } from './pages/admin';
+import DigicertConfigPage from './pages/admin/DigicertConfigPage';
+
+// --- DIGICERT ---
+import DigicertRenewalsPage from './pages/DigicertRenewalsPage';
+
+// --- PÁGINA DE DEMOSTRACIÓN ---
+import GuiEnhancementsDemo from './pages/GuiEnhancementsDemo';
+import HomePage from './pages/HomePage';
+import SimpleHomePage from './pages/SimpleHomePage';
 
 function App() {
   const basename = import.meta.env.VITE_ROUTER_BASENAME || '/';
@@ -30,15 +39,22 @@ function App() {
         <Routes>
           {/* Ruta pública para Login */}
           <Route path="/login" element={<LoginPage />} />
+          
+          {/* Ruta simple para Home - redirige al dashboard si está autenticado */}
+          <Route path="/" element={
+            <ProtectedRoute redirectTo="/simple">
+              <Navigate to="/app/dashboard" replace />
+            </ProtectedRoute>
+          } />
+          <Route path="/simple" element={<SimpleHomePage />} />
 
           {/* Todo lo demás, detrás de auth y dentro del layout */}
           <Route
-            path="/*"
+            path="/app/*"
             element={
               <ProtectedRoute>
                 <MainLayout>
                   <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/certificates" element={<InventoryPage />} />
                     <Route path="/devices" element={<DevicesPage />} />
@@ -48,15 +64,22 @@ function App() {
                     <Route path="/pfx-generator" element={<PfxPage />} />
                     <Route path="/generate-csr" element={<CsrGeneratorPage />} />
                     <Route path="/deploy" element={<DeployCenterPage />} />
+
+                    {/* DigiCert API Renewals */}
+                    <Route path="/digicert/renewals" element={<DigicertRenewalsPage />} />
+                    
+                    {/* GUI Enhancements Demo */}
+                    <Route path="/demo" element={<GuiEnhancementsDemo />} />
                     
                     {/* Admin Routes */}
-                    <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="/admin" element={<Navigate to="/app/admin/dashboard" replace />} />
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<UserManagement />} />
                     <Route path="/admin/config" element={<SystemConfiguration />} />
+                    <Route path="/admin/providers/digicert" element={<DigicertConfigPage />} />
                     
                     {/* Fallback */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
                   </Routes>
                 </MainLayout>
               </ProtectedRoute>

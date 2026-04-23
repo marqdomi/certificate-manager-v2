@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { authProvider } from '../pages/LoginPage';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, redirectTo = "/login" }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const location = useLocation();
 
@@ -24,7 +24,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     // Si no hay token o token inválido, redirige al login, guardando la página que intentaba visitar.
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   return children;

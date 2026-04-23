@@ -17,6 +17,11 @@ const CertificateTable = ({
 }) => {
   const userRole = authProvider.getRole();
   const theme = useTheme(); // Usamos el hook para acceder a la paleta de colores
+  
+  // Helper function to check if user has admin privileges
+  const isAdmin = () => {
+    return userRole === 'admin' || userRole === 'super_admin';
+  };
 
   // ✅ CAMBIO 1: Las columnas se mantienen, pero ajustamos el renderizado de 'days_remaining' y 'actions'
   const columns = [
@@ -101,7 +106,7 @@ const CertificateTable = ({
                     )
                 )}
 
-                {userRole === 'admin' && ( // Acción destructiva
+                {isAdmin() && ( // Acción destructiva
                     <Tooltip title="Delete Certificate">
                         <span>
                             <IconButton color="error" size="small" onClick={() => onDelete(params.row.id)} disabled={actionLoading}>

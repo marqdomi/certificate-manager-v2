@@ -23,6 +23,7 @@ import CertificateTable from '../components/CertificateTable';
 import RenewalChoiceDialog from '../components/RenewalChoiceDialog';
 import CertificateUsageDetail from '../components/CertificateUsageDetail';
 import RenewalWizardDialog from '../components/wizard/RenewWizardDialog';
+import DigicertRenewalWizard from '../components/digicert/DigicertRenewalWizard';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 
@@ -47,6 +48,7 @@ function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [choiceDialogOpen, setChoiceDialogOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [digicertWizardOpen, setDigicertWizardOpen] = useState(false);
   const [usageModalOpen, setUsageModalOpen] = useState(false);
   const [activeActionCertId, setActiveActionCertId] = useState(null);
   const [activeCert, setActiveCert] = useState(null);
@@ -301,6 +303,15 @@ function InventoryPage() {
         cert={activeCert}
         onGenerateCsr={navigateToCsrGenerator}
         onDeploy={navigateToDeployCenter}
+        onDigicertApi={() => {
+          setChoiceDialogOpen(false);
+          setDigicertWizardOpen(true);
+        }}
+      />
+      <DigicertRenewalWizard
+        open={digicertWizardOpen}
+        onClose={() => setDigicertWizardOpen(false)}
+        certificate={activeCert}
       />
       <RenewalWizardDialog
         open={wizardOpen}

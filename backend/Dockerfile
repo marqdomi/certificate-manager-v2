@@ -34,12 +34,8 @@ EXPOSE 8000
 
 # Healthcheck sin instalar curl/wget (usa stdlib)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request,sys;\n\n\
-try:\n\
-    r=urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)\n\
-    sys.exit(0 if getattr(r,'status',200)==200 else 1)\n\
-except Exception:\n\
-    sys.exit(1)"
+  CMD ["python", "-c", "import sys,urllib.request\ntry:\n    resp = urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)\n    sys.exit(0 if getattr(resp, 'status', 200) == 200 else 1)\nexcept Exception:\n    sys.exit(1)"]
+
 
 # Ejecuta la aplicación con autoreload (ideal para desarrollo)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

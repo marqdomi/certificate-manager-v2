@@ -8,8 +8,9 @@ import {
 } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
-const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy }) => {
+const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy, onDigicertApi }) => {
   if (!cert) return null;
 
   return (
@@ -27,7 +28,7 @@ const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy }) =
 
         <Grid container spacing={2}>
           {/* Opción A: Generar CSR */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Paper variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" gutterBottom>1. Generate CSR</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
@@ -50,7 +51,7 @@ const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy }) =
           </Grid>
 
           {/* Opción B: Desplegar Certificado */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Paper variant="outlined" sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" gutterBottom>2. Deploy Certificate</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
@@ -71,6 +72,45 @@ const RenewalChoiceDialog = ({ open, onClose, cert, onGenerateCsr, onDeploy }) =
               </Tooltip>
             </Paper>
           </Grid>
+
+          {/* Opción C: Renovación automática vía DigiCert API */}
+          {onDigicertApi && (
+            <Grid item xs={12} md={4}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderColor: 'primary.main',
+                  borderWidth: 2,
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  3. DigiCert API
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+                  End-to-end automated renewal: keypair + CSR generated, order submitted to
+                  DigiCert, issued cert auto-deployed to F5. Requires DigiCert API key configured.
+                </Typography>
+                <Tooltip title="Start fully automated renewal via DigiCert API">
+                  <span>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={onDigicertApi}
+                      endIcon={<AutoFixHighIcon />}
+                      sx={{ mt: 2 }}
+                      aria-label="Renew via DigiCert API"
+                    >
+                      Renew via DigiCert API
+                    </Button>
+                  </span>
+                </Tooltip>
+              </Paper>
+            </Grid>
+          )}
         </Grid>
 
       </DialogContent>

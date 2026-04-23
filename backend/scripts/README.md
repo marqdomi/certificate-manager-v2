@@ -87,7 +87,67 @@ Este script usa configuración async y rutas absolutas que no funcionan en el en
 
 ---
 
-## 🔧 Troubleshooting
+## �️ Gestión de Dispositivos
+
+### ✅ `import_devices.py` - **IMPORTACIÓN DE DISPOSITIVOS**
+**🔥 USAR ESTE SCRIPT** - Importa dispositivos desde CSV
+
+```bash
+# Ejecutar desde el contenedor backend
+docker-compose exec backend python scripts/import_devices.py
+```
+
+**Características:**
+- 📥 **Importa desde:** `/app/Device_Inventory.csv`
+- 🔍 **Detecta duplicados:** Por hostname o IP
+- 📊 **Campos mapeados:** hostname, ip_address, site, version, platform, serial_number
+- ✅ **Última ejecución:** 96 dispositivos importados exitosamente
+
+**Estructura CSV esperada:**
+```csv
+Hostname,Login IP,Site,Version,Platform,Serial Number
+device.example.com,10.1.1.100,us-dc01,17.1.1.4,vcmp,f5-serial-123
+```
+
+**Ejemplo de salida:**
+```
++ Added: device.example.com (10.1.1.100)
+- Skipped (already exists): existing.example.com
+
+Import complete! 96 new devices were added.
+```
+
+### ✅ `set_credential.py` - **CONFIGURACIÓN DE CREDENCIALES**
+**🔥 USAR ESTE SCRIPT** - Configura credenciales para dispositivos
+
+```bash
+# Configurar credenciales para dispositivos específicos
+docker-compose exec backend python scripts/set_credential.py --hostnames "device1.example.com" "device2.example.com" --username admin
+
+# Configurar credenciales para todos los dispositivos
+docker-compose exec backend python scripts/set_credential.py --username admin
+```
+
+**Características:**
+- 🔐 **Encriptación segura:** Passwords encriptados en base de datos
+- 🎯 **Selectivo o masivo:** Dispositivos específicos o todos
+- 👤 **Username configurable:** Por defecto 'admin'
+- ✅ **Estado actual:** 96/96 dispositivos con credenciales configuradas
+
+**Credenciales actuales:**
+- 👤 **Usuario:** admin
+- 🔐 **Password:** R0undt0w3r!
+
+**Ejemplo de uso interactivo:**
+```
+python scripts/set_credential.py --username admin
+Enter password for user 'admin' for the selected devices: [password]
+Successfully updated credentials for 96 device(s).
+```
+
+---
+
+## �🔧 Troubleshooting
 
 ### Error "No module named 'db'"
 ```bash

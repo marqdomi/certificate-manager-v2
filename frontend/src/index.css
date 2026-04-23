@@ -1,0 +1,229 @@
+/* Global styles for modern UI enhancements */
+
+/* Smooth transitions for all elements */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc;
+  line-height: 1.6;
+}
+
+/* Modern scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Enhanced focus styles for accessibility */
+.MuiButton-root:focus-visible,
+.MuiTextField-root:focus-within,
+.MuiIconButton-root:focus-visible {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+}
+
+/* Smooth animations */
+.MuiCard-root,
+.MuiPaper-root,
+.MuiButton-root {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Enhanced hover effects */
+.MuiCard-root:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.MuiButton-root:hover {
+  transform: translateY(-1px);
+}
+
+/* Modern glass morphism effects */
+.glassmorphic {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.rotating {
+  animation: spin 2s linear infinite;
+}
+
+.pulsing {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Enhanced DataGrid styling */
+.MuiDataGrid-root {
+  border-radius: 12px !important;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+}
+
+.MuiDataGrid-columnHeaders {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.MuiDataGrid-columnHeaderTitle {
+  color: white !important;
+  font-weight: 600;
+}
+
+.MuiDataGrid-row {
+  transition: all 0.2s ease;
+}
+
+.MuiDataGrid-row:hover {
+  background-color: rgba(102, 126, 234, 0.05) !important;
+  transform: scale(1.005);
+}
+
+.MuiDataGrid-cell {
+  border-bottom: 1px solid rgba(224, 224, 224, 0.5) !important;
+  padding: 16px 8px !important;
+}
+
+/* Improved status chips */
+.MuiChip-root {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+/* Better button styles */
+.MuiButton-containedPrimary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.MuiButton-containedSecondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+/* Modern card styling */
+.modern-card {
+  border-radius: 16px;
+  background: white;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.modern-card:hover {
+  box-shadow: 
+    0 14px 28px rgba(0, 0, 0, 0.25),
+    0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* Typography improvements */
+.MuiTypography-h4 {
+  font-weight: 700 !important;
+  letter-spacing: -0.025em;
+}
+
+.MuiTypography-h5 {
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+}
+
+/* Input field enhancements */
+.MuiTextField-root .MuiOutlinedInput-root {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.MuiTextField-root .MuiOutlinedInput-root:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.MuiTextField-root .MuiOutlinedInput-root.Mui-focused {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Avatar enhancements */
+.MuiAvatar-root {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+  .MuiCard-root {
+    margin: 8px;
+    border-radius: 12px;
+  }
+  
+  .MuiDataGrid-root {
+    font-size: 12px;
+  }
+  
+  .MuiButton-root {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Dark mode support preparation */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #121212;
+    color: #ffffff;
+  }
+  
+  .glassmorphic {
+    background: rgba(30, 30, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}

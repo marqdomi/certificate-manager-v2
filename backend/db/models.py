@@ -29,6 +29,7 @@ class Device(Base):
     version = Column(String, nullable=True)
     platform = Column(String, nullable=True)                  # e.g. BIG-IP, TMOS
     serial_number = Column(String, nullable=True)             # device serial
+    # F5 Device Information
     ha_state = Column(String, nullable=True)                  # active | standby | offline | unknown
     cluster_key = Column(String, nullable=True, index=True)   # e.g., cluster discriminator (site+pair)
     is_primary_preferred = Column(Boolean, nullable=False, default=False)  # scan/ops target flag
@@ -36,6 +37,21 @@ class Device(Base):
     last_sync_color = Column(String, nullable=True)           # green | yellow | red | unknown (UI hint)
     dns_servers = Column(Text, nullable=True)                 # JSON string or comma-separated
     last_facts_refresh = Column(DateTime, nullable=True)      # when facts were last pulled
+    
+    # Enhanced Cluster Discovery Fields (from F5 API)
+    trust_domain = Column(String, nullable=True, index=True)  # F5 trust domain
+    local_device_name = Column(String, nullable=True)         # Device name as reported by F5
+    peer_device_ids = Column(Text, nullable=True)             # JSON array of peer device IDs in cluster
+    sync_group = Column(String, nullable=True)                # F5 sync group information  
+    device_trust_state = Column(String, nullable=True)        # F5 device trust state
+    last_cluster_discovery = Column(DateTime, nullable=True)   # Last time cluster info was discovered
+    cluster_discovery_source = Column(String, nullable=True, index=True)  # heuristic|f5_api
+    
+    # Unified Discovery and Monitoring Fields  
+    last_unified_discovery = Column(DateTime, nullable=True, index=True)   # Last complete discovery operation
+    last_health_check = Column(DateTime, nullable=True, index=True)        # Last health monitoring check
+    last_facts_scan = Column(DateTime, nullable=True, index=True)          # Last facts scanning operation
+    
     active = Column(Boolean, nullable=False, default=True)    # whether to include in scheduled scans
     username = Column(String, nullable=False, default="admin")
     encrypted_password = Column(Text, nullable=True)
@@ -120,10 +136,10 @@ class UserRole(str, enum.Enum):
     VIEWER = "viewer"                   # Read-only access
 
 class AuthType(str, enum.Enum):
-    LOCAL = "local"                     # Local database authentication
-    LDAP = "ldap"                      # LDAP/Active Directory
-    AZURE_AD = "azure_ad"              # Azure AD OAuth2/OpenID Connect
-    SAML = "saml"                      # SAML SSO (future)
+    LOCAL = "LOCAL"                     # Local database authentication
+    LDAP = "LDAP"                      # LDAP/Active Directory
+    AZURE_AD = "AZURE_AD"              # Azure AD OAuth2/OpenID Connect
+    SAML = "SAML"                      # SAML SSO (future)
 
 class User(Base):
     __tablename__ = "users"
@@ -131,8 +147,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     
-    # Authentication fields
-    hashed_password = Column(String, nullable=True)  # Nullable for AD users
+    # Authentication fields - Local only
+    hashed_password = Column(String, nullable=False)  # Required for local users
     auth_type = Column(String, nullable=False, default="local")
     
     # User profile information
@@ -144,12 +160,6 @@ class User(Base):
     # Authorization and permissions
     role = Column(String, nullable=False, default="VIEWER")
     permissions = Column(Text, nullable=True)  # JSON string for granular permissions
-    
-    # AD/LDAP specific fields
-    domain = Column(String, nullable=True)  # AD domain (e.g., 'contoso.com')
-    distinguished_name = Column(String, nullable=True)  # LDAP DN
-    ad_groups = Column(Text, nullable=True)  # JSON array of AD group memberships
-    object_guid = Column(String, nullable=True)  # AD ObjectGUID for sync
     
     # Session and activity tracking
     last_login = Column(DateTime, nullable=True)
@@ -170,17 +180,13 @@ class User(Base):
     created_by = Column(String, nullable=True)  # Username who created this user
     last_modified_by = Column(String, nullable=True)
     
-    # Sync information (for AD users)
-    last_ad_sync = Column(DateTime, nullable=True)
-    ad_sync_status = Column(String, nullable=True)  # 'synced', 'error', 'pending'
-    
     def __repr__(self):
-        return f"<User(username='{self.username}', role='{self.role.value}', auth_type='{self.auth_type.value}')>"
+        return f"<User(username='{self.username}', role='{self.role}', auth_type='{self.auth_type}')>"
     
     @property
     def is_ad_user(self):
-        """Check if user authenticates via AD/LDAP"""
-        return self.auth_type in [AuthType.LDAP, AuthType.AZURE_AD]
+        """Local users only - always returns False"""
+        return False
     
     @property
     def display_name(self):
@@ -188,11 +194,9 @@ class User(Base):
         return self.full_name or self.username
     
     @property
-    def is_emergency_admin(self):
-        """Check if this is an emergency admin account"""
-        return (self.auth_type == AuthType.LOCAL and 
-                self.role == UserRole.SUPER_ADMIN and 
-                self.username.startswith('admin'))
+    def is_admin(self):
+        """Check if this is an admin account"""
+        return self.role in [UserRole.ADMIN, UserRole.SUPER_ADMIN]
 
 # User session tracking table
 class UserSession(Base):
@@ -294,3 +298,162 @@ class CertProfileLinksCache(Base):
     __table_args__ = (
         UniqueConstraint("device_id", "cert_name", "profile_full_path", name="uq_cert_profile_per_device"),
     )
+
+
+# -------------------------------------------------------------------
+# DigiCert automated renewal (paralelo al flujo manual de RenewalRequest)
+# -------------------------------------------------------------------
+class DigicertOrderStatus(str, enum.Enum):
+    PENDING_SUBMIT = "PENDING_SUBMIT"
+    SUBMITTED = "SUBMITTED"
+    NEEDS_APPROVAL = "NEEDS_APPROVAL"
+    APPROVAL_REJECTED = "APPROVAL_REJECTED"
+    PENDING_DCV = "PENDING_DCV"
+    PENDING_VALIDATION = "PENDING_VALIDATION"
+    ISSUED = "ISSUED"
+    DOWNLOADED = "DOWNLOADED"
+    DEPLOYING = "DEPLOYING"
+    PARTIAL_DEPLOY = "PARTIAL_DEPLOY"
+    DEPLOYED = "DEPLOYED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    TIMEOUT_APPROVAL = "TIMEOUT_APPROVAL"
+
+
+# Estados en los que una orden se considera "activa" (evita crear otra paralela para el mismo cert)
+DIGICERT_ACTIVE_STATUSES = {
+    DigicertOrderStatus.PENDING_SUBMIT.value,
+    DigicertOrderStatus.SUBMITTED.value,
+    DigicertOrderStatus.NEEDS_APPROVAL.value,
+    DigicertOrderStatus.PENDING_DCV.value,
+    DigicertOrderStatus.PENDING_VALIDATION.value,
+    DigicertOrderStatus.ISSUED.value,
+    DigicertOrderStatus.DOWNLOADED.value,
+    DigicertOrderStatus.DEPLOYING.value,
+    DigicertOrderStatus.PARTIAL_DEPLOY.value,
+}
+
+
+class DigicertRenewalOrder(Base):
+    __tablename__ = "digicert_renewal_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    certificate_id = Column(Integer, ForeignKey("certificates.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    status = Column(String, nullable=False, default=DigicertOrderStatus.PENDING_SUBMIT.value, index=True)
+
+    # DigiCert references
+    digicert_order_id = Column(String, nullable=True, index=True)
+    digicert_certificate_id = Column(String, nullable=True, index=True)
+
+    # Crypto / CSR
+    csr_pem = Column(Text, nullable=True)
+    encrypted_private_key = Column(Text, nullable=True)  # nullable tras purga (paso 30)
+    private_key_purged_at = Column(DateTime, nullable=True)
+    key_size = Column(Integer, nullable=False, default=2048)
+
+    # Certificate metadata
+    common_name = Column(String, nullable=False, index=True)
+    san_list = Column(Text, nullable=True)  # JSON array
+    validity_years = Column(Integer, nullable=False, default=1)
+    product = Column(String, nullable=True)
+    container_id = Column(String, nullable=True)
+    organization_id = Column(String, nullable=True)
+
+    # Delivered certificate (post-issue)
+    signed_cert_pem = Column(Text, nullable=True)
+    chain_pem = Column(Text, nullable=True)
+    serial_number = Column(String, nullable=True, index=True)
+    thumbprint = Column(String, nullable=True, index=True)
+    valid_from = Column(DateTime, nullable=True)
+    valid_till = Column(DateTime, nullable=True)
+
+    # Approval tracking
+    approval_required = Column(Boolean, nullable=False, default=False)
+    approval_detected_at = Column(DateTime, nullable=True)
+    last_approval_reminder_at = Column(DateTime, nullable=True)
+
+    # DCV tracking
+    dcv_method = Column(String, nullable=True)  # dns-cname | dns-txt | email | http | reused
+    dcv_tokens = Column(Text, nullable=True)    # JSON por SAN
+    dcv_completed_at = Column(DateTime, nullable=True)
+
+    # Deployment tracking
+    deploy_results = Column(Text, nullable=True)  # JSON: {"device_id": {"status": "...", "error": "..."}}
+    deployed_at = Column(DateTime, nullable=True)
+
+    # Error handling & idempotency
+    error_message = Column(Text, nullable=True)
+    idempotency_key = Column(String, nullable=True, index=True)
+    submit_attempts = Column(Integer, nullable=False, default=0)
+
+    # Audit
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_by = Column(String, nullable=True)
+
+    # Relationship
+    certificate = relationship("Certificate", foreign_keys=[certificate_id])
+
+    __table_args__ = (
+        UniqueConstraint("certificate_id", "idempotency_key", name="uq_digicert_cert_idempotency"),
+    )
+
+    def __repr__(self):
+        return f"<DigicertRenewalOrder(id={self.id}, cn='{self.common_name}', status='{self.status}')>"
+
+
+class DigicertRenewalAuditLog(Base):
+    __tablename__ = "digicert_renewal_audit_log"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("digicert_renewal_orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String, nullable=False, index=True)
+    # INITIATED | SUBMITTED | APPROVAL_REQUIRED | APPROVED | APPROVAL_REJECTED |
+    # DCV_GENERATED | DCV_COMPLETED | ISSUED | DOWNLOAD_COMPLETED |
+    # DEPLOY_STARTED | DEPLOY_DEVICE_SUCCESS | DEPLOY_DEVICE_FAILED | DEPLOY_COMPLETED |
+    # CANCELLED | REVOKED | REISSUED | KEY_PURGED | ERROR
+    username = Column(String, nullable=True)  # nullable para eventos de sistema/celery
+    event_metadata = Column(Text, nullable=True)  # JSON
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    order = relationship("DigicertRenewalOrder", backref="audit_events")
+
+    def __repr__(self):
+        return f"<DigicertRenewalAuditLog(order_id={self.order_id}, event='{self.event_type}')>"
+
+
+class DigicertInventoryItem(Base):
+    """
+    Cache local de órdenes y certificados DigiCert (para vista de inventory y matching cert F5 <-> DigiCert).
+    Se refresca on-demand vía sync endpoint. Soporta órdenes creadas fuera de CMT dentro del mismo container.
+    """
+    __tablename__ = "digicert_inventory"
+
+    id = Column(Integer, primary_key=True, index=True)
+    digicert_order_id = Column(String, nullable=False, unique=True, index=True)
+    digicert_certificate_id = Column(String, nullable=True, index=True)
+
+    common_name = Column(String, nullable=True, index=True)
+    sans = Column(Text, nullable=True)  # JSON
+    serial_number = Column(String, nullable=True, index=True)
+    thumbprint = Column(String, nullable=True, index=True)
+
+    status = Column(String, nullable=True, index=True)
+    product = Column(String, nullable=True)
+    container_id = Column(String, nullable=True, index=True)
+    organization = Column(String, nullable=True)
+
+    valid_from = Column(DateTime, nullable=True)
+    valid_till = Column(DateTime, nullable=True, index=True)
+    issued_date = Column(DateTime, nullable=True)
+
+    # Matching con cert local F5 (paso 18 del plan)
+    local_certificate_id = Column(Integer, ForeignKey("certificates.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    last_synced_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    local_certificate = relationship("Certificate", foreign_keys=[local_certificate_id])
+
+    def __repr__(self):
+        return f"<DigicertInventoryItem(order_id='{self.digicert_order_id}', cn='{self.common_name}')>"

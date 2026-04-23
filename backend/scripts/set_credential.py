@@ -1,6 +1,12 @@
-# backend/set_credential.py
+# backend/scripts/set_credential.py
 
 import argparse
+import sys
+import os
+
+# Add the parent directory to the path so we can import from backend modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from db.base import SessionLocal
 from db.models import Device
 from services.encryption_service import encrypt_data

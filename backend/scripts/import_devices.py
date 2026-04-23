@@ -1,5 +1,11 @@
-# backend/import_devices.py
+# backend/scripts/import_devices.py
 import csv
+import sys
+import os
+
+# Add the parent directory to the path so we can import from backend modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from db.base import SessionLocal
 from db.models import Device
 
@@ -16,6 +22,8 @@ def import_devices_from_csv(filepath: str):
                 ip_address = row.get("Login IP")
                 site = row.get("Site")
                 version = row.get("Version")
+                platform = row.get("Platform")
+                serial_number = row.get("Serial Number")
 
                 if not hostname or not ip_address:
                     print(f"Skipping row due to missing hostname or IP: {row}")
@@ -31,11 +39,15 @@ def import_devices_from_csv(filepath: str):
                         hostname=hostname,
                         ip_address=ip_address,
                         site=site,
-                        version=version
+                        version=version,
+                        platform=platform,
+                        serial_number=serial_number,
+                        active=True,
+                        username="admin"  # Default username
                     )
                     db.add(new_device)
                     imported_count += 1
-                    print(f"  + Added: {hostname}")
+                    print(f"  + Added: {hostname} ({ip_address})")
                 else:
                     print(f"  - Skipped (already exists): {hostname}")
 

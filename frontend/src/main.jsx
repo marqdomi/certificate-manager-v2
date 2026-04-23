@@ -1,6 +1,7 @@
 // frontend/src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css'; // Import global styles
 import App from './App';
 import { CustomThemeProvider } from './context/ThemeContext'; // <-- Importar
 

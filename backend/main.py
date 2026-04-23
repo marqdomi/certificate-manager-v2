@@ -7,6 +7,7 @@ import logging
 from api.endpoints import (
     auth,
     admin,
+    admin_providers,
     f5_scans,
     certificates,
     devices,
@@ -14,6 +15,8 @@ from api.endpoints import (
     deployments,
     f5_cache,
     f5_vips,
+    monitoring,
+    digicert_renewals,
 )
 
 # Configure logging
@@ -51,8 +54,11 @@ app.include_router(admin.router,        prefix="/api/v1/admin",        tags=["Ad
 app.include_router(f5_scans.router,     prefix="/api/v1",              tags=["F5 Scans"])
 app.include_router(certificates.router, prefix="/api/v1/certificates", tags=["Certificates"])
 app.include_router(devices.router,      prefix="/api/v1/devices",      tags=["Devices"])
+app.include_router(monitoring.router,   prefix="/api/v1/monitoring",   tags=["Monitoring"])
 app.include_router(pfx.router,          prefix="/api/v1/pfx",          tags=["PFX"])
 app.include_router(deployments.router,  prefix="/api/v1/deployments",  tags=["Deployments"])
+app.include_router(digicert_renewals.router, prefix="/api/v1/digicert", tags=["DigiCert Renewals"])
+app.include_router(admin_providers.router,   prefix="/api/v1/admin/providers", tags=["Admin Providers"])
 
 # Optional: hashing self-test at startup to catch env/package drift early
 try:

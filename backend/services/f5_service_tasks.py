@@ -1,10 +1,13 @@
 # backend/services/f5_service_tasks.py
+import logging
 from datetime import datetime
 
 from db.base import SessionLocal
 from db.models import Device
 from services import f5_service_logic, encryption_service
 from core.celery_worker import celery_app
+
+logger = logging.getLogger(__name__)
 
 # This function can be called by Celery via a wrapper in core.celery_worker.py
 def scan_f5_impl(device_id: int):
@@ -87,10 +90,8 @@ def normalize_object_names_task(device_id: int):
         db.close()
 
 def refresh_device_facts_task(device_id: int):
+    """Task to refresh F5 facts for a single device."""
     from services.f5_facts import fetch_and_store_device_facts
-import logging
-
-logger = logging.getLogger(__name__)
     return fetch_and_store_device_facts(device_id)
 
 def refresh_device_facts_all_task():

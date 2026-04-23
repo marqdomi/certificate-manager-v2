@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 from db.base import get_db
-from db.models import User
+from db.models import User, UserRole
 from services import auth_service
 from schemas.user import UserResponse # Crearemos este schema en el siguiente paso
 
@@ -75,6 +75,23 @@ async def read_users_me(
     Endpoint protegido que devuelve la información del usuario logueado.
     """
     return current_user
+
+@router.get("/debug/token-info")
+async def debug_token_info(
+    current_user: Annotated[User, Depends(auth_service.get_current_active_user)]
+):
+    """
+    Endpoint de debug para verificar información del token y permisos.
+    """
+    return {
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+        "has_admin_permission": current_user.role in [UserRole.ADMIN, UserRole.SUPER_ADMIN],
+        "created_at": current_user.created_at,
+        "last_login": current_user.last_login
+    }
 
 
 @router.post("/logout", summary="User Logout")

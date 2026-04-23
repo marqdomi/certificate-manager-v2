@@ -6,11 +6,13 @@ from sqlalchemy import func, desc
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import json
+import logging
 
 from db.base import get_db
 from db.models import (
     User, UserRole, AuthType, UserActivity, UserSession, 
-    SystemConfig, Device, Certificate
+    SystemConfig, Device, Certificate, SslProfileVipsCache,
+    SslProfilesCache, CertProfileLinksCache
 )
 from services import auth_service
 from services.encryption_service import encrypt_data, decrypt_data
@@ -20,10 +22,12 @@ from schemas.user import (
     SystemConfigUpdate, ADSyncResult
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 # Dependency for admin-only access
-admin_required = auth_service.require_role([UserRole.SUPER_ADMIN, UserRole.ADMIN])
+admin_required = auth_service.require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN])
 super_admin_required = auth_service.require_role([UserRole.SUPER_ADMIN])
 
 @router.get("/users", response_model=UserListResponse, summary="List Users")
@@ -392,38 +396,91 @@ async def get_system_stats(
     db: Session = Depends(get_db)
 ):
     """
-    Get system statistics for admin dashboard
+    Get system statistics for admin dashboard - simplified version
     """
-    # User statistics
-    total_users = db.query(func.count(User.id)).scalar()
-    active_users = db.query(func.count(User.id)).filter(User.is_active == True).scalar()
-    locked_users = db.query(func.count(User.id)).filter(User.is_locked == True).scalar()
+    try:
+        # Basic user statistics
+        total_users = db.query(func.count(User.id)).scalar() or 0
+        active_users = db.query(func.count(User.id)).filter(User.is_active == True).scalar() or 0
+        
+        # Basic device statistics
+        total_devices = db.query(func.count(Device.id)).scalar() or 0
+        
+        # Basic certificate statistics  
+        total_certificates = db.query(func.count(Certificate.id)).scalar() or 0
+        
+        return {
+            "users": {
+                "total": total_users,
+                "active": active_users,
+                "locked": 0
+            },
+            "devices": {
+                "total": total_devices,
+                "active": total_devices,
+                "inactive": 0
+            },
+            "certificates": {
+                "total": total_certificates,
+                "expiring_soon": 0,
+                "expired": 0
+            },
+            "activity": {
+                "recent_logins": 0,
+                "failed_logins": 0
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error getting system stats: {e}")
+        return {
+            "users": {"total": 0, "active": 0, "locked": 0},
+            "devices": {"total": 0, "active": 0, "inactive": 0},
+            "certificates": {"total": 0, "expiring_soon": 0, "expired": 0},
+            "activity": {"recent_logins": 0, "failed_logins": 0}
+        }
+    devices_by_sync_status = db.query(Device.sync_status, func.count(Device.id)).group_by(Device.sync_status).all()
+    devices_by_scan_status = db.query(Device.last_scan_status, func.count(Device.id)).group_by(Device.last_scan_status).all()
     
-    # Users by auth type
-    users_by_auth = db.query(User.auth_type, func.count(User.id)).group_by(User.auth_type).all()
-    
-    # Users by role
-    users_by_role = db.query(User.role, func.count(User.id)).group_by(User.role).all()
-    
-    # Recent login activity (last 24 hours)
-    yesterday = datetime.utcnow() - timedelta(days=1)
-    recent_logins = db.query(func.count(UserActivity.id)).filter(
-        UserActivity.action == "login",
-        UserActivity.result == "success",
-        UserActivity.created_at >= yesterday
-    ).scalar()
-    
-    # Failed login attempts (last 24 hours)
-    failed_logins = db.query(func.count(UserActivity.id)).filter(
-        UserActivity.action == "login",
-        UserActivity.result == "failure",
-        UserActivity.created_at >= yesterday
-    ).scalar()
-    
-    # Device and certificate counts
-    total_devices = db.query(func.count(Device.id)).scalar()
-    active_devices = db.query(func.count(Device.id)).filter(Device.active == True).scalar()
+    # Certificate statistics
     total_certificates = db.query(func.count(Certificate.id)).scalar()
+    
+    # Certificates expiring soon (30 days)
+    thirty_days_from_now = datetime.utcnow() + timedelta(days=30)
+    expiring_soon = db.query(func.count(Certificate.id)).filter(
+        Certificate.expiration_date.isnot(None),
+        Certificate.expiration_date <= thirty_days_from_now,
+        Certificate.expiration_date > datetime.utcnow()
+    ).scalar()
+    
+    # Expired certificates
+    expired = db.query(func.count(Certificate.id)).filter(
+        Certificate.expiration_date.isnot(None),
+        Certificate.expiration_date < datetime.utcnow()
+    ).scalar()
+    
+    # VIPs statistics (from cache)
+    total_vips = db.query(func.count(func.distinct(SslProfileVipsCache.vip_name))).scalar()
+    
+    # VIPs by status (enabled/disabled)
+    vips_enabled = db.query(func.count(func.distinct(SslProfileVipsCache.vip_name))).filter(
+        SslProfileVipsCache.enabled == True
+    ).scalar()
+    
+    vips_disabled = db.query(func.count(func.distinct(SslProfileVipsCache.vip_name))).filter(
+        SslProfileVipsCache.enabled == False
+    ).scalar()
+    
+    # SSL profiles statistics
+    total_ssl_profiles = db.query(func.count(SslProfilesCache.id)).scalar()
+    profiles_with_certs = db.query(func.count(func.distinct(SslProfilesCache.profile_full_path))).join(
+        CertProfileLinksCache, SslProfilesCache.profile_full_path == CertProfileLinksCache.profile_full_path
+    ).scalar()
+    
+    # Recent sync activity (last 24 hours)
+    yesterday = datetime.utcnow() - timedelta(days=1)
+    recent_vip_syncs = db.query(func.count(SslProfileVipsCache.id)).filter(
+        SslProfileVipsCache.updated_at >= yesterday
+    ).scalar()
     
     return {
         "users": {
@@ -437,10 +494,28 @@ async def get_system_stats(
             "recent_logins_24h": recent_logins,
             "failed_logins_24h": failed_logins
         },
-        "resources": {
-            "total_devices": total_devices,
-            "active_devices": active_devices,
-            "total_certificates": total_certificates
+        "devices": {
+            "total": total_devices,
+            "active": active_devices,
+            "inactive": inactive_devices,
+            "by_ha_state": dict(devices_by_ha_state),
+            "by_sync_status": dict(devices_by_sync_status),
+            "by_scan_status": dict(devices_by_scan_status)
+        },
+        "certificates": {
+            "total": total_certificates,
+            "expiring_soon": expiring_soon,
+            "expired": expired
+        },
+        "vips": {
+            "total": total_vips,
+            "enabled": vips_enabled,
+            "disabled": vips_disabled,
+            "recent_syncs_24h": recent_vip_syncs
+        },
+        "ssl_profiles": {
+            "total": total_ssl_profiles,
+            "with_certificates": profiles_with_certs
         },
         "timestamp": datetime.utcnow().isoformat()
     }
